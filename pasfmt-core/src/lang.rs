@@ -201,6 +201,68 @@ pub enum TokenType {
     Unknown,
 }
 
+#[derive(Debug, Hash, PartialEq, Eq, Clone)]
+pub enum LogicalLineType {
+    ConditionalDirective,
+    Eof,
+    Unknown,
+}
+#[derive(Debug, PartialEq, Eq)]
+pub struct LogicalLine {
+    parent_token: Option<usize>,
+    level: usize,
+    tokens: Vec<usize>,
+    line_type: LogicalLineType,
+}
+#[allow(dead_code)]
+impl LogicalLine {
+    pub fn new(
+        parent_token: Option<usize>,
+        level: usize,
+        tokens: Vec<usize>,
+        line_type: LogicalLineType,
+    ) -> Self {
+        LogicalLine {
+            parent_token,
+            level,
+            tokens,
+            line_type,
+        }
+    }
+    pub fn get_parent_token(&self) -> Option<usize> {
+        self.parent_token
+    }
+    pub fn get_level(&self) -> usize {
+        self.level
+    }
+    pub fn get_tokens(&self) -> &Vec<usize> {
+        &self.tokens
+    }
+    pub fn get_line_type(&self) -> LogicalLineType {
+        self.line_type.clone()
+    }
+}
+#[allow(dead_code)]
+pub struct LogicalLines<'a> {
+    tokens: Vec<Token<'a>>,
+    lines: Vec<LogicalLine>,
+}
+#[allow(dead_code)]
+impl<'a> LogicalLines<'a> {
+    pub fn new(tokens: Vec<Token<'a>>, lines: Vec<LogicalLine>) -> Self {
+        LogicalLines { tokens, lines }
+    }
+    pub fn get_tokens(&self) -> &Vec<Token<'a>> {
+        &self.tokens
+    }
+    pub fn get_lines(&self) -> &Vec<LogicalLine> {
+        &self.lines
+    }
+    pub fn own_data(self) -> (Vec<Token<'a>>, Vec<LogicalLine>) {
+        (self.tokens, self.lines)
+    }
+}
+
 pub struct RefToken<'a> {
     index: usize,
     original_leading_whitespace: &'a str,
