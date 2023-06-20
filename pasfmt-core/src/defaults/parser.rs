@@ -180,6 +180,12 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                     self.add_logical_line();
                     return;
                 }
+                Keyword(Uses) => {
+                    self.add_logical_line();
+                    self.set_logical_line_type(LogicalLineType::UsesClause);
+                    self.parse_to_after_next_semicolon();
+                    self.add_logical_line();
+                }
                 Keyword(Begin) => {
                     self.parse_child_block(self.current_token_index);
                 }
@@ -189,6 +195,18 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                 return;
             }
         }
+    }
+
+    fn parse_to_after_next_semicolon(&mut self) {
+        while !self.is_eof()
+            && !matches!(
+                self.get_current_token().unwrap().get_token_type(),
+                TokenType::Op(OperatorKind::Semicolon)
+            )
+        {
+            self.next_token();
+        }
+        self.next_token();
     }
 
     fn parse_parens(&mut self) {
@@ -377,13 +395,16 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
     fn parse_conditional_directive(&mut self) {
         let prev_level = self.directive_context.len();
         match self.get_current_token().unwrap().get_token_type() {
-            ConditionalDirective(Ifdef) => {
+            ConditionalDirective(Ifdef)
+            | ConditionalDirective(Ifndef)
+            | ConditionalDirective(Ifopt)
+            | ConditionalDirective(ConditionalDirectiveKind::If) => {
                 self.parse_directive_if();
             }
-            ConditionalDirective(ConditionalDirectiveKind::Else) => {
+            ConditionalDirective(ConditionalDirectiveKind::Else) | ConditionalDirective(Elseif) => {
                 self.parse_directive_else();
             }
-            ConditionalDirective(Endif) => {
+            ConditionalDirective(Endif) | ConditionalDirective(Ifend) => {
                 self.parse_directive_endif();
             }
             _ => panic!(),
@@ -572,7 +593,6 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
     fn get_current_token(&mut self) -> Option<&Token> {
         self.tokens.get(self.current_token_index)
     }
-
     fn is_eof(&self) -> bool {
         match self.tokens.get(self.current_token_index) {
             None => true,
@@ -615,6 +635,7 @@ impl LogicalLineParser for DelphiLogicalLineParser {
 
 #[cfg(test)]
 mod tests {
+    use indoc::indoc;
     use spectral::prelude::*;
 
     use super::*;
@@ -819,5 +840,51 @@ mod tests {
             LogicalLine::new(None, 0, vec![0, 1], LogicalLineType::Unknown),
             LogicalLine::new(None, 0, vec![2], LogicalLineType::Eof),
         ]);
+    }
+
+    #[test]
+    fn package_uses_clause() {
+        run_test(
+            indoc! {"
+                package Foo;
+                uses Unit1, Unit2;"
+            },
+            vec![
+                LogicalLine::new(None, 0, vec![0, 1, 2], LogicalLineType::Unknown),
+                LogicalLine::new(None, 0, vec![3, 4, 5, 6, 7], LogicalLineType::UsesClause),
+            ],
+        );
+    }
+
+    #[test]
+    fn package_uses_clause_with_compiler_directive() {
+        run_test(
+            indoc! {"
+                package Foo;
+                {$R}
+                uses Unit1 {Bar: TBar}, Unit2;"
+            },
+            vec![
+                LogicalLine::new(None, 0, vec![0, 1, 2], LogicalLineType::Unknown),
+                LogicalLine::new(None, 0, vec![3], LogicalLineType::Unknown),
+                LogicalLine::new(None, 0, vec![4, 5, 6, 7, 8, 9], LogicalLineType::UsesClause),
+            ],
+        );
+    }
+
+    #[test]
+    fn unit_uses_clause() {
+        run_test(
+            indoc! {"
+                unit Foo;
+                implementation
+                uses Unit1, Unit2;"
+            },
+            vec![
+                LogicalLine::new(None, 0, vec![0, 1, 2], LogicalLineType::Unknown),
+                LogicalLine::new(None, 0, vec![3], LogicalLineType::Unknown),
+                LogicalLine::new(None, 0, vec![4, 5, 6, 7, 8], LogicalLineType::UsesClause),
+            ],
+        );
     }
 }

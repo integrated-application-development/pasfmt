@@ -205,6 +205,7 @@ pub enum TokenType {
 pub enum LogicalLineType {
     ConditionalDirective,
     Eof,
+    UsesClause,
     Unknown,
 }
 #[derive(Debug, PartialEq, Eq)]
