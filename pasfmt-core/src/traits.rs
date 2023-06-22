@@ -11,3 +11,10 @@ pub trait LogicalLineParser {
 pub trait LogicalLinesConsolidator {
     fn consolidate<'a>(&self, input: LogicalLines<'a>) -> LogicalLines<'a>;
 }
+pub trait LogicalLineFormatter {
+    fn format<'a>(
+        &self,
+        formatted_tokens: FormattedTokens<'a>,
+        input: &LogicalLine,
+    ) -> FormattedTokens<'a>;
+}

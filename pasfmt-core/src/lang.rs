@@ -246,6 +246,130 @@ impl LogicalLine {
         self.line_type.clone()
     }
 }
+
+#[allow(dead_code)]
+pub struct FormattingData {
+    token: usize,
+    newlines_before: usize,
+    indentations_before: usize,
+    continuations_before: usize,
+    spaces_before: usize,
+}
+#[allow(dead_code)]
+impl FormattingData {
+    pub fn new(token: usize) -> Self {
+        FormattingData {
+            token,
+            newlines_before: 0,
+            indentations_before: 0,
+            continuations_before: 0,
+            spaces_before: 0,
+        }
+    }
+    pub fn from(token: usize, leading_whitespace: &str) -> Self {
+        let newlines_before = leading_whitespace
+            .chars()
+            .filter(|char| char.eq(&'\n'))
+            .count();
+
+        // Rusts .lines() fn doesn't treat a trailing newline as creating
+        // another line.
+        let last_line = leading_whitespace
+            .split('\n')
+            .last()
+            .map(|line| line.trim_end_matches('\r'))
+            .unwrap_or_default();
+
+        FormattingData {
+            token,
+            newlines_before,
+            indentations_before: 0,
+            continuations_before: 0,
+            spaces_before: last_line.len() - last_line.trim_start().len(),
+        }
+    }
+    pub fn get_token_index(&self) -> usize {
+        self.token
+    }
+    pub fn get_newlines_before(&self) -> usize {
+        self.newlines_before
+    }
+    pub fn get_newlines_before_mut(&mut self) -> &mut usize {
+        &mut self.newlines_before
+    }
+    pub fn get_indentations_before(&self) -> usize {
+        self.indentations_before
+    }
+    pub fn get_indentations_before_mut(&mut self) -> &mut usize {
+        &mut self.indentations_before
+    }
+    pub fn get_continuations_before(&self) -> usize {
+        self.continuations_before
+    }
+    pub fn get_continuations_before_mut(&mut self) -> &mut usize {
+        &mut self.continuations_before
+    }
+    pub fn get_spaces_before(&self) -> usize {
+        self.spaces_before
+    }
+    pub fn get_spaces_before_mut(&mut self) -> &mut usize {
+        &mut self.spaces_before
+    }
+}
+
+#[allow(dead_code)]
+pub struct FormattedTokens<'a> {
+    tokens: Vec<Token<'a>>,
+    formatting_data: Vec<FormattingData>,
+}
+#[allow(dead_code)]
+impl<'a> FormattedTokens<'a> {
+    pub fn new(tokens: Vec<Token<'a>>, formatting_data: Vec<FormattingData>) -> Self {
+        FormattedTokens {
+            tokens,
+            formatting_data,
+        }
+    }
+    pub fn get_tokens(&self) -> &Vec<Token<'a>> {
+        &self.tokens
+    }
+    pub fn get_formatting_data(&self) -> &Vec<FormattingData> {
+        &self.formatting_data
+    }
+    pub fn get_or_create_formatting_data_mut(&mut self, token_index: usize) -> &mut FormattingData {
+        let data_index = self
+            .formatting_data
+            .iter()
+            .enumerate()
+            .find_map(
+                |(data_index, data)| match data.get_token_index() == token_index {
+                    true => Some(data_index),
+                    false => None,
+                },
+            );
+
+        if let Some(formatting_data_index) = data_index {
+            self.formatting_data.get_mut(formatting_data_index).unwrap()
+        } else {
+            let new_formatting_data = FormattingData::from(
+                token_index,
+                self.tokens
+                    .get(token_index)
+                    .unwrap()
+                    .get_leading_whitespace(),
+            );
+            self.formatting_data.push(new_formatting_data);
+            self.formatting_data.last_mut().unwrap()
+        }
+    }
+    pub fn get_token_type_for_index(&self, index: usize) -> TokenType {
+        self.tokens.get(index).unwrap().get_token_type()
+    }
+    pub fn own_data(self) -> (Vec<Token<'a>>, Vec<FormattingData>) {
+        (self.tokens, self.formatting_data)
+    }
+}
+
 #[allow(dead_code)]
 pub struct LogicalLines<'a> {
     tokens: Vec<Token<'a>>,
