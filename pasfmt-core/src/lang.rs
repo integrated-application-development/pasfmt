@@ -239,6 +239,9 @@ impl LogicalLine {
     pub fn get_tokens(&self) -> &Vec<usize> {
         &self.tokens
     }
+    pub fn get_tokens_mut(&mut self) -> &mut Vec<usize> {
+        &mut self.tokens
+    }
     pub fn get_line_type(&self) -> LogicalLineType {
         self.line_type.clone()
     }

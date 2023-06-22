@@ -7,3 +7,7 @@ pub trait Lexer {
 pub trait LogicalLineParser {
     fn parse<'a>(&self, input: Vec<Token<'a>>) -> LogicalLines<'a>;
 }
+
+pub trait LogicalLinesConsolidator {
+    fn consolidate<'a>(&self, input: LogicalLines<'a>) -> LogicalLines<'a>;
+}
