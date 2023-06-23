@@ -5,3 +5,4 @@ edition = "2021"
 
 [dev-dependencies]
 spectral = "0.6.0"
+indoc = "2.0.1"
