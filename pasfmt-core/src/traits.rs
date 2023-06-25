@@ -18,3 +18,7 @@ pub trait LogicalLineFormatter {
         input: &LogicalLine,
     ) -> FormattedTokens<'a>;
 }
+
+pub trait LogicalLinesReconstructor {
+    fn reconstruct(&self, formatted_tokens: FormattedTokens) -> String;
+}

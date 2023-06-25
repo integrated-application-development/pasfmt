@@ -391,6 +391,31 @@ impl<'a> LogicalLines<'a> {
     }
 }
 
+pub struct ReconstructionSettings {
+    newline_str: String,
+    indentation_str: String,
+    continuation_str: String,
+}
+#[allow(dead_code)]
+impl ReconstructionSettings {
+    pub fn new(newline_str: String, indentation_str: String, continuation_str: String) -> Self {
+        ReconstructionSettings {
+            newline_str,
+            indentation_str,
+            continuation_str,
+        }
+    }
+    pub fn get_newline_str(&self) -> &str {
+        &self.newline_str
+    }
+    pub fn get_indentation_str(&self) -> &str {
+        &self.indentation_str
+    }
+    pub fn get_continuation_str(&self) -> &str {
+        &self.continuation_str
+    }
+}
+
 pub struct RefToken<'a> {
     index: usize,
     original_leading_whitespace: &'a str,
@@ -416,7 +441,6 @@ impl<'a> RefToken<'a> {
 pub enum Token<'a> {
     RefToken(RefToken<'a>),
 }
-#[allow(dead_code)]
 impl<'a> Token<'a> {
     pub fn get_index(&self) -> usize {
         match &self {
