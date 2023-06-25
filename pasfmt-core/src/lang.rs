@@ -438,28 +438,57 @@ impl<'a> RefToken<'a> {
     }
 }
 
+pub struct OwningToken {
+    index: usize,
+    original_leading_whitespace: String,
+    content: String,
+    token_type: TokenType,
+}
+#[allow(dead_code)]
+impl OwningToken {
+    pub fn new(
+        index: usize,
+        leading_whitespace: String,
+        content: String,
+        token_type: TokenType,
+    ) -> OwningToken {
+        OwningToken {
+            index,
+            original_leading_whitespace: leading_whitespace,
+            content,
+            token_type,
+        }
+    }
+}
+
 pub enum Token<'a> {
     RefToken(RefToken<'a>),
+    #[allow(dead_code)]
+    OwningToken(OwningToken),
 }
 impl<'a> Token<'a> {
     pub fn get_index(&self) -> usize {
         match &self {
             Token::RefToken(token) => token.index,
+            Token::OwningToken(token) => token.index,
         }
     }
     pub fn get_leading_whitespace(&self) -> &str {
         match &self {
             Token::RefToken(token) => token.original_leading_whitespace,
+            Token::OwningToken(token) => token.original_leading_whitespace.as_str(),
         }
     }
     pub fn get_content(&self) -> &str {
         match &self {
             Token::RefToken(token) => token.content,
+            Token::OwningToken(token) => &token.content,
         }
     }
     pub fn get_token_type(&self) -> TokenType {
         match &self {
             Token::RefToken(token) => token.token_type.clone(),
+            Token::OwningToken(token) => token.token_type.clone(),
         }
     }
 }

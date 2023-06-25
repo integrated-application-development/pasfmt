@@ -4,6 +4,10 @@ pub trait Lexer {
     fn lex<'a>(&self, input: &'a str) -> Vec<Token<'a>>;
 }
 
+pub trait TokenConsolidator {
+    fn consolidate<'a>(&self, tokens: Vec<Token<'a>>) -> Vec<Token<'a>>;
+}
+
 pub trait LogicalLineParser {
     fn parse<'a>(&self, input: Vec<Token<'a>>) -> LogicalLines<'a>;
 }
