@@ -130,56 +130,32 @@ mod tests {
 
     use super::*;
     use crate::{
-        defaults::lexer::DelphiLexer,
-        defaults::parser::DelphiLogicalLineParser,
+        defaults::lexer::DelphiLexer, defaults::parser::DelphiLogicalLineParser,
+        defaults::reconstructor::DelphiLogicalLinesReconstructor, formatter::Formatter,
+        formatter_selector::FormatterSelector,
         rules::uses_clause_consolidator::UsesClauseConsolidator,
-        traits::LogicalLineParser,
-        traits::{Lexer, LogicalLinesConsolidator},
     };
 
     fn run_test(input: &'static str, expected_output: &'static str) {
-        let lexer = DelphiLexer {};
-        let parser = DelphiLogicalLineParser {};
-        let line_consolidator = UsesClauseConsolidator {};
-        let formatter = UsesClauseFormatter {};
-
-        let formatted_tokens = Some(input)
-            .map(|input| lexer.lex(input))
-            .map(|tokens| parser.parse(tokens))
-            .map(|lines| line_consolidator.consolidate(lines).own_data())
-            .map(|(tokens, lines)| {
-                formatter.format(
-                    FormattedTokens::new(tokens, vec![]),
-                    lines
-                        .iter()
-                        .find(|line| line.get_line_type() == LogicalLineType::UsesClause)
-                        .unwrap(),
-                )
-            })
-            .unwrap();
-
-        let formatted_output = formatted_tokens.get_tokens().iter().fold(
-            "".to_owned(),
-            |acc: String, token: &Token| {
-                let possible_formatting_data = formatted_tokens
-                    .get_formatting_data()
-                    .iter()
-                    .find(|formatting_data| formatting_data.get_token_index() == token.get_index());
-
-                let leading_whitespace = match possible_formatting_data {
-                    None => token.get_leading_whitespace().to_string(),
-                    Some(formatting_data) => format!(
-                        "{}{}{}",
-                        "\n".repeat(formatting_data.get_newlines_before()),
-                        "  ".repeat(formatting_data.get_indentations_before()),
-                        " ".repeat(formatting_data.get_spaces_before())
-                    ),
-                };
-
-                format!("{}{}{}", acc, leading_whitespace, token.get_content())
-            },
+        let uses_line_consolidator = UsesClauseConsolidator {};
+        let uses_formatter = &UsesClauseFormatter {};
+        let formatter = Formatter::new(
+            Box::new(DelphiLexer {}),
+            vec![],
+            Box::new(DelphiLogicalLineParser {}),
+            vec![Box::new(uses_line_consolidator)],
+            vec![Box::new(FormatterSelector::new(
+                |line_type| match line_type {
+                    LogicalLineType::UsesClause => Some(uses_formatter),
+                    _ => None,
+                },
+            ))],
+            Box::new(DelphiLogicalLinesReconstructor::new(
+                ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),
+            )),
         );
-        println!("{}", formatted_output);
+
+        let formatted_output = formatter.format(input);
         assert_that(&formatted_output).is_equal_to(expected_output.to_string());
     }
 
