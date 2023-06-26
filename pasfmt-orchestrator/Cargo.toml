@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 pasfmt-core = { path = "../pasfmt-core" }
+rayon = "1.7.0"
