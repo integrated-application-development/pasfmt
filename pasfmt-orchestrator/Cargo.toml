@@ -7,3 +7,4 @@ edition = "2021"
 clap = { version = "4.3.8", features = ["derive"] }
 pasfmt-core = { path = "../pasfmt-core" }
 rayon = "1.7.0"
+toml = "0.7.5"
