@@ -6,3 +6,5 @@ edition = "2021"
 [dependencies]
 pasfmt-core = { path = "../pasfmt-core" }
 pasfmt-orchestrator = { path = "../pasfmt-orchestrator" }
+serde = "1.0.164"
+serde_derive = "1.0.164"
