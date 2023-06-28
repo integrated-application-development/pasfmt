@@ -17,32 +17,33 @@ impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
 
         tokens.sort_by_key(|token_a| token_a.get_index());
 
-        tokens
-            .iter()
-            .fold("".to_owned(), |acc: String, token: &Token| {
-                let possible_formatting_data = token_formatting_data
-                    .iter()
-                    .find(|formatting_data| formatting_data.get_token_index() == token.get_index());
+        let mut out = String::new();
+        tokens.iter().for_each(|token: &Token| {
+            let possible_formatting_data = token_formatting_data
+                .iter()
+                .find(|formatting_data| formatting_data.get_token_index() == token.get_index());
 
-                let leading_whitespace = match possible_formatting_data {
-                    None => token.get_leading_whitespace().to_string(),
-                    Some(formatting_data) => format!(
-                        "{}{}{}{}",
-                        self.reconstruction_settings
-                            .get_newline_str()
-                            .repeat(formatting_data.get_newlines_before()),
-                        self.reconstruction_settings
-                            .get_indentation_str()
-                            .repeat(formatting_data.get_indentations_before()),
-                        self.reconstruction_settings
-                            .get_continuation_str()
-                            .repeat(formatting_data.get_continuations_before()),
-                        " ".repeat(formatting_data.get_spaces_before())
-                    ),
-                };
+            match possible_formatting_data {
+                None => {
+                    out.push_str(token.get_leading_whitespace());
+                }
+                Some(formatting_data) => {
+                    (0..formatting_data.get_newlines_before())
+                        .for_each(|_| out.push_str(self.reconstruction_settings.get_newline_str()));
 
-                format!("{}{}{}", acc, leading_whitespace, token.get_content())
-            })
+                    (0..formatting_data.get_indentations_before()).for_each(|_| {
+                        out.push_str(self.reconstruction_settings.get_indentation_str())
+                    });
+                    (0..formatting_data.get_continuations_before()).for_each(|_| {
+                        out.push_str(self.reconstruction_settings.get_continuation_str())
+                    });
+                    (0..formatting_data.get_spaces_before()).for_each(|_| out.push(' '));
+                }
+            };
+
+            out.push_str(token.get_content());
+        });
+        out
     }
 }
 
