@@ -4,22 +4,22 @@ use itertools::Itertools;
 
 #[allow(dead_code)]
 pub struct Formatter {
-    lexer: Box<dyn Lexer>,
-    token_consolidators: Vec<Box<dyn TokenConsolidator>>,
-    logical_line_parser: Box<dyn LogicalLineParser>,
-    logical_line_consolidators: Vec<Box<dyn LogicalLinesConsolidator>>,
-    logical_line_formatters: Vec<Box<dyn LogicalLineFormatter>>,
-    reconstructor: Box<dyn LogicalLinesReconstructor>,
+    lexer: Box<dyn Lexer + Sync>,
+    token_consolidators: Vec<Box<dyn TokenConsolidator + Sync>>,
+    logical_line_parser: Box<dyn LogicalLineParser + Sync>,
+    logical_line_consolidators: Vec<Box<dyn LogicalLinesConsolidator + Sync>>,
+    logical_line_formatters: Vec<Box<dyn LogicalLineFormatter + Sync>>,
+    reconstructor: Box<dyn LogicalLinesReconstructor + Sync>,
 }
 #[allow(dead_code)]
 impl Formatter {
     pub fn new(
-        lexer: Box<dyn Lexer>,
-        token_consolidators: Vec<Box<dyn TokenConsolidator>>,
-        logical_line_parser: Box<dyn LogicalLineParser>,
-        logical_line_consolidators: Vec<Box<dyn LogicalLinesConsolidator>>,
-        logical_line_formatters: Vec<Box<dyn LogicalLineFormatter>>,
-        reconstructor: Box<dyn LogicalLinesReconstructor>,
+        lexer: Box<dyn Lexer + Sync>,
+        token_consolidators: Vec<Box<dyn TokenConsolidator + Sync>>,
+        logical_line_parser: Box<dyn LogicalLineParser + Sync>,
+        logical_line_consolidators: Vec<Box<dyn LogicalLinesConsolidator + Sync>>,
+        logical_line_formatters: Vec<Box<dyn LogicalLineFormatter + Sync>>,
+        reconstructor: Box<dyn LogicalLinesReconstructor + Sync>,
     ) -> Self {
         Formatter {
             lexer,

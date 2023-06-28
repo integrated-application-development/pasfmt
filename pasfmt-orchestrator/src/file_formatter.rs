@@ -6,6 +6,7 @@ use std::{
 
 use glob::glob;
 use pasfmt_core::formatter::Formatter;
+use rayon::prelude::*;
 
 pub struct FileFormatter {
     formatter: Formatter,
@@ -81,7 +82,7 @@ impl FileFormatter {
     pub fn format_files(&self, paths: Vec<&str>) {
         let valid_paths: Vec<_> = self.get_valid_files(paths);
 
-        valid_paths.into_iter().for_each(|file_path| {
+        valid_paths.into_par_iter().for_each(|file_path| {
             let file_contents = self.get_file_contents(&file_path);
             if file_contents.is_err() {
                 eprintln!("{}", file_contents.unwrap_err());
