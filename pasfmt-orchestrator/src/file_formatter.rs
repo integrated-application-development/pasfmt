@@ -11,10 +11,14 @@ use walkdir::WalkDir;
 
 pub struct FileFormatter {
     formatter: Formatter,
+    encoding: &'static encoding_rs::Encoding,
 }
 impl FileFormatter {
-    pub fn new(formatter: Formatter) -> Self {
-        FileFormatter { formatter }
+    pub fn new(formatter: Formatter, encoding: &'static encoding_rs::Encoding) -> Self {
+        FileFormatter {
+            formatter,
+            encoding,
+        }
     }
 
     fn warn_invalid_glob(&self, path: &str) {
@@ -61,11 +65,11 @@ impl FileFormatter {
         let mut file = File::open(file_path)
             .map_err(|e| format!("ERROR: Failed to open '{}', {}", file_path, e))?;
 
-        let mut file_contents = String::new();
-        file.read_to_string(&mut file_contents)
+        let mut file_bytes = Vec::new();
+        file.read_to_end(&mut file_bytes)
             .map_err(|e| format!("ERROR: Failed to read '{}', {}", file_path, e))?;
 
-        Ok(file_contents)
+        Ok(self.encoding.decode(&file_bytes[..]).0.into_owned())
     }
 
     fn exec_format<T>(&self, paths: Vec<&str>, result_operation: T)
@@ -96,7 +100,8 @@ impl FileFormatter {
                 .open(file_path)
                 .unwrap();
 
-            match new_file.write_all(formatted_output.as_bytes()) {
+            let encoded_output = self.encoding.encode(&formatted_output).0;
+            match new_file.write_all(&encoded_output) {
                 Ok(_) => {}
                 Err(error) => eprintln!("ERROR: Failed to write to '{}', {}", file_path, error),
             }

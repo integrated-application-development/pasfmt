@@ -1,16 +1,13 @@
 use std::io::Read;
 
-use pasfmt_core::formatter::Formatter;
-
 use crate::{command_line::PasFmtConfiguration, file_formatter::FileFormatter};
 
 pub struct FormattingOrchestrator;
 impl FormattingOrchestrator {
-    pub fn run(formatter: Formatter) {
+    pub fn run(file_formatter: FileFormatter) {
         let config = PasFmtConfiguration::new();
         let files = config.get_paths();
         let file_refs: Vec<_> = files.iter().map(|string| string.as_str()).collect();
-        let file_formatter = FileFormatter::new(formatter);
 
         if file_refs.is_empty() {
             let mut input = String::new();
