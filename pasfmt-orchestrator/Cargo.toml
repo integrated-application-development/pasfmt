@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.3.8", features = ["derive"] }
+encoding_rs = "0.8.32"
 glob = "0.3.1"
 pasfmt-core = { path = "../pasfmt-core" }
 rayon = "1.7.0"
