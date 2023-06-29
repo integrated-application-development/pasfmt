@@ -1,5 +1,5 @@
 [package]
-name = "pasfmt-front-end"
+name = "pasfmt"
 version = "0.1.0-dev"
 edition = "2021"
 

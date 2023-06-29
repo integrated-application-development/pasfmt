@@ -334,21 +334,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 
 [[package]]
-name = "pasfmt-core"
-version = "0.1.0-dev"
-dependencies = [
- "itertools",
- "nom",
-]
-
-[[package]]
-name = "pasfmt-front-end"
+name = "pasfmt"
 version = "0.1.0-dev"
 dependencies = [
  "pasfmt-core",
  "pasfmt-orchestrator",
  "serde",
  "serde_derive",
+]
+
+[[package]]
+name = "pasfmt-core"
+version = "0.1.0-dev"
+dependencies = [
+ "itertools",
+ "nom",
 ]
 
 [[package]]
