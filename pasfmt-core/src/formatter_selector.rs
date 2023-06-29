@@ -58,17 +58,14 @@ mod tests {
     impl LogicalLineFormatter for Add1Indentation {
         fn format<'a>(
             &self,
-            formatted_tokens: FormattedTokens<'a>,
+            mut formatted_tokens: FormattedTokens<'a>,
             input: &LogicalLine,
         ) -> FormattedTokens<'a> {
-            let (tokens, mut formatting_data) = formatted_tokens.own_data();
             let first_token = *input.get_tokens().first().unwrap();
-            formatting_data.push(FormattingData::new(first_token));
-            *formatting_data
-                .last_mut()
-                .unwrap()
+            *formatted_tokens
+                .get_or_create_formatting_data_mut(first_token)
                 .get_indentations_before_mut() += 1;
-            FormattedTokens::new(tokens, formatting_data)
+            formatted_tokens
         }
     }
 
@@ -76,17 +73,14 @@ mod tests {
     impl LogicalLineFormatter for Add1Continuation {
         fn format<'a>(
             &self,
-            formatted_tokens: FormattedTokens<'a>,
+            mut formatted_tokens: FormattedTokens<'a>,
             input: &LogicalLine,
         ) -> FormattedTokens<'a> {
-            let (tokens, mut formatting_data) = formatted_tokens.own_data();
             let first_token = *input.get_tokens().first().unwrap();
-            formatting_data.push(FormattingData::new(first_token));
-            *formatting_data
-                .last_mut()
-                .unwrap()
+            *formatted_tokens
+                .get_or_create_formatting_data_mut(first_token)
                 .get_continuations_before_mut() += 1;
-            FormattedTokens::new(tokens, formatting_data)
+            formatted_tokens
         }
     }
 

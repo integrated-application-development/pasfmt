@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use crate::{lang::*, traits::LogicalLinesReconstructor};
 
 pub struct DelphiLogicalLinesReconstructor {
@@ -13,36 +15,33 @@ impl DelphiLogicalLinesReconstructor {
 }
 impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
     fn reconstruct(&self, formatted_tokens: FormattedTokens) -> String {
-        let (mut tokens, token_formatting_data) = formatted_tokens.own_data();
-
-        tokens.sort_by_key(|token_a| token_a.get_index());
-
         let mut out = String::new();
-        tokens.iter().for_each(|token: &Token| {
-            let possible_formatting_data = token_formatting_data
-                .iter()
-                .find(|formatting_data| formatting_data.get_token_index() == token.get_index());
+        formatted_tokens
+            .get_tokens()
+            .iter()
+            .sorted_by_key(|(token, _)| token.get_index())
+            .for_each(|(token, formatting_data)| {
+                match formatting_data {
+                    None => {
+                        out.push_str(token.get_leading_whitespace());
+                    }
+                    Some(formatting_data) => {
+                        (0..formatting_data.get_newlines_before()).for_each(|_| {
+                            out.push_str(self.reconstruction_settings.get_newline_str())
+                        });
 
-            match possible_formatting_data {
-                None => {
-                    out.push_str(token.get_leading_whitespace());
-                }
-                Some(formatting_data) => {
-                    (0..formatting_data.get_newlines_before())
-                        .for_each(|_| out.push_str(self.reconstruction_settings.get_newline_str()));
+                        (0..formatting_data.get_indentations_before()).for_each(|_| {
+                            out.push_str(self.reconstruction_settings.get_indentation_str())
+                        });
+                        (0..formatting_data.get_continuations_before()).for_each(|_| {
+                            out.push_str(self.reconstruction_settings.get_continuation_str())
+                        });
+                        (0..formatting_data.get_spaces_before()).for_each(|_| out.push(' '));
+                    }
+                };
 
-                    (0..formatting_data.get_indentations_before()).for_each(|_| {
-                        out.push_str(self.reconstruction_settings.get_indentation_str())
-                    });
-                    (0..formatting_data.get_continuations_before()).for_each(|_| {
-                        out.push_str(self.reconstruction_settings.get_continuation_str())
-                    });
-                    (0..formatting_data.get_spaces_before()).for_each(|_| out.push(' '));
-                }
-            };
-
-            out.push_str(token.get_content());
-        });
+                out.push_str(token.get_content());
+            });
         out
     }
 }
@@ -67,98 +66,113 @@ mod tests {
     #[test]
     fn all_tokens_with_data_from_token() {
         run_test(
-            FormattedTokens::new(
-                vec![
+            FormattedTokens::new(vec![
+                (
                     Token::RefToken(RefToken::new(0, "\n\n  ", "token1", TokenType::Unknown)),
+                    Some(FormattingData::from("\n\n  ")),
+                ),
+                (
                     Token::RefToken(RefToken::new(1, " ", "token2", TokenType::Unknown)),
-                ],
-                vec![
-                    FormattingData::from(0, "\n\n  "),
-                    FormattingData::from(1, " "),
-                ],
-            ),
+                    Some(FormattingData::from(" ")),
+                ),
+            ]),
             "\n\n  token1 token2",
         );
     }
 
     #[test]
     fn all_tokens_with_data_constructed_spaces() {
-        let mut formatting_data1 = FormattingData::new(0);
+        let mut formatting_data1 = FormattingData::default();
         *formatting_data1.get_spaces_before_mut() = 3;
-        let mut formatting_data2 = FormattingData::new(1);
+        let mut formatting_data2 = FormattingData::default();
         *formatting_data2.get_spaces_before_mut() = 1;
         run_test(
-            FormattedTokens::new(
-                vec![
+            FormattedTokens::new(vec![
+                (
                     Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    Some(formatting_data1),
+                ),
+                (
                     Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
-                ],
-                vec![formatting_data1, formatting_data2],
-            ),
+                    Some(formatting_data2),
+                ),
+            ]),
             "   token1 token2",
         );
     }
 
     #[test]
     fn all_tokens_with_data_constructed_indentations() {
-        let mut formatting_data1 = FormattingData::new(0);
+        let mut formatting_data1 = FormattingData::default();
         *formatting_data1.get_indentations_before_mut() = 3;
-        let mut formatting_data2 = FormattingData::new(1);
+        let mut formatting_data2 = FormattingData::default();
         *formatting_data2.get_indentations_before_mut() = 1;
         run_test(
-            FormattedTokens::new(
-                vec![
+            FormattedTokens::new(vec![
+                (
                     Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    Some(formatting_data1),
+                ),
+                (
                     Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
-                ],
-                vec![formatting_data1, formatting_data2],
-            ),
+                    Some(formatting_data2),
+                ),
+            ]),
             "      token1  token2",
         );
     }
 
     #[test]
     fn all_tokens_with_data_constructed_continuations() {
-        let mut formatting_data1 = FormattingData::new(0);
+        let mut formatting_data1 = FormattingData::default();
         *formatting_data1.get_continuations_before_mut() = 3;
-        let mut formatting_data2 = FormattingData::new(1);
+        let mut formatting_data2 = FormattingData::default();
         *formatting_data2.get_continuations_before_mut() = 1;
         run_test(
-            FormattedTokens::new(
-                vec![
+            FormattedTokens::new(vec![
+                (
                     Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    Some(formatting_data1),
+                ),
+                (
                     Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
-                ],
-                vec![formatting_data1, formatting_data2],
-            ),
+                    Some(formatting_data2),
+                ),
+            ]),
             "      token1  token2",
         );
     }
 
     #[test]
     fn some_tokens_with_data() {
-        let mut formatting_data1 = FormattingData::new(0);
+        let mut formatting_data1 = FormattingData::default();
         *formatting_data1.get_newlines_before_mut() = 3;
         run_test(
-            FormattedTokens::new(
-                vec![
+            FormattedTokens::new(vec![
+                (
                     Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
+                    Some(formatting_data1),
+                ),
+                (
                     Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
-                ],
-                vec![formatting_data1],
-            ),
+                    None,
+                ),
+            ]),
             "\n\n\ntoken1\n   token2",
         );
-        let mut formatting_data2 = FormattingData::new(1);
+        let mut formatting_data2 = FormattingData::default();
         *formatting_data2.get_newlines_before_mut() = 3;
         run_test(
-            FormattedTokens::new(
-                vec![
+            FormattedTokens::new(vec![
+                (
                     Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
+                    None,
+                ),
+                (
                     Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
-                ],
-                vec![formatting_data2],
-            ),
+                    Some(formatting_data2),
+                ),
+            ]),
             " token1\n\n\ntoken2",
         );
     }
@@ -166,13 +180,16 @@ mod tests {
     #[test]
     fn no_tokens_with_data() {
         run_test(
-            FormattedTokens::new(
-                vec![
+            FormattedTokens::new(vec![
+                (
                     Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
+                    None,
+                ),
+                (
                     Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
-                ],
-                vec![],
-            ),
+                    None,
+                ),
+            ]),
             " token1\n   token2",
         );
     }
@@ -180,13 +197,16 @@ mod tests {
     #[test]
     fn trailing_newlines() {
         run_test(
-            FormattedTokens::new(
-                vec![
+            FormattedTokens::new(vec![
+                (
                     Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    None,
+                ),
+                (
                     Token::RefToken(RefToken::new(1, "\n", "", TokenType::Eof)),
-                ],
-                vec![],
-            ),
+                    None,
+                ),
+            ]),
             "token1\n",
         );
     }
@@ -194,15 +214,10 @@ mod tests {
     #[test]
     fn unrepresentable_leading_whitespace() {
         run_test(
-            FormattedTokens::new(
-                vec![Token::RefToken(RefToken::new(
-                    0,
-                    "\n \n\t",
-                    "token1",
-                    TokenType::Unknown,
-                ))],
-                vec![],
-            ),
+            FormattedTokens::new(vec![(
+                Token::RefToken(RefToken::new(0, "\n \n\t", "token1", TokenType::Unknown)),
+                None,
+            )]),
             "\n \n\ttoken1",
         );
     }
@@ -210,13 +225,16 @@ mod tests {
     #[test]
     fn tokens_out_of_order() {
         run_test(
-            FormattedTokens::new(
-                vec![
+            FormattedTokens::new(vec![
+                (
                     Token::RefToken(RefToken::new(1, " ", "token2", TokenType::Unknown)),
+                    None,
+                ),
+                (
                     Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
-                ],
-                vec![],
-            ),
+                    None,
+                ),
+            ]),
             "token1 token2",
         );
     }

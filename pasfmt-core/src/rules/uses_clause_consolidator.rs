@@ -3,7 +3,7 @@ use crate::{lang::*, traits::LogicalLinesConsolidator};
 pub struct UsesClauseConsolidator {}
 impl LogicalLinesConsolidator for UsesClauseConsolidator {
     fn consolidate<'a>(&self, input: LogicalLines<'a>) -> LogicalLines<'a> {
-        let (tokens, mut lines) = input.own_data();
+        let (tokens, mut lines) = input.into();
 
         let uses_token_indices: Vec<usize> = tokens
             .iter()
@@ -124,7 +124,7 @@ mod tests {
             .map(|tokens| parser.parse(tokens))
             .map(|logical_lines| consolidator.consolidate(logical_lines))
             .unwrap()
-            .own_data();
+            .into();
         lines.retain(|line| line.get_line_type() != LogicalLineType::Eof);
 
         assert_that(&lines).has_length(expected_lines.len());

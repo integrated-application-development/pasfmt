@@ -51,11 +51,11 @@ impl Formatter {
                     .fold(logical_lines, |logical_lines, consolidator| {
                         consolidator.consolidate(logical_lines)
                     })
-                    .own_data()
+                    .into()
             })
             .map(|(tokens, logical_lines)| {
                 self.logical_line_formatters.iter().fold(
-                    FormattedTokens::new(tokens, vec![]),
+                    FormattedTokens::new_from_tokens(tokens),
                     |formatted_tokens, formatter| {
                         logical_lines.iter().fold(
                             formatted_tokens,
@@ -185,7 +185,7 @@ mod tests {
     struct CombineFirst2Lines;
     impl LogicalLinesConsolidator for CombineFirst2Lines {
         fn consolidate<'a>(&self, input: LogicalLines<'a>) -> LogicalLines<'a> {
-            let (tokens, mut lines) = input.own_data();
+            let (tokens, mut lines) = input.into();
             let second_line = lines.remove(1);
             let second_line_tokens = second_line.get_tokens();
             lines
@@ -202,19 +202,19 @@ mod tests {
     impl LogicalLineFormatter for LogicalLinesOnNewLines {
         fn format<'a>(
             &self,
-            formatted_tokens: FormattedTokens<'a>,
+            mut formatted_tokens: FormattedTokens<'a>,
             input: &LogicalLine,
         ) -> FormattedTokens<'a> {
-            let (tokens, mut formatting_data) = formatted_tokens.own_data();
             let first_token = *input.get_tokens().first().unwrap();
-            if first_token != 0 && first_token != tokens.len() - 1 {
-                formatting_data.push(FormattingData::new(first_token));
-                *formatting_data
-                    .last_mut()
-                    .unwrap()
+            if first_token != 0 && first_token != formatted_tokens.get_tokens().len() - 1 {
+                *formatted_tokens
+                    .get_or_create_formatting_data_mut(first_token)
+                    .get_spaces_before_mut() = 0;
+                *formatted_tokens
+                    .get_or_create_formatting_data_mut(first_token)
                     .get_newlines_before_mut() = 1;
             }
-            FormattedTokens::new(tokens, formatting_data)
+            formatted_tokens
         }
     }
 

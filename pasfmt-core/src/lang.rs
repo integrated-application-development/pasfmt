@@ -248,8 +248,8 @@ impl LogicalLine {
 }
 
 #[allow(dead_code)]
+#[derive(Default)]
 pub struct FormattingData {
-    token: usize,
     newlines_before: usize,
     indentations_before: usize,
     continuations_before: usize,
@@ -257,16 +257,7 @@ pub struct FormattingData {
 }
 #[allow(dead_code)]
 impl FormattingData {
-    pub fn new(token: usize) -> Self {
-        FormattingData {
-            token,
-            newlines_before: 0,
-            indentations_before: 0,
-            continuations_before: 0,
-            spaces_before: 0,
-        }
-    }
-    pub fn from(token: usize, leading_whitespace: &str) -> Self {
+    pub fn from(leading_whitespace: &str) -> Self {
         let newlines_before = leading_whitespace
             .chars()
             .filter(|char| char.eq(&'\n'))
@@ -281,15 +272,11 @@ impl FormattingData {
             .unwrap_or_default();
 
         FormattingData {
-            token,
             newlines_before,
             indentations_before: 0,
             continuations_before: 0,
             spaces_before: last_line.len() - last_line.trim_start().len(),
         }
-    }
-    pub fn get_token_index(&self) -> usize {
-        self.token
     }
     pub fn get_newlines_before(&self) -> usize {
         self.newlines_before
@@ -319,54 +306,39 @@ impl FormattingData {
 
 #[allow(dead_code)]
 pub struct FormattedTokens<'a> {
-    tokens: Vec<Token<'a>>,
-    formatting_data: Vec<FormattingData>,
+    tokens: Vec<(Token<'a>, Option<FormattingData>)>,
 }
 #[allow(dead_code)]
 impl<'a> FormattedTokens<'a> {
-    pub fn new(tokens: Vec<Token<'a>>, formatting_data: Vec<FormattingData>) -> Self {
+    pub fn new_from_tokens(tokens: Vec<Token<'a>>) -> Self {
         FormattedTokens {
-            tokens,
-            formatting_data,
+            tokens: tokens.into_iter().map(|token| (token, None)).collect(),
         }
     }
-    pub fn get_tokens(&self) -> &Vec<Token<'a>> {
+    pub fn new(tokens: Vec<(Token<'a>, Option<FormattingData>)>) -> Self {
+        FormattedTokens { tokens }
+    }
+    pub fn get_tokens(&self) -> &Vec<(Token<'a>, Option<FormattingData>)> {
         &self.tokens
     }
-    pub fn get_formatting_data(&self) -> &Vec<FormattingData> {
-        &self.formatting_data
+    pub fn get_token(&self, index: usize) -> &(Token<'a>, Option<FormattingData>) {
+        self.tokens.get(index).unwrap()
+    }
+    pub fn get_token_mut(&mut self, index: usize) -> &mut (Token<'a>, Option<FormattingData>) {
+        self.tokens.get_mut(index).unwrap()
+    }
+    pub fn get_formatting_data(&self, index: usize) -> &Option<FormattingData> {
+        &self.tokens.get(index).unwrap().1
     }
     pub fn get_or_create_formatting_data_mut(&mut self, token_index: usize) -> &mut FormattingData {
-        let data_index = self
-            .formatting_data
-            .iter()
-            .enumerate()
-            .find_map(
-                |(data_index, data)| match data.get_token_index() == token_index {
-                    true => Some(data_index),
-                    false => None,
-                },
-            );
-
-        if let Some(formatting_data_index) = data_index {
-            self.formatting_data.get_mut(formatting_data_index).unwrap()
-        } else {
-            let new_formatting_data = FormattingData::from(
-                token_index,
-                self.tokens
-                    .get(token_index)
-                    .unwrap()
-                    .get_leading_whitespace(),
-            );
-            self.formatting_data.push(new_formatting_data);
-            self.formatting_data.last_mut().unwrap()
+        let mut token_data = self.get_token_mut(token_index);
+        if token_data.1.is_none() {
+            token_data.1 = Some(FormattingData::from(token_data.0.get_leading_whitespace()));
         }
+        token_data.1.as_mut().unwrap()
     }
     pub fn get_token_type_for_index(&self, index: usize) -> TokenType {
-        self.tokens.get(index).unwrap().get_token_type()
-    }
-    pub fn own_data(self) -> (Vec<Token<'a>>, Vec<FormattingData>) {
-        (self.tokens, self.formatting_data)
+        self.tokens.get(index).unwrap().0.get_token_type()
     }
 }
 
@@ -386,8 +358,10 @@ impl<'a> LogicalLines<'a> {
     pub fn get_lines(&self) -> &Vec<LogicalLine> {
         &self.lines
     }
-    pub fn own_data(self) -> (Vec<Token<'a>>, Vec<LogicalLine>) {
-        (self.tokens, self.lines)
+}
+impl<'a> From<LogicalLines<'a>> for (Vec<Token<'a>>, Vec<LogicalLine>) {
+    fn from(val: LogicalLines<'a>) -> Self {
+        (val.tokens, val.lines)
     }
 }
 
