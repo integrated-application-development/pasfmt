@@ -4,6 +4,7 @@ version = "0.1.0-dev"
 edition = "2021"
 
 [dependencies]
+encoding_rs = "0.8.32"
 pasfmt-core = { path = "../pasfmt-core" }
 pasfmt-orchestrator = { path = "../pasfmt-orchestrator" }
 serde = "1.0.164"
