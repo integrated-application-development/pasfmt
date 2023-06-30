@@ -7,7 +7,7 @@ use pasfmt_core::{
     formatter_selector::FormatterSelector,
     lang::{LogicalLineType, ReconstructionSettings},
     rules::{
-        remove_repeated_newlines::RemoveRepeatedNewlines,
+        eof_newline::EofNewline, remove_repeated_newlines::RemoveRepeatedNewlines,
         remove_trailing_whitespace::RemoveTrailingWhitespace,
         uses_clause_consolidator::UsesClauseConsolidator,
         uses_clause_formatter::UsesClauseFormatter,
@@ -54,6 +54,7 @@ fn main() {
             vec![
                 Box::new(RemoveTrailingWhitespace {}),
                 Box::new(RemoveRepeatedNewlines {}),
+                Box::new(EofNewline {}),
                 Box::new(FormatterSelector::new(
                     |logical_line_type| match logical_line_type {
                         LogicalLineType::UsesClause => Some(uses_clause_formatter),
