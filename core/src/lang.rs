@@ -155,6 +155,8 @@ pub enum OperatorKind {
     Xor,
     Not,
     Is,
+    LGeneric,
+    RGeneric,
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
