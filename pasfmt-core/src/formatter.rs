@@ -207,12 +207,12 @@ mod tests {
         ) -> FormattedTokens<'a> {
             let first_token = *input.get_tokens().first().unwrap();
             if first_token != 0 && first_token != formatted_tokens.get_tokens().len() - 1 {
-                *formatted_tokens
-                    .get_or_create_formatting_data_mut(first_token)
-                    .get_spaces_before_mut() = 0;
-                *formatted_tokens
-                    .get_or_create_formatting_data_mut(first_token)
-                    .get_newlines_before_mut() = 1;
+                if let Some(formatting_data) =
+                    formatted_tokens.get_or_create_formatting_data_mut(first_token)
+                {
+                    *formatting_data.get_spaces_before_mut() = 0;
+                    *formatting_data.get_newlines_before_mut() = 1;
+                }
             }
             formatted_tokens
         }
@@ -278,14 +278,16 @@ mod tests {
                 .iter()
                 .filter(|&&token_index| {
                     formatted_tokens.get_token_type_for_index(token_index)
-                        == TokenType::Op(OperatorKind::Semicolon)
+                        == Some(TokenType::Op(OperatorKind::Semicolon))
                 })
                 .collect();
 
             semicolon_indices.iter().for_each(|&&semicolon_index| {
-                let semicolon_formatting_data =
-                    formatted_tokens.get_or_create_formatting_data_mut(semicolon_index);
-                *semicolon_formatting_data.get_spaces_before_mut() = 1;
+                if let Some(semicolon_formatting_data) =
+                    formatted_tokens.get_or_create_formatting_data_mut(semicolon_index)
+                {
+                    *semicolon_formatting_data.get_spaces_before_mut() = 1;
+                }
             });
             formatted_tokens
         }

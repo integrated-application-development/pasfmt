@@ -12,18 +12,20 @@ impl LogicalLineFormatter for EofNewline {
             .iter()
             .filter_map(|&token_index| {
                 match formatted_tokens.get_token_type_for_index(token_index) {
-                    TokenType::Eof => Some(token_index),
+                    Some(TokenType::Eof) => Some(token_index),
                     _ => None,
                 }
             })
             .collect();
         eof_tokens.into_iter().for_each(|eof_token| {
-            let token_formatting_data =
-                formatted_tokens.get_or_create_formatting_data_mut(eof_token);
-            *token_formatting_data.get_newlines_before_mut() = 1;
-            *token_formatting_data.get_spaces_before_mut() = 0;
-            *token_formatting_data.get_indentations_before_mut() = 0;
-            *token_formatting_data.get_continuations_before_mut() = 0;
+            if let Some(token_formatting_data) =
+                formatted_tokens.get_or_create_formatting_data_mut(eof_token)
+            {
+                *token_formatting_data.get_newlines_before_mut() = 1;
+                *token_formatting_data.get_spaces_before_mut() = 0;
+                *token_formatting_data.get_indentations_before_mut() = 0;
+                *token_formatting_data.get_continuations_before_mut() = 0;
+            }
         });
 
         formatted_tokens

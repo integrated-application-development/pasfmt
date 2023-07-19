@@ -10,10 +10,12 @@ impl LogicalLineFormatter for RemoveRepeatedNewlines {
         input: &LogicalLine,
     ) -> FormattedTokens<'a> {
         for &token_index in input.get_tokens() {
-            let token_formatting_data =
-                formatted_tokens.get_or_create_formatting_data_mut(token_index);
-            *token_formatting_data.get_newlines_before_mut() =
-                min(token_formatting_data.get_newlines_before(), 2);
+            if let Some(token_formatting_data) =
+                formatted_tokens.get_or_create_formatting_data_mut(token_index)
+            {
+                *token_formatting_data.get_newlines_before_mut() =
+                    min(token_formatting_data.get_newlines_before(), 2);
+            }
         }
 
         formatted_tokens

@@ -321,24 +321,35 @@ impl<'a> FormattedTokens<'a> {
     pub fn get_tokens(&self) -> &Vec<(Token<'a>, Option<FormattingData>)> {
         &self.tokens
     }
-    pub fn get_token(&self, index: usize) -> &(Token<'a>, Option<FormattingData>) {
-        self.tokens.get(index).unwrap()
+
+    pub fn get_token(&self, index: usize) -> Option<&(Token<'a>, Option<FormattingData>)> {
+        self.tokens.get(index)
     }
-    pub fn get_token_mut(&mut self, index: usize) -> &mut (Token<'a>, Option<FormattingData>) {
-        self.tokens.get_mut(index).unwrap()
+
+    pub fn get_token_mut(
+        &mut self,
+        index: usize,
+    ) -> Option<&mut (Token<'a>, Option<FormattingData>)> {
+        self.tokens.get_mut(index)
     }
-    pub fn get_formatting_data(&self, index: usize) -> &Option<FormattingData> {
-        &self.tokens.get(index).unwrap().1
+
+    pub fn get_formatting_data(&self, index: usize) -> Option<&FormattingData> {
+        self.tokens.get(index).and_then(|t| t.1.as_ref())
     }
-    pub fn get_or_create_formatting_data_mut(&mut self, token_index: usize) -> &mut FormattingData {
-        let mut token_data = self.get_token_mut(token_index);
-        if token_data.1.is_none() {
-            token_data.1 = Some(FormattingData::from(token_data.0.get_leading_whitespace()));
-        }
-        token_data.1.as_mut().unwrap()
+
+    pub fn get_or_create_formatting_data_mut(
+        &mut self,
+        token_index: usize,
+    ) -> Option<&mut FormattingData> {
+        let token_data = self.get_token_mut(token_index)?;
+        Some(
+            token_data
+                .1
+                .get_or_insert_with(|| FormattingData::from(token_data.0.get_leading_whitespace())),
+        )
     }
-    pub fn get_token_type_for_index(&self, index: usize) -> TokenType {
-        self.tokens.get(index).unwrap().0.get_token_type()
+    pub fn get_token_type_for_index(&self, index: usize) -> Option<TokenType> {
+        self.tokens.get(index).map(|t| t.0.get_token_type())
     }
 }
 

@@ -62,9 +62,11 @@ mod tests {
             input: &LogicalLine,
         ) -> FormattedTokens<'a> {
             let first_token = *input.get_tokens().first().unwrap();
-            *formatted_tokens
-                .get_or_create_formatting_data_mut(first_token)
-                .get_indentations_before_mut() += 1;
+            if let Some(formatting_data) =
+                formatted_tokens.get_or_create_formatting_data_mut(first_token)
+            {
+                *formatting_data.get_indentations_before_mut() += 1;
+            }
             formatted_tokens
         }
     }
@@ -77,9 +79,11 @@ mod tests {
             input: &LogicalLine,
         ) -> FormattedTokens<'a> {
             let first_token = *input.get_tokens().first().unwrap();
-            *formatted_tokens
-                .get_or_create_formatting_data_mut(first_token)
-                .get_continuations_before_mut() += 1;
+            if let Some(formatting_data) =
+                formatted_tokens.get_or_create_formatting_data_mut(first_token)
+            {
+                *formatting_data.get_continuations_before_mut() += 1;
+            }
             formatted_tokens
         }
     }

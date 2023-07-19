@@ -13,109 +13,139 @@ impl LogicalLineFormatter for UsesClauseFormatter {
         for &token_index in input.get_tokens() {
             {
                 // Reset formatting for the token
-                let token_formatting_data =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index);
-                *token_formatting_data.get_spaces_before_mut() = 0;
+                if let Some(token_formatting_data) =
+                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                {
+                    *token_formatting_data.get_spaces_before_mut() = 0;
+                }
             }
             if !matches!(
                 formatted_tokens.get_token_type_for_index(token_index),
-                TokenType::Keyword(PureKeywordKind::Uses)
-                    | TokenType::Comment(CommentKind::IndividualLine)
-                    | TokenType::Comment(CommentKind::IndividualBlock)
-                    | TokenType::Comment(CommentKind::MultilineBlock)
+                Some(
+                    TokenType::Keyword(PureKeywordKind::Uses)
+                        | TokenType::Comment(
+                            CommentKind::IndividualLine
+                                | CommentKind::IndividualBlock
+                                | CommentKind::MultilineBlock
+                        )
+                )
             ) {
                 // Reset newlines for tokens other than uses
-                *formatted_tokens
-                    .get_or_create_formatting_data_mut(token_index)
-                    .get_newlines_before_mut() = 0;
-            }
-
-            if matches!(
-                formatted_tokens.get_token_type_for_index(token_index),
-                TokenType::Keyword(PureKeywordKind::Uses)
-            ) {
-                let token_formatting_data =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index);
-                *token_formatting_data.get_spaces_before_mut() = 0;
-                if token_index > 0 {
-                    *token_formatting_data.get_newlines_before_mut() =
-                        max(token_formatting_data.get_newlines_before(), 1);
+                if let Some(formatting_data) =
+                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                {
+                    *formatting_data.get_newlines_before_mut() = 0;
                 }
             }
 
             if matches!(
                 formatted_tokens.get_token_type_for_index(token_index),
-                TokenType::ConditionalDirective(_)
+                Some(TokenType::Keyword(PureKeywordKind::Uses))
+            ) {
+                if let Some(token_formatting_data) =
+                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                {
+                    *token_formatting_data.get_spaces_before_mut() = 0;
+                    if token_index > 0 {
+                        *token_formatting_data.get_newlines_before_mut() =
+                            max(token_formatting_data.get_newlines_before(), 1);
+                    }
+                }
+            }
+
+            if matches!(
+                formatted_tokens.get_token_type_for_index(token_index),
+                Some(TokenType::ConditionalDirective(_))
             ) {
                 conditional_depth += match formatted_tokens.get_token_type_for_index(token_index) {
-                    TokenType::ConditionalDirective(ConditionalDirectiveKind::Endif)
-                    | TokenType::ConditionalDirective(ConditionalDirectiveKind::Else)
-                    | TokenType::ConditionalDirective(ConditionalDirectiveKind::Ifend) => -1,
+                    Some(TokenType::ConditionalDirective(
+                        ConditionalDirectiveKind::Endif
+                        | ConditionalDirectiveKind::Else
+                        | ConditionalDirectiveKind::Ifend,
+                    )) => -1,
                     _ => 0,
                 };
 
-                let token_formatting_data =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index);
-                *token_formatting_data.get_newlines_before_mut() = 1;
-                *token_formatting_data.get_spaces_before_mut() = 0;
-                *token_formatting_data.get_indentations_before_mut() =
-                    conditional_depth.unsigned_abs();
+                if let Some(token_formatting_data) =
+                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                {
+                    *token_formatting_data.get_newlines_before_mut() = 1;
+                    *token_formatting_data.get_spaces_before_mut() = 0;
+                    *token_formatting_data.get_indentations_before_mut() =
+                        conditional_depth.unsigned_abs();
+                }
 
                 conditional_depth += match formatted_tokens.get_token_type_for_index(token_index) {
-                    TokenType::ConditionalDirective(ConditionalDirectiveKind::If)
-                    | TokenType::ConditionalDirective(ConditionalDirectiveKind::Else)
-                    | TokenType::ConditionalDirective(ConditionalDirectiveKind::Ifdef)
-                    | TokenType::ConditionalDirective(ConditionalDirectiveKind::Ifopt)
-                    | TokenType::ConditionalDirective(ConditionalDirectiveKind::Ifndef)
-                    | TokenType::ConditionalDirective(ConditionalDirectiveKind::Elseif) => 1,
+                    Some(TokenType::ConditionalDirective(
+                        ConditionalDirectiveKind::If
+                        | ConditionalDirectiveKind::Else
+                        | ConditionalDirectiveKind::Ifdef
+                        | ConditionalDirectiveKind::Ifopt
+                        | ConditionalDirectiveKind::Ifndef
+                        | ConditionalDirectiveKind::Elseif,
+                    )) => 1,
                     _ => 0,
                 }
             } else if matches!(
                 formatted_tokens.get_token_type_for_index(token_index),
-                TokenType::Keyword(PureKeywordKind::In)
-                    | TokenType::TextLiteral
-                    | TokenType::Comment(_)
+                Some(
+                    TokenType::Keyword(PureKeywordKind::In)
+                        | TokenType::TextLiteral
+                        | TokenType::Comment(_)
+                )
             ) || token_index > 1
                 && matches!(
                     formatted_tokens.get_token_type_for_index(token_index - 1),
-                    TokenType::Op(OperatorKind::Comma)
+                    Some(TokenType::Op(OperatorKind::Comma))
                 )
             {
-                let token_formatting_data =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index);
-                *token_formatting_data.get_spaces_before_mut() = 1;
+                if let Some(token_formatting_data) =
+                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                {
+                    *token_formatting_data.get_spaces_before_mut() = 1;
+                }
             }
 
             if matches!(
                 formatted_tokens.get_token_type_for_index(token_index),
-                TokenType::Op(OperatorKind::Comma)
-                    | TokenType::Op(OperatorKind::Semicolon)
-                    | TokenType::Comment(CommentKind::IndividualLine)
-                    | TokenType::Comment(CommentKind::IndividualBlock)
-                    | TokenType::Comment(CommentKind::MultilineBlock)
+                Some(
+                    TokenType::Op(OperatorKind::Comma | OperatorKind::Semicolon)
+                        | TokenType::Comment(
+                            CommentKind::IndividualLine
+                                | CommentKind::IndividualBlock
+                                | CommentKind::MultilineBlock
+                        )
+                )
             ) {
-                let token_formatting_data =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index);
-                *token_formatting_data.get_spaces_before_mut() = 2;
-                *token_formatting_data.get_newlines_before_mut() = 1;
+                if let Some(token_formatting_data) =
+                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                {
+                    *token_formatting_data.get_spaces_before_mut() = 2;
+                    *token_formatting_data.get_newlines_before_mut() = 1;
+                }
             }
 
             if matches!(
                 formatted_tokens.get_token_type_for_index(token_index),
-                TokenType::Identifier
+                Some(TokenType::Identifier)
             ) && token_index > 0
                 && matches!(
                     formatted_tokens.get_token_type_for_index(token_index - 1),
-                    TokenType::Keyword(PureKeywordKind::Uses)
-                        | TokenType::ConditionalDirective(_)
-                        | TokenType::Comment(CommentKind::IndividualLine)
-                        | TokenType::Comment(CommentKind::InlineLine)
+                    Some(
+                        TokenType::Keyword(PureKeywordKind::Uses)
+                            | TokenType::ConditionalDirective(_)
+                            | TokenType::Comment(
+                                CommentKind::IndividualLine | CommentKind::InlineLine
+                            )
+                    )
                 )
             {
-                let token_formatting_data =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index);
-                *token_formatting_data.get_spaces_before_mut() = 4;
-                *token_formatting_data.get_newlines_before_mut() = 1;
+                if let Some(token_formatting_data) =
+                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                {
+                    *token_formatting_data.get_spaces_before_mut() = 4;
+                    *token_formatting_data.get_newlines_before_mut() = 1;
+                }
             }
         }
 
