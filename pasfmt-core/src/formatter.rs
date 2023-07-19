@@ -59,8 +59,9 @@ impl Formatter {
                     |formatted_tokens, formatter| {
                         logical_lines.iter().fold(
                             formatted_tokens,
-                            |formatted_tokens, logical_line| {
-                                formatter.format(formatted_tokens, logical_line)
+                            |mut formatted_tokens, logical_line| {
+                                formatter.format(&mut formatted_tokens, logical_line);
+                                formatted_tokens
                             },
                         )
                     },
@@ -200,11 +201,7 @@ mod tests {
 
     struct LogicalLinesOnNewLines;
     impl LogicalLineFormatter for LogicalLinesOnNewLines {
-        fn format<'a>(
-            &self,
-            mut formatted_tokens: FormattedTokens<'a>,
-            input: &LogicalLine,
-        ) -> FormattedTokens<'a> {
+        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             let first_token = *input.get_tokens().first().unwrap();
             if first_token != 0 && first_token != formatted_tokens.get_tokens().len() - 1 {
                 if let Some(formatting_data) =
@@ -214,7 +211,6 @@ mod tests {
                     *formatting_data.get_newlines_before_mut() = 1;
                 }
             }
-            formatted_tokens
         }
     }
 
@@ -268,11 +264,7 @@ mod tests {
 
     struct SpaceBeforeSemiColon;
     impl LogicalLineFormatter for SpaceBeforeSemiColon {
-        fn format<'a>(
-            &self,
-            mut formatted_tokens: FormattedTokens<'a>,
-            input: &LogicalLine,
-        ) -> FormattedTokens<'a> {
+        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             let semicolon_indices: Vec<_> = input
                 .get_tokens()
                 .iter()
@@ -289,7 +281,6 @@ mod tests {
                     *semicolon_formatting_data.get_spaces_before_mut() = 1;
                 }
             });
-            formatted_tokens
         }
     }
 

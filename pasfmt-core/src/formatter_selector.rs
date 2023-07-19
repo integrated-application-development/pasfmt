@@ -22,15 +22,9 @@ impl<'a, T> LogicalLineFormatter for FormatterSelector<'a, T>
 where
     T: Fn(LogicalLineType) -> Option<&'a dyn LogicalLineFormatter>,
 {
-    fn format<'b>(
-        &self,
-        formatted_tokens: FormattedTokens<'b>,
-        input: &LogicalLine,
-    ) -> FormattedTokens<'b> {
+    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
         if let Some(formatter) = (self.selector)(input.get_line_type()) {
             formatter.format(formatted_tokens, input)
-        } else {
-            formatted_tokens
         }
     }
 }
@@ -56,35 +50,25 @@ mod tests {
 
     struct Add1Indentation;
     impl LogicalLineFormatter for Add1Indentation {
-        fn format<'a>(
-            &self,
-            mut formatted_tokens: FormattedTokens<'a>,
-            input: &LogicalLine,
-        ) -> FormattedTokens<'a> {
+        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             let first_token = *input.get_tokens().first().unwrap();
             if let Some(formatting_data) =
                 formatted_tokens.get_or_create_formatting_data_mut(first_token)
             {
                 *formatting_data.get_indentations_before_mut() += 1;
             }
-            formatted_tokens
         }
     }
 
     struct Add1Continuation;
     impl LogicalLineFormatter for Add1Continuation {
-        fn format<'a>(
-            &self,
-            mut formatted_tokens: FormattedTokens<'a>,
-            input: &LogicalLine,
-        ) -> FormattedTokens<'a> {
+        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             let first_token = *input.get_tokens().first().unwrap();
             if let Some(formatting_data) =
                 formatted_tokens.get_or_create_formatting_data_mut(first_token)
             {
                 *formatting_data.get_continuations_before_mut() += 1;
             }
-            formatted_tokens
         }
     }
 

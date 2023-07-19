@@ -2,11 +2,7 @@ use crate::{lang::*, traits::LogicalLineFormatter};
 
 pub struct RemoveTrailingWhitespace {}
 impl LogicalLineFormatter for RemoveTrailingWhitespace {
-    fn format<'a>(
-        &self,
-        mut formatted_tokens: FormattedTokens<'a>,
-        input: &LogicalLine,
-    ) -> FormattedTokens<'a> {
+    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
         // The action of creating formatting data for a token will remove
         // trailing whitespace. Trailing whitespace is unrepresentable using the
         // `FormattingData` struct.
@@ -14,8 +10,6 @@ impl LogicalLineFormatter for RemoveTrailingWhitespace {
         for &token_index in input.get_tokens() {
             formatted_tokens.get_or_create_formatting_data_mut(token_index);
         }
-
-        formatted_tokens
     }
 }
 

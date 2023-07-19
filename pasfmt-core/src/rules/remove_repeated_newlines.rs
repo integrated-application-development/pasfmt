@@ -4,11 +4,7 @@ use crate::{lang::*, traits::LogicalLineFormatter};
 
 pub struct RemoveRepeatedNewlines {}
 impl LogicalLineFormatter for RemoveRepeatedNewlines {
-    fn format<'a>(
-        &self,
-        mut formatted_tokens: FormattedTokens<'a>,
-        input: &LogicalLine,
-    ) -> FormattedTokens<'a> {
+    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
         for &token_index in input.get_tokens() {
             if let Some(token_formatting_data) =
                 formatted_tokens.get_or_create_formatting_data_mut(token_index)
@@ -17,8 +13,6 @@ impl LogicalLineFormatter for RemoveRepeatedNewlines {
                     min(token_formatting_data.get_newlines_before(), 2);
             }
         }
-
-        formatted_tokens
     }
 }
 

@@ -2,11 +2,7 @@ use crate::{lang::*, traits::LogicalLineFormatter};
 
 pub struct EofNewline {}
 impl LogicalLineFormatter for EofNewline {
-    fn format<'a>(
-        &self,
-        mut formatted_tokens: FormattedTokens<'a>,
-        input: &LogicalLine,
-    ) -> FormattedTokens<'a> {
+    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
         let eof_tokens: Vec<_> = input
             .get_tokens()
             .iter()
@@ -27,8 +23,6 @@ impl LogicalLineFormatter for EofNewline {
                 *token_formatting_data.get_continuations_before_mut() = 0;
             }
         });
-
-        formatted_tokens
     }
 }
 

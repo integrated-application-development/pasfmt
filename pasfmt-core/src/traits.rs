@@ -16,11 +16,7 @@ pub trait LogicalLinesConsolidator {
     fn consolidate<'a>(&self, input: LogicalLines<'a>) -> LogicalLines<'a>;
 }
 pub trait LogicalLineFormatter {
-    fn format<'a>(
-        &self,
-        formatted_tokens: FormattedTokens<'a>,
-        input: &LogicalLine,
-    ) -> FormattedTokens<'a>;
+    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine);
 }
 
 pub trait LogicalLinesReconstructor {
