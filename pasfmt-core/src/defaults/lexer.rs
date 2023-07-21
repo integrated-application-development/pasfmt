@@ -254,7 +254,7 @@ fn identifier_or_keyword(input: &str) -> IResult<&str, &str> {
     alt((
         identifier,
         recognize(tuple((tag("&"), identifier))),
-        recognize(tuple((tag("&&"), identifier))),
+        recognize(tuple((tag("&&"), opt(identifier)))),
     ))(input)
 }
 
@@ -303,17 +303,19 @@ fn number_literal(input: &str) -> IResult<&str, (&str, TokenType)> {
     alt((
         map(
             recognize(tuple((
+                opt(tag("&")),
                 digit_sequence,
                 opt(pair(tag("."), digit_sequence)),
                 opt(scale_factor),
             ))),
             |value: &str| (value, NumberLiteral(Decimal)),
         ),
-        map(recognize(tuple((tag("%"), hex_digit0))), |value: &str| {
-            (value, NumberLiteral(Hex))
-        }),
         map(
-            recognize(tuple((tag("$"), binary_digit_sequence))),
+            recognize(tuple((opt(tag("&")), tag("%"), hex_digit0))),
+            |value: &str| (value, NumberLiteral(Hex)),
+        ),
+        map(
+            recognize(tuple((opt(tag("&")), tag("$"), binary_digit_sequence))),
             |value: &str| (value, NumberLiteral(Binary)),
         ),
     ))(input)
@@ -682,15 +684,31 @@ mod tests {
     }
 
     #[test]
+    fn parse_ampersand_integer_literals() {
+        // Only the &0 case is valid according to our compiler, not that it makes any sense, but we figure that
+        // the other cases should be lexed in the same way (even if they are invalid).
+        run_test(
+            "&%FF &$0 &0",
+            vec![
+                ("&%FF", NumberLiteral(Hex)),
+                ("&$0", NumberLiteral(Binary)),
+                ("&0", NumberLiteral(Decimal)),
+            ],
+        );
+    }
+
+    #[test]
     fn parse_identifiers() {
         run_test(
-            "Foo _Foo _1Foo &begin &&op_Addition",
+            "Foo _Foo _1Foo &begin &&op_Addition &&",
             vec![
                 ("Foo", Identifier),
                 ("_Foo", Identifier),
                 ("_1Foo", Identifier),
                 ("&begin", Identifier),
                 ("&&op_Addition", Identifier),
+                // You can't actually use this as an identifier, but in some contexts it's valid yet ignored.
+                ("&&", Identifier),
             ],
         );
     }
