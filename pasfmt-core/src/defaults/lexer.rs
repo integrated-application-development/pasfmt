@@ -215,17 +215,17 @@ fn take_whitespace(input: &str) -> IResult<&str, &str> {
 fn scale_factor(input: &str) -> IResult<&str, &str> {
     recognize(tuple((
         tag_no_case("e"),
-        opt(alt((tag("+"), tag("-")))),
+        opt(alt((char('+'), char('-')))),
         digit1,
     )))(input)
 }
 
-fn binary_digit(input: &str) -> IResult<&str, &str> {
-    alt((tag("0"), tag("1")))(input)
+fn binary_digit(input: &str) -> IResult<&str, char> {
+    alt((char('0'), char('1')))(input)
 }
 
 fn binary_digit_sequence(input: &str) -> IResult<&str, &str> {
-    recognize(many0(alt((binary_digit, tag("_")))))(input)
+    recognize(many0(alt((binary_digit, char('_')))))(input)
 }
 
 fn digit_sequence(input: &str) -> IResult<&str, &str> {
@@ -234,11 +234,11 @@ fn digit_sequence(input: &str) -> IResult<&str, &str> {
 
 fn escaped_character(input: &str) -> IResult<&str, &str> {
     recognize(tuple((
-        tag("#"),
+        char('#'),
         alt((
             digit_sequence,
-            recognize(tuple((tag("%"), hex_digit0))),
-            recognize(tuple((tag("$"), binary_digit_sequence))),
+            recognize(tuple((char('%'), hex_digit0))),
+            recognize(tuple((char('$'), binary_digit_sequence))),
         )),
     )))(input)
 }
@@ -253,7 +253,7 @@ fn identifier(input: &str) -> IResult<&str, &str> {
 fn identifier_or_keyword(input: &str) -> IResult<&str, &str> {
     alt((
         identifier,
-        recognize(tuple((tag("&"), identifier))),
+        recognize(tuple((char('&'), identifier))),
         recognize(tuple((tag("&&"), opt(identifier)))),
     ))(input)
 }
@@ -303,19 +303,19 @@ fn number_literal(input: &str) -> IResult<&str, (&str, TokenType)> {
     alt((
         map(
             recognize(tuple((
-                opt(tag("&")),
+                opt(char('&')),
                 digit_sequence,
-                opt(pair(tag("."), digit_sequence)),
+                opt(pair(char('.'), digit_sequence)),
                 opt(scale_factor),
             ))),
             |value: &str| (value, NumberLiteral(Decimal)),
         ),
         map(
-            recognize(tuple((opt(tag("&")), tag("%"), hex_digit0))),
+            recognize(tuple((opt(char('&')), char('%'), hex_digit0))),
             |value: &str| (value, NumberLiteral(Hex)),
         ),
         map(
-            recognize(tuple((opt(tag("&")), tag("$"), binary_digit_sequence))),
+            recognize(tuple((opt(char('&')), char('$'), binary_digit_sequence))),
             |value: &str| (value, NumberLiteral(Binary)),
         ),
     ))(input)
