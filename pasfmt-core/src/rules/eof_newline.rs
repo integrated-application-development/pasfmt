@@ -2,27 +2,18 @@ use crate::{lang::*, traits::LogicalLineFormatter};
 
 pub struct EofNewline {}
 impl LogicalLineFormatter for EofNewline {
-    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
-        let eof_tokens: Vec<_> = input
-            .get_tokens()
-            .iter()
-            .filter_map(|&token_index| {
-                match formatted_tokens.get_token_type_for_index(token_index) {
-                    Some(TokenType::Eof) => Some(token_index),
-                    _ => None,
-                }
-            })
-            .collect();
-        eof_tokens.into_iter().for_each(|eof_token| {
-            if let Some(token_formatting_data) =
-                formatted_tokens.get_or_create_formatting_data_mut(eof_token)
-            {
-                *token_formatting_data.get_newlines_before_mut() = 1;
-                *token_formatting_data.get_spaces_before_mut() = 0;
-                *token_formatting_data.get_indentations_before_mut() = 0;
-                *token_formatting_data.get_continuations_before_mut() = 0;
-            }
-        });
+    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, _input: &LogicalLine) {
+        let eof_index = formatted_tokens.get_tokens().len() - 1;
+        if let Some(token_formatting_data) = formatted_tokens
+            .get_token_type_for_index(eof_index)
+            .filter(|typ| matches!(typ, TokenType::Eof))
+            .and_then(|_| formatted_tokens.get_or_create_formatting_data_mut(eof_index))
+        {
+            *token_formatting_data.get_newlines_before_mut() = 1;
+            *token_formatting_data.get_spaces_before_mut() = 0;
+            *token_formatting_data.get_indentations_before_mut() = 0;
+            *token_formatting_data.get_continuations_before_mut() = 0;
+        }
     }
 }
 

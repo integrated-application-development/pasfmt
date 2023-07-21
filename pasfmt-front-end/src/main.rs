@@ -45,6 +45,7 @@ fn main() {
     let formatting_settings = config.get_config_object::<FormattingSettings>();
 
     let uses_clause_formatter = &UsesClauseFormatter {};
+    let eof_newline_formatter = &EofNewline {};
     let formatter = FileFormatter::new(
         Formatter::new(
             Box::new(DelphiLexer {}),
@@ -54,10 +55,10 @@ fn main() {
             vec![
                 Box::new(RemoveTrailingWhitespace {}),
                 Box::new(RemoveRepeatedNewlines {}),
-                Box::new(EofNewline {}),
                 Box::new(FormatterSelector::new(
                     |logical_line_type| match logical_line_type {
                         LogicalLineType::UsesClause => Some(uses_clause_formatter),
+                        LogicalLineType::Eof => Some(eof_newline_formatter),
                         _ => None,
                     },
                 )),
