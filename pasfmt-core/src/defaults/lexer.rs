@@ -177,7 +177,7 @@ fn get_operator_token_type(input: &str) -> TokenType {
         "@" => Op(AddressOf),
         "." => Op(Dot),
         ".." => Op(DotDot),
-        "&" => Op(Ampersand),
+
         _ => panic!("Unknown operator token {}", input),
     }
 }
@@ -422,7 +422,6 @@ fn operator(input: &str) -> IResult<&str, (&str, TokenType)> {
                 tag("@"),
                 tag(".."),
                 tag("."),
-                tag("&"),
             )),
         )),
         |token| (token, get_operator_token_type(token)),
@@ -716,7 +715,7 @@ mod tests {
     #[test]
     fn parse_operators() {
         run_test(
-            "+-*/:=,;=:<><<=>=>[](..)()^@...& mod div shl shr and as in or xor not is",
+            "+-*/:=,;=:<><<=>=>[](..)()^@... mod div shl shr and as in or xor not is",
             vec![
                 ("+", Op(Plus)),
                 ("-", Op(Minus)),
@@ -742,7 +741,6 @@ mod tests {
                 ("@", Op(AddressOf)),
                 ("..", Op(DotDot)),
                 (".", Op(Dot)),
-                ("&", Op(Ampersand)),
                 ("mod", Op(Mod)),
                 ("div", Op(Div)),
                 ("shl", Op(Shl)),

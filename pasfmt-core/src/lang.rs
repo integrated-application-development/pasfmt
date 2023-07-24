@@ -142,7 +142,6 @@ pub enum OperatorKind {
     AddressOf,
     Dot,
     DotDot,
-    Ampersand,
     Mod,
     Div,
     Shl,
