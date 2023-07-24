@@ -178,7 +178,7 @@ fn get_operator_token_type(input: &str) -> TokenType {
         "." => Op(Dot),
         ".." => Op(DotDot),
         "&" => Op(Ampersand),
-        _ => panic!("Unknown operator token"),
+        _ => panic!("Unknown operator token {}", input),
     }
 }
 
