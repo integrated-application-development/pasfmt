@@ -64,9 +64,7 @@ pub enum IdentifierOrKeywordKind {
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum PureKeywordKind {
-    And,
     Array,
-    As,
     Asm,
     Begin,
     Case,
@@ -75,7 +73,6 @@ pub enum PureKeywordKind {
     Constructor,
     Destructor,
     Dispinterface,
-    Div,
     Do,
     Downto,
     Else,
@@ -90,20 +87,15 @@ pub enum PureKeywordKind {
     Goto,
     If,
     Implementation,
-    In,
     Inherited,
     Initialization,
     Inline,
     Interface,
-    Is,
     Label,
     Library,
-    Mod,
     Nil,
-    Not,
     Object,
     Of,
-    Or,
     Packed,
     Procedure,
     Program,
@@ -113,8 +105,6 @@ pub enum PureKeywordKind {
     Repeat,
     ResourceString,
     Set,
-    Shl,
-    Shr,
     Then,
     ThreadVar,
     To,
@@ -126,7 +116,6 @@ pub enum PureKeywordKind {
     Var,
     While,
     With,
-    Xor,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -154,6 +143,17 @@ pub enum OperatorKind {
     Dot,
     DotDot,
     Ampersand,
+    Mod,
+    Div,
+    Shl,
+    Shr,
+    And,
+    As,
+    In,
+    Or,
+    Xor,
+    Not,
+    Is,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
