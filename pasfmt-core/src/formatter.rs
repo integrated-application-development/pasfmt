@@ -204,8 +204,7 @@ mod tests {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             let first_token = *input.get_tokens().first().unwrap();
             if first_token != 0 && first_token != formatted_tokens.get_tokens().len() - 1 {
-                if let Some(formatting_data) =
-                    formatted_tokens.get_or_create_formatting_data_mut(first_token)
+                if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(first_token)
                 {
                     *formatting_data.get_spaces_before_mut() = 0;
                     *formatting_data.get_newlines_before_mut() = 1;
@@ -276,7 +275,7 @@ mod tests {
 
             semicolon_indices.iter().for_each(|&&semicolon_index| {
                 if let Some(semicolon_formatting_data) =
-                    formatted_tokens.get_or_create_formatting_data_mut(semicolon_index)
+                    formatted_tokens.get_formatting_data_mut(semicolon_index)
                 {
                     *semicolon_formatting_data.get_spaces_before_mut() = 1;
                 }

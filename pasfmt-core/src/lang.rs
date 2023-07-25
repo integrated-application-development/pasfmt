@@ -249,6 +249,7 @@ impl LogicalLine {
 #[allow(dead_code)]
 #[derive(Default)]
 pub struct FormattingData {
+    ignored: bool,
     newlines_before: usize,
     indentations_before: usize,
     continuations_before: usize,
@@ -271,11 +272,18 @@ impl FormattingData {
             .unwrap_or_default();
 
         FormattingData {
+            ignored: false,
             newlines_before,
             indentations_before: 0,
             continuations_before: 0,
             spaces_before: last_line.len() - last_line.trim_start().len(),
         }
+    }
+    pub fn get_ignored(&self) -> bool {
+        self.ignored
+    }
+    pub fn get_ignored_mut(&mut self) -> &mut bool {
+        &mut self.ignored
     }
     pub fn get_newlines_before(&self) -> usize {
         self.newlines_before
@@ -305,47 +313,42 @@ impl FormattingData {
 
 #[allow(dead_code)]
 pub struct FormattedTokens<'a> {
-    tokens: Vec<(Token<'a>, Option<FormattingData>)>,
+    tokens: Vec<(Token<'a>, FormattingData)>,
 }
 #[allow(dead_code)]
 impl<'a> FormattedTokens<'a> {
     pub fn new_from_tokens(tokens: Vec<Token<'a>>) -> Self {
         FormattedTokens {
-            tokens: tokens.into_iter().map(|token| (token, None)).collect(),
+            tokens: tokens
+                .into_iter()
+                .map(|token| {
+                    let formatting_data = FormattingData::from(token.get_leading_whitespace());
+                    (token, formatting_data)
+                })
+                .collect(),
         }
     }
-    pub fn new(tokens: Vec<(Token<'a>, Option<FormattingData>)>) -> Self {
+    pub fn new(tokens: Vec<(Token<'a>, FormattingData)>) -> Self {
         FormattedTokens { tokens }
     }
-    pub fn get_tokens(&self) -> &Vec<(Token<'a>, Option<FormattingData>)> {
+    pub fn get_tokens(&self) -> &Vec<(Token<'a>, FormattingData)> {
         &self.tokens
     }
 
-    pub fn get_token(&self, index: usize) -> Option<&(Token<'a>, Option<FormattingData>)> {
+    pub fn get_token(&self, index: usize) -> Option<&(Token<'a>, FormattingData)> {
         self.tokens.get(index)
     }
 
-    pub fn get_token_mut(
-        &mut self,
-        index: usize,
-    ) -> Option<&mut (Token<'a>, Option<FormattingData>)> {
+    pub fn get_token_mut(&mut self, index: usize) -> Option<&mut (Token<'a>, FormattingData)> {
         self.tokens.get_mut(index)
     }
 
     pub fn get_formatting_data(&self, index: usize) -> Option<&FormattingData> {
-        self.tokens.get(index).and_then(|t| t.1.as_ref())
+        self.tokens.get(index).map(|t| &t.1)
     }
 
-    pub fn get_or_create_formatting_data_mut(
-        &mut self,
-        token_index: usize,
-    ) -> Option<&mut FormattingData> {
-        let token_data = self.get_token_mut(token_index)?;
-        Some(
-            token_data
-                .1
-                .get_or_insert_with(|| FormattingData::from(token_data.0.get_leading_whitespace())),
-        )
+    pub fn get_formatting_data_mut(&mut self, index: usize) -> Option<&mut FormattingData> {
+        self.tokens.get_mut(index).map(|t| &mut t.1)
     }
     pub fn get_token_type_for_index(&self, index: usize) -> Option<TokenType> {
         self.tokens.get(index).map(|t| t.0.get_token_type())

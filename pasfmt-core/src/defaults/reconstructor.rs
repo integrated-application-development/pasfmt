@@ -21,23 +21,18 @@ impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
             .iter()
             .sorted_by_key(|(token, _)| token.get_index())
             .for_each(|(token, formatting_data)| {
-                match formatting_data {
-                    None => {
-                        out.push_str(token.get_leading_whitespace());
-                    }
-                    Some(formatting_data) => {
-                        (0..formatting_data.get_newlines_before()).for_each(|_| {
-                            out.push_str(self.reconstruction_settings.get_newline_str())
-                        });
-
-                        (0..formatting_data.get_indentations_before()).for_each(|_| {
-                            out.push_str(self.reconstruction_settings.get_indentation_str())
-                        });
-                        (0..formatting_data.get_continuations_before()).for_each(|_| {
-                            out.push_str(self.reconstruction_settings.get_continuation_str())
-                        });
-                        (0..formatting_data.get_spaces_before()).for_each(|_| out.push(' '));
-                    }
+                if formatting_data.get_ignored() {
+                    out.push_str(token.get_leading_whitespace());
+                } else {
+                    (0..formatting_data.get_newlines_before())
+                        .for_each(|_| out.push_str(self.reconstruction_settings.get_newline_str()));
+                    (0..formatting_data.get_indentations_before()).for_each(|_| {
+                        out.push_str(self.reconstruction_settings.get_indentation_str())
+                    });
+                    (0..formatting_data.get_continuations_before()).for_each(|_| {
+                        out.push_str(self.reconstruction_settings.get_continuation_str())
+                    });
+                    (0..formatting_data.get_spaces_before()).for_each(|_| out.push(' '));
                 };
 
                 out.push_str(token.get_content());
@@ -63,17 +58,23 @@ mod tests {
         assert_that(&output).is_equal_to(expected_output.to_string());
     }
 
+    fn ignored_formatting_data() -> FormattingData {
+        let mut out = FormattingData::default();
+        *out.get_ignored_mut() = true;
+        out
+    }
+
     #[test]
     fn all_tokens_with_data_from_token() {
         run_test(
             FormattedTokens::new(vec![
                 (
                     Token::RefToken(RefToken::new(0, "\n\n  ", "token1", TokenType::Unknown)),
-                    Some(FormattingData::from("\n\n  ")),
+                    FormattingData::from("\n\n  "),
                 ),
                 (
                     Token::RefToken(RefToken::new(1, " ", "token2", TokenType::Unknown)),
-                    Some(FormattingData::from(" ")),
+                    FormattingData::from(" "),
                 ),
             ]),
             "\n\n  token1 token2",
@@ -90,11 +91,11 @@ mod tests {
             FormattedTokens::new(vec![
                 (
                     Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
-                    Some(formatting_data1),
+                    formatting_data1,
                 ),
                 (
                     Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
-                    Some(formatting_data2),
+                    formatting_data2,
                 ),
             ]),
             "   token1 token2",
@@ -111,11 +112,11 @@ mod tests {
             FormattedTokens::new(vec![
                 (
                     Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
-                    Some(formatting_data1),
+                    formatting_data1,
                 ),
                 (
                     Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
-                    Some(formatting_data2),
+                    formatting_data2,
                 ),
             ]),
             "      token1  token2",
@@ -132,11 +133,11 @@ mod tests {
             FormattedTokens::new(vec![
                 (
                     Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
-                    Some(formatting_data1),
+                    formatting_data1,
                 ),
                 (
                     Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
-                    Some(formatting_data2),
+                    formatting_data2,
                 ),
             ]),
             "      token1  token2",
@@ -151,11 +152,11 @@ mod tests {
             FormattedTokens::new(vec![
                 (
                     Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
-                    Some(formatting_data1),
+                    formatting_data1,
                 ),
                 (
                     Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
-                    None,
+                    ignored_formatting_data(),
                 ),
             ]),
             "\n\n\ntoken1\n   token2",
@@ -166,11 +167,11 @@ mod tests {
             FormattedTokens::new(vec![
                 (
                     Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
-                    None,
+                    ignored_formatting_data(),
                 ),
                 (
                     Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
-                    Some(formatting_data2),
+                    formatting_data2,
                 ),
             ]),
             " token1\n\n\ntoken2",
@@ -183,11 +184,11 @@ mod tests {
             FormattedTokens::new(vec![
                 (
                     Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
-                    None,
+                    ignored_formatting_data(),
                 ),
                 (
                     Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
-                    None,
+                    ignored_formatting_data(),
                 ),
             ]),
             " token1\n   token2",
@@ -200,11 +201,11 @@ mod tests {
             FormattedTokens::new(vec![
                 (
                     Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
-                    None,
+                    ignored_formatting_data(),
                 ),
                 (
                     Token::RefToken(RefToken::new(1, "\n", "", TokenType::Eof)),
-                    None,
+                    ignored_formatting_data(),
                 ),
             ]),
             "token1\n",
@@ -216,7 +217,7 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![(
                 Token::RefToken(RefToken::new(0, "\n \n\t", "token1", TokenType::Unknown)),
-                None,
+                ignored_formatting_data(),
             )]),
             "\n \n\ttoken1",
         );
@@ -228,11 +229,11 @@ mod tests {
             FormattedTokens::new(vec![
                 (
                     Token::RefToken(RefToken::new(1, " ", "token2", TokenType::Unknown)),
-                    None,
+                    ignored_formatting_data(),
                 ),
                 (
                     Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
-                    None,
+                    ignored_formatting_data(),
                 ),
             ]),
             "token1 token2",

@@ -7,7 +7,7 @@ impl LogicalLineFormatter for EofNewline {
         if let Some(token_formatting_data) = formatted_tokens
             .get_token_type_for_index(eof_index)
             .filter(|typ| matches!(typ, TokenType::Eof))
-            .and_then(|_| formatted_tokens.get_or_create_formatting_data_mut(eof_index))
+            .and_then(|_| formatted_tokens.get_formatting_data_mut(eof_index))
         {
             *token_formatting_data.get_newlines_before_mut() = 1;
             *token_formatting_data.get_spaces_before_mut() = 0;

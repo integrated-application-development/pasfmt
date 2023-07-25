@@ -8,7 +8,6 @@ use pasfmt_core::{
     lang::{LogicalLineType, ReconstructionSettings},
     rules::{
         eof_newline::EofNewline, remove_repeated_newlines::RemoveRepeatedNewlines,
-        remove_trailing_whitespace::RemoveTrailingWhitespace,
         uses_clause_consolidator::UsesClauseConsolidator,
         uses_clause_formatter::UsesClauseFormatter,
     },
@@ -53,7 +52,6 @@ fn main() {
             Box::new(DelphiLogicalLineParser {}),
             vec![Box::new(UsesClauseConsolidator {})],
             vec![
-                Box::new(RemoveTrailingWhitespace {}),
                 Box::new(RemoveRepeatedNewlines {}),
                 Box::new(FormatterSelector::new(
                     |logical_line_type| match logical_line_type {

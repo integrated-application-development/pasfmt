@@ -7,7 +7,7 @@ impl LogicalLineFormatter for RemoveRepeatedNewlines {
     fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
         for &token_index in input.get_tokens() {
             if let Some(token_formatting_data) =
-                formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                formatted_tokens.get_formatting_data_mut(token_index)
             {
                 *token_formatting_data.get_newlines_before_mut() =
                     min(token_formatting_data.get_newlines_before(), 2);

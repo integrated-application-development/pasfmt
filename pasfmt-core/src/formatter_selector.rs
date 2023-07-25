@@ -52,9 +52,7 @@ mod tests {
     impl LogicalLineFormatter for Add1Indentation {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             let first_token = *input.get_tokens().first().unwrap();
-            if let Some(formatting_data) =
-                formatted_tokens.get_or_create_formatting_data_mut(first_token)
-            {
+            if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(first_token) {
                 *formatting_data.get_indentations_before_mut() += 1;
             }
         }
@@ -64,9 +62,7 @@ mod tests {
     impl LogicalLineFormatter for Add1Continuation {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             let first_token = *input.get_tokens().first().unwrap();
-            if let Some(formatting_data) =
-                formatted_tokens.get_or_create_formatting_data_mut(first_token)
-            {
+            if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(first_token) {
                 *formatting_data.get_continuations_before_mut() += 1;
             }
         }

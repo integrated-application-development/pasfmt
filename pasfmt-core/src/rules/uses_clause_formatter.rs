@@ -10,7 +10,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
             {
                 // Reset formatting for the token
                 if let Some(token_formatting_data) =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                    formatted_tokens.get_formatting_data_mut(token_index)
                 {
                     *token_formatting_data.get_spaces_before_mut() = 0;
                 }
@@ -27,8 +27,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 )
             ) {
                 // Reset newlines for tokens other than uses
-                if let Some(formatting_data) =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token_index)
                 {
                     *formatting_data.get_newlines_before_mut() = 0;
                 }
@@ -39,7 +38,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 Some(TokenType::Keyword(PureKeywordKind::Uses))
             ) {
                 if let Some(token_formatting_data) =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                    formatted_tokens.get_formatting_data_mut(token_index)
                 {
                     *token_formatting_data.get_spaces_before_mut() = 0;
                     if token_index > 0 {
@@ -63,7 +62,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 };
 
                 if let Some(token_formatting_data) =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                    formatted_tokens.get_formatting_data_mut(token_index)
                 {
                     *token_formatting_data.get_newlines_before_mut() = 1;
                     *token_formatting_data.get_spaces_before_mut() = 0;
@@ -96,7 +95,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 )
             {
                 if let Some(token_formatting_data) =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                    formatted_tokens.get_formatting_data_mut(token_index)
                 {
                     *token_formatting_data.get_spaces_before_mut() = 1;
                 }
@@ -114,7 +113,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 )
             ) {
                 if let Some(token_formatting_data) =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                    formatted_tokens.get_formatting_data_mut(token_index)
                 {
                     *token_formatting_data.get_spaces_before_mut() = 2;
                     *token_formatting_data.get_newlines_before_mut() = 1;
@@ -137,7 +136,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 )
             {
                 if let Some(token_formatting_data) =
-                    formatted_tokens.get_or_create_formatting_data_mut(token_index)
+                    formatted_tokens.get_formatting_data_mut(token_index)
                 {
                     *token_formatting_data.get_spaces_before_mut() = 4;
                     *token_formatting_data.get_newlines_before_mut() = 1;
