@@ -475,4 +475,11 @@ impl<'a> Token<'a> {
             Token::OwningToken(token) => token.token_type.clone(),
         }
     }
+
+    pub fn set_token_type(&mut self, typ: TokenType) {
+        match self {
+            Token::RefToken(token) => token.token_type = typ,
+            Token::OwningToken(token) => token.token_type = typ,
+        }
+    }
 }
