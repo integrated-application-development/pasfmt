@@ -1,0 +1,134 @@
+use crate::lang::*;
+use crate::traits::LogicalLineFileFormatter;
+
+use nom::branch::*;
+use nom::bytes::complete::*;
+use nom::character::complete::*;
+use nom::combinator::*;
+use nom::sequence::*;
+use nom::*;
+
+enum FormattingToggle {
+    On,
+    Off,
+}
+
+fn parse_pasfmt_toggle(input: &str) -> IResult<&str, FormattingToggle> {
+    if input.eq_ignore_ascii_case("off") {
+        Ok(("", FormattingToggle::Off))
+    } else if input.eq_ignore_ascii_case("on") {
+        Ok(("", FormattingToggle::On))
+    } else {
+        fail(input)
+    }
+}
+
+fn parse_pasfmt_directive_comment_contents(input: &str) -> IResult<&str, FormattingToggle> {
+    delimited(
+        tuple((multispace0, tag_no_case("pasfmt"), multispace1)),
+        parse_pasfmt_toggle,
+        success(0),
+    )(input)
+}
+
+pub struct FormattingToggler {}
+impl LogicalLineFileFormatter for FormattingToggler {
+    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &[LogicalLine]) {
+        let mut ignored = false;
+        for line in input {
+            for &index in line.get_tokens() {
+                let mut on_toggle_comment = false;
+                if let Some((token, _)) = formatted_tokens.get_token(index) {
+                    if let TokenType::Comment(_) = token.get_token_type() {
+                        let parse_result: IResult<_, _> =
+                            delimited(
+                                alt((tag("{"), tag("(*"), tag("//"))),
+                                parse_pasfmt_directive_comment_contents,
+                                success(0),
+                            )(token.get_content());
+                        match parse_result {
+                            Ok((_, FormattingToggle::Off)) => ignored = true,
+                            Ok((_, FormattingToggle::On)) => ignored = false,
+                            _ => {}
+                        };
+                        on_toggle_comment = parse_result.is_ok();
+                    }
+                }
+
+                if ignored | on_toggle_comment {
+                    if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(index) {
+                        formatting_data.ignored = true;
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use indoc::indoc;
+    use spectral::prelude::*;
+
+    use super::*;
+
+    use crate::defaults::lexer::DelphiLexer;
+    use crate::defaults::parser::DelphiLogicalLineParser;
+    use crate::defaults::reconstructor::DelphiLogicalLinesReconstructor;
+    use crate::formatter::*;
+    use crate::traits::LogicalLineFormatter;
+
+    struct AddSpaceBeforeEverything {}
+    impl LogicalLineFormatter for AddSpaceBeforeEverything {
+        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
+            for &token_index in input.get_tokens() {
+                if let Some(formatting_data) = formatted_tokens
+                    .get_token_type_for_index(token_index)
+                    .and_then(|_| formatted_tokens.get_formatting_data_mut(token_index))
+                {
+                    formatting_data.spaces_before += 1;
+                }
+            }
+        }
+    }
+
+    fn run_test(input: &str, expected_output: &str) {
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .line_formatter(AddSpaceBeforeEverything {})
+            .file_formatter(FormattingToggler {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
+                ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),
+            ))
+            .build();
+
+        let formatted_output = formatter.format(input);
+        assert_that(&formatted_output).is_equal_to(expected_output.to_string());
+    }
+
+    #[test]
+    fn not_disabled() {
+        run_test("Foo(Bar + Baz)", " Foo ( Bar  +  Baz ) ");
+    }
+
+    #[test]
+    fn disabled_single_line() {
+        run_test(
+            indoc! {
+              "
+              Foo(Bar);
+              // pasfmt off
+              Foo(Bar);
+              "
+            },
+            indoc! {
+              "
+               Foo ( Bar ) ;
+              // pasfmt off
+              Foo(Bar);
+              "
+            },
+        );
+    }
+}

@@ -7,7 +7,8 @@ use pasfmt_core::{
     formatter_selector::FormatterSelector,
     lang::{LogicalLineType, ReconstructionSettings},
     rules::{
-        eof_newline::EofNewline, remove_repeated_newlines::RemoveRepeatedNewlines,
+        eof_newline::EofNewline, formatting_toggle::FormattingToggler,
+        remove_repeated_newlines::RemoveRepeatedNewlines,
         uses_clause_consolidator::UsesClauseConsolidator,
         uses_clause_formatter::UsesClauseFormatter,
     },
@@ -56,6 +57,7 @@ pub fn format_with_settings(formatting_settings: FormattingSettings, config: Pas
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
             .lines_consolidator(UsesClauseConsolidator {})
+            .file_formatter(FormattingToggler {})
             .line_formatter(RemoveRepeatedNewlines {})
             .line_formatter(FormatterSelector::new(
                 |logical_line_type| match logical_line_type {
