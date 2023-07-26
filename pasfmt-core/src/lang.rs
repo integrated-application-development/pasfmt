@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum IdentifierOrKeywordKind {
     Absolute,
     Abstract,
@@ -62,7 +62,7 @@ pub enum IdentifierOrKeywordKind {
     WriteOnly,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum PureKeywordKind {
     Array,
     Asm,
@@ -118,7 +118,7 @@ pub enum PureKeywordKind {
     With,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum OperatorKind {
     Plus,
     Minus,
@@ -155,14 +155,14 @@ pub enum OperatorKind {
     Is,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum NumberLiteralKind {
     Decimal,
     Hex,
     Binary,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum CommentKind {
     Block,
     InlineBlock,
@@ -173,7 +173,7 @@ pub enum CommentKind {
     IndividualLine,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum ConditionalDirectiveKind {
     If,
     Ifdef,
@@ -185,7 +185,7 @@ pub enum ConditionalDirectiveKind {
     Endif,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum TokenType {
     Op(OperatorKind),
     Identifier,
@@ -200,7 +200,7 @@ pub enum TokenType {
     Unknown,
 }
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone)]
+#[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
 pub enum LogicalLineType {
     ConditionalDirective,
     Eof,
@@ -242,7 +242,7 @@ impl LogicalLine {
         &mut self.tokens
     }
     pub fn get_line_type(&self) -> LogicalLineType {
-        self.line_type.clone()
+        self.line_type
     }
 }
 
@@ -400,6 +400,7 @@ impl ReconstructionSettings {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct RefToken<'a> {
     index: usize,
     original_leading_whitespace: &'a str,
@@ -422,6 +423,7 @@ impl<'a> RefToken<'a> {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct OwningToken {
     index: usize,
     original_leading_whitespace: String,
@@ -445,6 +447,7 @@ impl OwningToken {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Token<'a> {
     RefToken(RefToken<'a>),
     #[allow(dead_code)]
@@ -471,8 +474,8 @@ impl<'a> Token<'a> {
     }
     pub fn get_token_type(&self) -> TokenType {
         match &self {
-            Token::RefToken(token) => token.token_type.clone(),
-            Token::OwningToken(token) => token.token_type.clone(),
+            Token::RefToken(token) => token.token_type,
+            Token::OwningToken(token) => token.token_type,
         }
     }
 

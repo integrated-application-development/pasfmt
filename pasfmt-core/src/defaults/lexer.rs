@@ -505,8 +505,8 @@ mod tests {
         run_test(
             input.as_str(),
             vec![
-                (lowercase.as_str(), expected_token_type.clone()),
-                (uppercase.as_str(), expected_token_type.clone()),
+                (lowercase.as_str(), expected_token_type),
+                (uppercase.as_str(), expected_token_type),
                 (alternating.as_str(), expected_token_type),
             ],
         )
