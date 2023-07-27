@@ -21,18 +21,18 @@ impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
             .iter()
             .sorted_by_key(|(token, _)| token.get_index())
             .for_each(|(token, formatting_data)| {
-                if formatting_data.get_ignored() {
+                if formatting_data.ignored {
                     out.push_str(token.get_leading_whitespace());
                 } else {
-                    (0..formatting_data.get_newlines_before())
+                    (0..formatting_data.newlines_before)
                         .for_each(|_| out.push_str(self.reconstruction_settings.get_newline_str()));
-                    (0..formatting_data.get_indentations_before()).for_each(|_| {
+                    (0..formatting_data.indentations_before).for_each(|_| {
                         out.push_str(self.reconstruction_settings.get_indentation_str())
                     });
-                    (0..formatting_data.get_continuations_before()).for_each(|_| {
+                    (0..formatting_data.continuations_before).for_each(|_| {
                         out.push_str(self.reconstruction_settings.get_continuation_str())
                     });
-                    (0..formatting_data.get_spaces_before()).for_each(|_| out.push(' '));
+                    (0..formatting_data.spaces_before).for_each(|_| out.push(' '));
                 };
 
                 out.push_str(token.get_content());
@@ -59,9 +59,10 @@ mod tests {
     }
 
     fn ignored_formatting_data() -> FormattingData {
-        let mut out = FormattingData::default();
-        *out.get_ignored_mut() = true;
-        out
+        FormattingData {
+            ignored: true,
+            ..Default::default()
+        }
     }
 
     #[test]
@@ -83,10 +84,14 @@ mod tests {
 
     #[test]
     fn all_tokens_with_data_constructed_spaces() {
-        let mut formatting_data1 = FormattingData::default();
-        *formatting_data1.get_spaces_before_mut() = 3;
-        let mut formatting_data2 = FormattingData::default();
-        *formatting_data2.get_spaces_before_mut() = 1;
+        let formatting_data1 = FormattingData {
+            spaces_before: 3,
+            ..Default::default()
+        };
+        let formatting_data2 = FormattingData {
+            spaces_before: 1,
+            ..Default::default()
+        };
         run_test(
             FormattedTokens::new(vec![
                 (
@@ -104,10 +109,14 @@ mod tests {
 
     #[test]
     fn all_tokens_with_data_constructed_indentations() {
-        let mut formatting_data1 = FormattingData::default();
-        *formatting_data1.get_indentations_before_mut() = 3;
-        let mut formatting_data2 = FormattingData::default();
-        *formatting_data2.get_indentations_before_mut() = 1;
+        let formatting_data1 = FormattingData {
+            indentations_before: 3,
+            ..Default::default()
+        };
+        let formatting_data2 = FormattingData {
+            indentations_before: 1,
+            ..Default::default()
+        };
         run_test(
             FormattedTokens::new(vec![
                 (
@@ -125,10 +134,14 @@ mod tests {
 
     #[test]
     fn all_tokens_with_data_constructed_continuations() {
-        let mut formatting_data1 = FormattingData::default();
-        *formatting_data1.get_continuations_before_mut() = 3;
-        let mut formatting_data2 = FormattingData::default();
-        *formatting_data2.get_continuations_before_mut() = 1;
+        let formatting_data1 = FormattingData {
+            continuations_before: 3,
+            ..Default::default()
+        };
+        let formatting_data2 = FormattingData {
+            continuations_before: 1,
+            ..Default::default()
+        };
         run_test(
             FormattedTokens::new(vec![
                 (
@@ -146,8 +159,10 @@ mod tests {
 
     #[test]
     fn some_tokens_with_data() {
-        let mut formatting_data1 = FormattingData::default();
-        *formatting_data1.get_newlines_before_mut() = 3;
+        let formatting_data1 = FormattingData {
+            newlines_before: 3,
+            ..Default::default()
+        };
         run_test(
             FormattedTokens::new(vec![
                 (
@@ -161,8 +176,10 @@ mod tests {
             ]),
             "\n\n\ntoken1\n   token2",
         );
-        let mut formatting_data2 = FormattingData::default();
-        *formatting_data2.get_newlines_before_mut() = 3;
+        let formatting_data2 = FormattingData {
+            newlines_before: 3,
+            ..Default::default()
+        };
         run_test(
             FormattedTokens::new(vec![
                 (

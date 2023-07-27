@@ -53,7 +53,7 @@ mod tests {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             let first_token = *input.get_tokens().first().unwrap();
             if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(first_token) {
-                *formatting_data.get_indentations_before_mut() += 1;
+                formatting_data.indentations_before += 1;
             }
         }
     }
@@ -63,7 +63,7 @@ mod tests {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             let first_token = *input.get_tokens().first().unwrap();
             if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(first_token) {
-                *formatting_data.get_continuations_before_mut() += 1;
+                formatting_data.continuations_before += 1;
             }
         }
     }

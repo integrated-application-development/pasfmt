@@ -419,8 +419,8 @@ mod tests {
             if first_token != 0 && first_token != formatted_tokens.get_tokens().len() - 1 {
                 if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(first_token)
                 {
-                    *formatting_data.get_spaces_before_mut() = 0;
-                    *formatting_data.get_newlines_before_mut() = 1;
+                    formatting_data.spaces_before = 0;
+                    formatting_data.newlines_before = 1;
                 }
             }
         }
@@ -487,7 +487,7 @@ mod tests {
                 if let Some(semicolon_formatting_data) =
                     formatted_tokens.get_formatting_data_mut(semicolon_index)
                 {
-                    *semicolon_formatting_data.get_spaces_before_mut() = 1;
+                    semicolon_formatting_data.spaces_before = 1;
                 }
             });
         }
@@ -550,8 +550,8 @@ mod tests {
                 let formatting_data = formatted_tokens
                     .get_formatting_data_mut(first_line_token)
                     .unwrap();
-                *formatting_data.get_spaces_before_mut() = 0;
-                *formatting_data.get_indentations_before_mut() = index;
+                formatting_data.spaces_before = 0;
+                formatting_data.indentations_before = index;
             }
         }
     }
@@ -582,10 +582,10 @@ mod tests {
             let formatting_data = formatted_tokens
                 .get_formatting_data_mut(first_line_token)
                 .unwrap();
-            if formatting_data.get_newlines_before() == 0 {
-                *formatting_data.get_spaces_before_mut() = 3;
+            if formatting_data.newlines_before == 0 {
+                formatting_data.spaces_before = 3;
             }
-            *formatting_data.get_indentations_before_mut() = 0;
+            formatting_data.indentations_before = 0;
         }
     }
 
@@ -615,10 +615,9 @@ mod tests {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             let first_token = *input.get_tokens().first().unwrap();
             if first_token != 0 && first_token != formatted_tokens.get_tokens().len() - 1 {
-                if let Some(formatting_data) =
-                    formatted_tokens.get_formatting_data_mut(first_token)
+                if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(first_token)
                 {
-                    *formatting_data.get_newlines_before_mut() = 1;
+                    formatting_data.newlines_before = 1;
                 }
             }
         }

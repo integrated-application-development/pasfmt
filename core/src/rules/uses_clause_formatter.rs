@@ -12,7 +12,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 if let Some(token_formatting_data) =
                     formatted_tokens.get_formatting_data_mut(token_index)
                 {
-                    *token_formatting_data.get_spaces_before_mut() = 0;
+                    token_formatting_data.spaces_before = 0;
                 }
             }
             if !matches!(
@@ -29,7 +29,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 // Reset newlines for tokens other than uses
                 if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token_index)
                 {
-                    *formatting_data.get_newlines_before_mut() = 0;
+                    formatting_data.newlines_before = 0;
                 }
             }
 
@@ -40,10 +40,10 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 if let Some(token_formatting_data) =
                     formatted_tokens.get_formatting_data_mut(token_index)
                 {
-                    *token_formatting_data.get_spaces_before_mut() = 0;
+                    token_formatting_data.spaces_before = 0;
                     if token_index > 0 {
-                        *token_formatting_data.get_newlines_before_mut() =
-                            max(token_formatting_data.get_newlines_before(), 1);
+                        token_formatting_data.newlines_before =
+                            max(token_formatting_data.newlines_before, 1);
                     }
                 }
             }
@@ -64,10 +64,9 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 if let Some(token_formatting_data) =
                     formatted_tokens.get_formatting_data_mut(token_index)
                 {
-                    *token_formatting_data.get_newlines_before_mut() = 1;
-                    *token_formatting_data.get_spaces_before_mut() = 0;
-                    *token_formatting_data.get_indentations_before_mut() =
-                        conditional_depth.unsigned_abs();
+                    token_formatting_data.newlines_before = 1;
+                    token_formatting_data.spaces_before = 0;
+                    token_formatting_data.indentations_before = conditional_depth.unsigned_abs();
                 }
 
                 conditional_depth += match formatted_tokens.get_token_type_for_index(token_index) {
@@ -97,7 +96,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 if let Some(token_formatting_data) =
                     formatted_tokens.get_formatting_data_mut(token_index)
                 {
-                    *token_formatting_data.get_spaces_before_mut() = 1;
+                    token_formatting_data.spaces_before = 1;
                 }
             }
 
@@ -115,8 +114,8 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 if let Some(token_formatting_data) =
                     formatted_tokens.get_formatting_data_mut(token_index)
                 {
-                    *token_formatting_data.get_spaces_before_mut() = 2;
-                    *token_formatting_data.get_newlines_before_mut() = 1;
+                    token_formatting_data.spaces_before = 2;
+                    token_formatting_data.newlines_before = 1;
                 }
             }
 
@@ -138,8 +137,8 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 if let Some(token_formatting_data) =
                     formatted_tokens.get_formatting_data_mut(token_index)
                 {
-                    *token_formatting_data.get_spaces_before_mut() = 4;
-                    *token_formatting_data.get_newlines_before_mut() = 1;
+                    token_formatting_data.spaces_before = 4;
+                    token_formatting_data.newlines_before = 1;
                 }
             }
         }

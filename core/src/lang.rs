@@ -1,4 +1,4 @@
-use crate::traits::{LogicalLineFormatter, LogicalLineFileFormatter};
+use crate::traits::{LogicalLineFileFormatter, LogicalLineFormatter};
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum IdentifierOrKeywordKind {
@@ -251,11 +251,11 @@ impl LogicalLine {
 #[allow(dead_code)]
 #[derive(Default)]
 pub struct FormattingData {
-    ignored: bool,
-    newlines_before: usize,
-    indentations_before: usize,
-    continuations_before: usize,
-    spaces_before: usize,
+    pub ignored: bool,
+    pub newlines_before: usize,
+    pub indentations_before: usize,
+    pub continuations_before: usize,
+    pub spaces_before: usize,
 }
 #[allow(dead_code)]
 impl FormattingData {
@@ -280,36 +280,6 @@ impl FormattingData {
             continuations_before: 0,
             spaces_before: last_line.len() - last_line.trim_start().len(),
         }
-    }
-    pub fn get_ignored(&self) -> bool {
-        self.ignored
-    }
-    pub fn get_ignored_mut(&mut self) -> &mut bool {
-        &mut self.ignored
-    }
-    pub fn get_newlines_before(&self) -> usize {
-        self.newlines_before
-    }
-    pub fn get_newlines_before_mut(&mut self) -> &mut usize {
-        &mut self.newlines_before
-    }
-    pub fn get_indentations_before(&self) -> usize {
-        self.indentations_before
-    }
-    pub fn get_indentations_before_mut(&mut self) -> &mut usize {
-        &mut self.indentations_before
-    }
-    pub fn get_continuations_before(&self) -> usize {
-        self.continuations_before
-    }
-    pub fn get_continuations_before_mut(&mut self) -> &mut usize {
-        &mut self.continuations_before
-    }
-    pub fn get_spaces_before(&self) -> usize {
-        self.spaces_before
-    }
-    pub fn get_spaces_before_mut(&mut self) -> &mut usize {
-        &mut self.spaces_before
     }
 }
 

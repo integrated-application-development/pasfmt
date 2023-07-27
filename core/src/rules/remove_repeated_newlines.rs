@@ -9,8 +9,8 @@ impl LogicalLineFormatter for RemoveRepeatedNewlines {
             if let Some(token_formatting_data) =
                 formatted_tokens.get_formatting_data_mut(token_index)
             {
-                *token_formatting_data.get_newlines_before_mut() =
-                    min(token_formatting_data.get_newlines_before(), 2);
+                token_formatting_data.newlines_before =
+                    min(token_formatting_data.newlines_before, 2);
             }
         }
     }
