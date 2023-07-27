@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::lang::*;
 use crate::traits::*;
 use itertools::Itertools;
@@ -13,22 +15,8 @@ pub struct Formatter {
 }
 #[allow(dead_code)]
 impl Formatter {
-    pub fn new(
-        lexer: Box<dyn Lexer + Sync>,
-        token_consolidators: Vec<Box<dyn TokenConsolidator + Sync>>,
-        logical_line_parser: Box<dyn LogicalLineParser + Sync>,
-        logical_line_consolidators: Vec<Box<dyn LogicalLinesConsolidator + Sync>>,
-        logical_line_formatters: Vec<FormatterKind>,
-        reconstructor: Box<dyn LogicalLinesReconstructor + Sync>,
-    ) -> Self {
-        Formatter {
-            lexer,
-            token_consolidators,
-            logical_line_parser,
-            logical_line_consolidators,
-            logical_line_formatters,
-            reconstructor,
-        }
+    pub fn builder() -> FormatterBuilder<BeforeLexer> {
+        FormatterBuilder::default()
     }
     pub fn format(&self, input: &str) -> String {
         Some(input)
@@ -71,6 +59,238 @@ impl Formatter {
             })
             .map(|formatted_tokens| self.reconstructor.reconstruct(formatted_tokens))
             .unwrap()
+    }
+}
+
+macro_rules! builder_state {
+    ($name: ident $(: [ $($trait_name: ident),* ] )?) => {
+        #[derive(Default)]
+        pub struct $name;
+        $(
+            $(
+                impl $trait_name for $name {}
+            )*
+        )?
+    };
+}
+
+trait WithParserMarker {}
+trait WithFormattersMarker {}
+trait WithReconstructorMarker {}
+
+builder_state!(BeforeLexer);
+builder_state!(BeforeTokenConsolidators: [WithParserMarker]);
+builder_state!(BeforeParsers: [WithParserMarker]);
+builder_state!(BeforeLineConsolidators: [WithFormattersMarker, WithReconstructorMarker]);
+builder_state!(BeforeFormatters: [WithFormattersMarker, WithReconstructorMarker]);
+builder_state!(BeforeReconstructor: [WithReconstructorMarker]);
+builder_state!(BeforeBuild);
+
+trait FormattingBuilderData: Sized {
+    fn set_lexer<L: Lexer + Sync + 'static>(self, lexer: L) -> Self;
+    fn add_token_consolidator<T: TokenConsolidator + Sync + 'static>(
+        self,
+        token_consolidator: T,
+    ) -> Self;
+    fn set_line_parser<T: LogicalLineParser + Sync + 'static>(self, line_parser: T) -> Self;
+    fn add_lines_consolidator<T: LogicalLinesConsolidator + Sync + 'static>(
+        self,
+        lines_consolidator: T,
+    ) -> Self;
+    fn add_formatter(self, logical_line_formatter: FormatterKind) -> Self;
+    fn set_reconstructor<T: LogicalLinesReconstructor + Sync + 'static>(
+        self,
+        reconstructor: T,
+    ) -> Self;
+
+    fn convert_type<U>(self) -> FormatterBuilder<U>;
+}
+
+pub trait WithLexer {
+    fn lexer<T: Lexer + Sync + 'static>(
+        self,
+        lexer: T,
+    ) -> FormatterBuilder<BeforeTokenConsolidators>;
+}
+pub trait WithTokenConsolidator {
+    fn token_consolidator<T: TokenConsolidator + Sync + 'static>(
+        self,
+        token_consolidator: T,
+    ) -> FormatterBuilder<BeforeTokenConsolidators>;
+}
+pub trait WithParser {
+    fn parser<T: LogicalLineParser + Sync + 'static>(
+        self,
+        parser: T,
+    ) -> FormatterBuilder<BeforeLineConsolidators>;
+}
+pub trait WithLineConsolidator {
+    fn lines_consolidator<T: LogicalLinesConsolidator + Sync + 'static>(
+        self,
+        lines_consolidator: T,
+    ) -> FormatterBuilder<BeforeLineConsolidators>;
+}
+pub trait WithFormatter {
+    fn line_formatter<T: LogicalLineFormatter + Sync + 'static>(
+        self,
+        formatter: T,
+    ) -> FormatterBuilder<BeforeFormatters>;
+    fn file_formatter<T: LogicalLineFileFormatter + Sync + 'static>(
+        self,
+        formatter: T,
+    ) -> FormatterBuilder<BeforeFormatters>;
+}
+pub trait WithReconstructor {
+    fn reconstructor<T: LogicalLinesReconstructor + Sync + 'static>(
+        self,
+        reconstructor: T,
+    ) -> FormatterBuilder<BeforeBuild>;
+}
+pub trait BuildFormatter {
+    fn build(self) -> Formatter;
+}
+
+#[derive(Default)]
+pub struct FormatterBuilder<T> {
+    lexer: Option<Box<dyn Lexer + Sync>>,
+    token_consolidators: Vec<Box<dyn TokenConsolidator + Sync + 'static>>,
+    logical_line_parser: Option<Box<dyn LogicalLineParser + Sync + 'static>>,
+    logical_line_consolidators: Vec<Box<dyn LogicalLinesConsolidator + Sync + 'static>>,
+    logical_line_formatters: Vec<FormatterKind>,
+    reconstructor: Option<Box<dyn LogicalLinesReconstructor + Sync + 'static>>,
+    builder_state: PhantomData<T>,
+}
+impl<T> FormatterBuilder<T> {
+    fn convert_type<U>(self) -> FormatterBuilder<U> {
+        FormatterBuilder::<U> {
+            lexer: self.lexer,
+            token_consolidators: self.token_consolidators,
+            logical_line_parser: self.logical_line_parser,
+            logical_line_consolidators: self.logical_line_consolidators,
+            logical_line_formatters: self.logical_line_formatters,
+            reconstructor: self.reconstructor,
+            builder_state: PhantomData,
+        }
+    }
+}
+impl<T> FormattingBuilderData for FormatterBuilder<T> {
+    fn set_lexer<L: Lexer + Sync + 'static>(mut self, lexer: L) -> Self {
+        self.lexer = Some(Box::new(lexer));
+        self
+    }
+    fn add_token_consolidator<C: TokenConsolidator + Sync + 'static>(
+        mut self,
+        token_consolidator: C,
+    ) -> Self {
+        self.token_consolidators.push(Box::new(token_consolidator));
+        self
+    }
+    fn set_line_parser<P: LogicalLineParser + Sync + 'static>(mut self, line_parser: P) -> Self {
+        self.logical_line_parser = Some(Box::new(line_parser));
+        self
+    }
+    fn add_lines_consolidator<C: LogicalLinesConsolidator + Sync + 'static>(
+        mut self,
+        lines_consolidator: C,
+    ) -> Self {
+        self.logical_line_consolidators
+            .push(Box::new(lines_consolidator));
+        self
+    }
+    fn add_formatter(mut self, logical_line_formatter: FormatterKind) -> Self {
+        self.logical_line_formatters.push(logical_line_formatter);
+        self
+    }
+    fn set_reconstructor<R: LogicalLinesReconstructor + Sync + 'static>(
+        mut self,
+        reconstructor: R,
+    ) -> Self {
+        self.reconstructor = Some(Box::new(reconstructor));
+        self
+    }
+
+    fn convert_type<U>(self) -> FormatterBuilder<U> {
+        FormatterBuilder::<U> {
+            lexer: self.lexer,
+            token_consolidators: self.token_consolidators,
+            logical_line_parser: self.logical_line_parser,
+            logical_line_consolidators: self.logical_line_consolidators,
+            logical_line_formatters: self.logical_line_formatters,
+            reconstructor: self.reconstructor,
+            builder_state: PhantomData,
+        }
+    }
+}
+
+impl WithLexer for FormatterBuilder<BeforeLexer> {
+    fn lexer<T: Lexer + Sync + 'static>(
+        self,
+        lexer: T,
+    ) -> FormatterBuilder<BeforeTokenConsolidators> {
+        self.set_lexer(lexer).convert_type()
+    }
+}
+impl WithTokenConsolidator for FormatterBuilder<BeforeTokenConsolidators> {
+    fn token_consolidator<T: TokenConsolidator + Sync + 'static>(
+        self,
+        token_consolidator: T,
+    ) -> FormatterBuilder<BeforeTokenConsolidators> {
+        self.add_token_consolidator(token_consolidator)
+            .convert_type()
+    }
+}
+impl<U: WithParserMarker> WithParser for FormatterBuilder<U> {
+    fn parser<T: LogicalLineParser + Sync + 'static>(
+        self,
+        parser: T,
+    ) -> FormatterBuilder<BeforeLineConsolidators> {
+        self.set_line_parser(parser).convert_type()
+    }
+}
+impl WithLineConsolidator for FormatterBuilder<BeforeLineConsolidators> {
+    fn lines_consolidator<T: LogicalLinesConsolidator + Sync + 'static>(
+        self,
+        lines_consolidator: T,
+    ) -> FormatterBuilder<BeforeLineConsolidators> {
+        self.add_lines_consolidator(lines_consolidator)
+            .convert_type()
+    }
+}
+impl<U: WithFormattersMarker> WithFormatter for FormatterBuilder<U> {
+    fn line_formatter<T: LogicalLineFormatter + Sync + 'static>(
+        self,
+        formatter: T,
+    ) -> FormatterBuilder<BeforeFormatters> {
+        self.add_formatter(FormatterKind::LineFormatter(Box::new(formatter)))
+            .convert_type()
+    }
+
+    fn file_formatter<T: LogicalLineFileFormatter + Sync + 'static>(
+        self,
+        formatter: T,
+    ) -> FormatterBuilder<BeforeFormatters> {
+        self.add_formatter(FormatterKind::FileFormatter(Box::new(formatter)))
+            .convert_type()
+    }
+}
+impl<U: WithReconstructorMarker> WithReconstructor for FormatterBuilder<U> {
+    fn reconstructor<T: LogicalLinesReconstructor + Sync + 'static>(
+        self,
+        reconstructor: T,
+    ) -> FormatterBuilder<BeforeBuild> {
+        self.set_reconstructor(reconstructor).convert_type()
+    }
+}
+impl BuildFormatter for FormatterBuilder<BeforeBuild> {
+    fn build(self) -> Formatter {
+        Formatter {
+            lexer: self.lexer.unwrap(),
+            token_consolidators: self.token_consolidators,
+            logical_line_parser: self.logical_line_parser.unwrap(),
+            logical_line_consolidators: self.logical_line_consolidators,
+            logical_line_formatters: self.logical_line_formatters,
+            reconstructor: self.reconstructor.unwrap(),
+        }
     }
 }
 
@@ -139,49 +359,40 @@ mod tests {
 
     #[test]
     fn no_optional_stages() {
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![],
-            vec![],
-            Box::new(DelphiLogicalLinesReconstructor::new(
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            )),
-        );
+            ))
+            .build();
         run_test(formatter, "a 1 b 2 c 3", "a 1 b 2 c 3");
     }
 
     #[test]
     fn single_token_consolidator() {
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![Box::new(AddNumberTokenToPrevious {})],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![],
-            vec![],
-            Box::new(DelphiLogicalLinesReconstructor::new(
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .token_consolidator(AddNumberTokenToPrevious {})
+            .parser(DelphiLogicalLineParser {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            )),
-        );
+            ))
+            .build();
         run_test(formatter, "a 1 b 2 c 3", "a1 b2 c3");
     }
 
     #[test]
     fn multiple_token_consolidators() {
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![
-                Box::new(AddNumberTokenToPrevious {}),
-                Box::new(Append1ToAllTokens {}),
-            ],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![],
-            vec![],
-            Box::new(DelphiLogicalLinesReconstructor::new(
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .token_consolidator(AddNumberTokenToPrevious {})
+            .token_consolidator(Append1ToAllTokens {})
+            .parser(DelphiLogicalLineParser {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            )),
-        );
+            ))
+            .build();
         run_test(formatter, "a 1 b 2 c 3", "a11 b21 c31");
     }
 
@@ -217,18 +428,16 @@ mod tests {
 
     #[test]
     fn single_line_consolidator() {
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![Box::new(CombineFirst2Lines {})],
-            vec![FormatterKind::LineFormatter(Box::new(
-                LogicalLinesOnNewLines {},
-            ))],
-            Box::new(DelphiLogicalLinesReconstructor::new(
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .token_consolidator(AddNumberTokenToPrevious {})
+            .parser(DelphiLogicalLineParser {})
+            .lines_consolidator(CombineFirst2Lines {})
+            .line_formatter(LogicalLinesOnNewLines {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            )),
-        );
+            ))
+            .build();
         run_test(
             formatter,
             "a; b; c; d;",
@@ -242,21 +451,16 @@ mod tests {
 
     #[test]
     fn multiple_line_consolidators() {
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![
-                Box::new(CombineFirst2Lines {}),
-                Box::new(CombineFirst2Lines {}),
-            ],
-            vec![FormatterKind::LineFormatter(Box::new(
-                LogicalLinesOnNewLines {},
-            ))],
-            Box::new(DelphiLogicalLinesReconstructor::new(
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .lines_consolidator(CombineFirst2Lines {})
+            .lines_consolidator(CombineFirst2Lines {})
+            .line_formatter(LogicalLinesOnNewLines {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            )),
-        );
+            ))
+            .build();
         run_test(
             formatter,
             "a; b; c; d;",
@@ -291,18 +495,14 @@ mod tests {
 
     #[test]
     fn single_line_formatter() {
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![],
-            vec![FormatterKind::LineFormatter(Box::new(
-                LogicalLinesOnNewLines {},
-            ))],
-            Box::new(DelphiLogicalLinesReconstructor::new(
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .line_formatter(LogicalLinesOnNewLines {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            )),
-        );
+            ))
+            .build();
         run_test(
             formatter,
             "a; b; c; d;",
@@ -316,19 +516,16 @@ mod tests {
     }
     #[test]
     fn multiple_line_formatters() {
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![Box::new(AddNumberTokenToPrevious {})],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![],
-            vec![
-                FormatterKind::LineFormatter(Box::new(LogicalLinesOnNewLines {})),
-                FormatterKind::LineFormatter(Box::new(SpaceBeforeSemiColon {})),
-            ],
-            Box::new(DelphiLogicalLinesReconstructor::new(
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .token_consolidator(AddNumberTokenToPrevious {})
+            .parser(DelphiLogicalLineParser {})
+            .line_formatter(LogicalLinesOnNewLines {})
+            .line_formatter(SpaceBeforeSemiColon {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            )),
-        );
+            ))
+            .build();
         run_test(
             formatter,
             "a; b; c; d;",
@@ -361,18 +558,14 @@ mod tests {
 
     #[test]
     fn single_file_formatter() {
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![Box::new(AddNumberTokenToPrevious {})],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![],
-            vec![FormatterKind::FileFormatter(Box::new(
-                IndentBasedOnLineNumber {},
-            ))],
-            Box::new(DelphiLogicalLinesReconstructor::new(
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .file_formatter(IndentBasedOnLineNumber {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), " ".to_owned(), " ".to_owned()),
-            )),
-        );
+            ))
+            .build();
         run_test(
             formatter,
             "a; b; c; d;",
@@ -398,19 +591,16 @@ mod tests {
 
     #[test]
     fn multiple_file_formatter() {
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![Box::new(AddNumberTokenToPrevious {})],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![],
-            vec![
-                FormatterKind::FileFormatter(Box::new(IndentBasedOnLineNumber {})),
-                FormatterKind::FileFormatter(Box::new(IndentSecondLine3SpacesIfNoNewLine {})),
-            ],
-            Box::new(DelphiLogicalLinesReconstructor::new(
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .token_consolidator(AddNumberTokenToPrevious {})
+            .parser(DelphiLogicalLineParser {})
+            .file_formatter(IndentBasedOnLineNumber {})
+            .file_formatter(IndentSecondLine3SpacesIfNoNewLine {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), " ".to_owned(), " ".to_owned()),
-            )),
-        );
+            ))
+            .build();
         run_test(
             formatter,
             "a; b; c; d;",
@@ -436,19 +626,15 @@ mod tests {
 
     #[test]
     fn line_then_file_formatter() {
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![Box::new(AddNumberTokenToPrevious {})],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![],
-            vec![
-                FormatterKind::LineFormatter(Box::new(RetainSpacesLogcialLinesOnNewLines {})),
-                FormatterKind::FileFormatter(Box::new(IndentSecondLine3SpacesIfNoNewLine {})),
-            ],
-            Box::new(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), " ".to_owned(), " ".to_owned()),
-            )),
-        );
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .line_formatter(RetainSpacesLogcialLinesOnNewLines {})
+            .file_formatter(IndentSecondLine3SpacesIfNoNewLine {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
+                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
+            ))
+            .build();
         run_test(
             formatter,
             "a;b;c;d;",
@@ -462,19 +648,15 @@ mod tests {
     }
     #[test]
     fn file_then_line_formatter() {
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![Box::new(AddNumberTokenToPrevious {})],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![],
-            vec![
-                FormatterKind::FileFormatter(Box::new(IndentSecondLine3SpacesIfNoNewLine {})),
-                FormatterKind::LineFormatter(Box::new(RetainSpacesLogcialLinesOnNewLines {})),
-            ],
-            Box::new(DelphiLogicalLinesReconstructor::new(
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .file_formatter(IndentSecondLine3SpacesIfNoNewLine {})
+            .line_formatter(RetainSpacesLogcialLinesOnNewLines {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), " ".to_owned(), " ".to_owned()),
-            )),
-        );
+            ))
+            .build();
         run_test(
             formatter,
             "a;b;c;d;",

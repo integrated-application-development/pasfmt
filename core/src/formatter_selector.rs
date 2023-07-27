@@ -37,7 +37,7 @@ mod tests {
             lexer::DelphiLexer, parser::DelphiLogicalLineParser,
             reconstructor::DelphiLogicalLinesReconstructor,
         },
-        formatter::Formatter,
+        formatter::*,
     };
 
     use super::*;
@@ -72,22 +72,20 @@ mod tests {
     fn optional_formatter_selector() {
         let add_1_indentation = &Add1Indentation {};
         let add_1_continuation = &Add1Continuation {};
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![],
-            vec![FormatterKind::LineFormatter(Box::new(FormatterSelector {
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .line_formatter(FormatterSelector {
                 selector: |line_type| match line_type {
                     LogicalLineType::Unknown => Some(add_1_indentation),
                     LogicalLineType::Eof => Some(add_1_continuation),
                     _ => None,
                 },
-            }))],
-            Box::new(DelphiLogicalLinesReconstructor::new(
+            })
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), " i".to_owned(), " c".to_owned()),
-            )),
-        );
+            ))
+            .build();
         run_test(formatter, "a;", " ia; c");
     }
 }

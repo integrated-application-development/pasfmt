@@ -154,7 +154,7 @@ mod tests {
     use super::*;
     use crate::{
         defaults::lexer::DelphiLexer, defaults::parser::DelphiLogicalLineParser,
-        defaults::reconstructor::DelphiLogicalLinesReconstructor, formatter::Formatter,
+        defaults::reconstructor::DelphiLogicalLinesReconstructor, formatter::*,
         formatter_selector::FormatterSelector,
         rules::uses_clause_consolidator::UsesClauseConsolidator,
     };
@@ -162,21 +162,18 @@ mod tests {
     fn run_test(input: &'static str, expected_output: &'static str) {
         let uses_line_consolidator = UsesClauseConsolidator {};
         let uses_formatter = &UsesClauseFormatter {};
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![Box::new(uses_line_consolidator)],
-            vec![FormatterKind::LineFormatter(Box::new(
-                FormatterSelector::new(|line_type| match line_type {
-                    LogicalLineType::UsesClause => Some(uses_formatter),
-                    _ => None,
-                }),
-            ))],
-            Box::new(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),
-            )),
-        );
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .lines_consolidator(uses_line_consolidator)
+            .line_formatter(FormatterSelector::new(|line_type| match line_type {
+                LogicalLineType::UsesClause => Some(uses_formatter),
+                _ => None,
+            }))
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
+                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
+            ))
+            .build();
 
         let formatted_output = formatter.format(input);
         assert_that(&formatted_output).is_equal_to(expected_output.to_string());

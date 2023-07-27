@@ -23,22 +23,18 @@ mod tests {
     use super::*;
     use crate::{
         defaults::lexer::DelphiLexer, defaults::parser::DelphiLogicalLineParser,
-        defaults::reconstructor::DelphiLogicalLinesReconstructor, formatter::Formatter,
+        defaults::reconstructor::DelphiLogicalLinesReconstructor, formatter::*,
     };
 
     fn run_test(input: &'static str, output: &'static str) {
-        let formatter = Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![],
-            vec![FormatterKind::LineFormatter(Box::new(
-                RemoveRepeatedNewlines {},
-            ))],
-            Box::new(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),
-            )),
-        );
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .line_formatter(RemoveRepeatedNewlines {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
+                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
+            ))
+            .build();
 
         let formatted_output = formatter.format(input);
         assert_that(&formatted_output).is_equal_to(output.to_string());

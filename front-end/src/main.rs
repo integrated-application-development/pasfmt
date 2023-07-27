@@ -3,9 +3,9 @@ use pasfmt_core::{
         lexer::DelphiLexer, parser::DelphiLogicalLineParser,
         reconstructor::DelphiLogicalLinesReconstructor,
     },
-    formatter::Formatter,
+    formatter::{Formatter, *},
     formatter_selector::FormatterSelector,
-    lang::{FormatterKind, LogicalLineType, ReconstructionSettings},
+    lang::{LogicalLineType, ReconstructionSettings},
     rules::{
         eof_newline::EofNewline, remove_repeated_newlines::RemoveRepeatedNewlines,
         uses_clause_consolidator::UsesClauseConsolidator,
@@ -21,6 +21,15 @@ use serde_derive::Deserialize;
 #[derive(Deserialize, Default, Debug)]
 struct FormattingSettings {
     reconstruction: Reconstruction,
+}
+impl From<Reconstruction> for ReconstructionSettings {
+    fn from(val: Reconstruction) -> Self {
+        ReconstructionSettings::new(
+            val.eol,
+            val.indentation.clone(),
+            val.continuation.unwrap_or(val.indentation),
+        )
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -46,32 +55,22 @@ fn main() {
     let uses_clause_formatter = &UsesClauseFormatter {};
     let eof_newline_formatter = &EofNewline {};
     let formatter = FileFormatter::new(
-        Formatter::new(
-            Box::new(DelphiLexer {}),
-            vec![],
-            Box::new(DelphiLogicalLineParser {}),
-            vec![Box::new(UsesClauseConsolidator {})],
-            vec![
-                FormatterKind::LineFormatter(Box::new(RemoveRepeatedNewlines {})),
-                FormatterKind::LineFormatter(Box::new(FormatterSelector::new(
-                    |logical_line_type| match logical_line_type {
-                        LogicalLineType::UsesClause => Some(uses_clause_formatter),
-                        LogicalLineType::Eof => Some(eof_newline_formatter),
-                        _ => None,
-                    },
-                ))),
-            ],
-            Box::new(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new(
-                    formatting_settings.reconstruction.eol,
-                    formatting_settings.reconstruction.indentation.clone(),
-                    formatting_settings
-                        .reconstruction
-                        .continuation
-                        .unwrap_or(formatting_settings.reconstruction.indentation),
-                ),
-            )),
-        ),
+        Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .lines_consolidator(UsesClauseConsolidator {})
+            .line_formatter(RemoveRepeatedNewlines {})
+            .line_formatter(FormatterSelector::new(
+                |logical_line_type| match logical_line_type {
+                    LogicalLineType::UsesClause => Some(uses_clause_formatter),
+                    LogicalLineType::Eof => Some(eof_newline_formatter),
+                    _ => None,
+                },
+            ))
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
+                formatting_settings.reconstruction.into(),
+            ))
+            .build(),
         encoding_rs::WINDOWS_1252,
     );
     FormattingOrchestrator::run(formatter);
