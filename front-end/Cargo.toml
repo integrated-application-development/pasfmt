@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 encoding_rs = "0.8.32"
-pasfmt-core = { path = "../pasfmt-core" }
-pasfmt-orchestrator = { path = "../pasfmt-orchestrator" }
+pasfmt-core = { path = "../core" }
+pasfmt-orchestrator = { path = "../orchestrator" }
 serde = "1.0.164"
 serde_derive = "1.0.164"
