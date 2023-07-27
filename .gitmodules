@@ -1,0 +1,8 @@
+[submodule "Indy"]
+	path = front-end/benches/modules/Indy
+	url = https://github.com/IndySockets/Indy
+	shallow = true
+[submodule "DelphiEncryptionCompendium"]
+	path = front-end/benches/modules/DelphiEncryptionCompendium
+	url = https://github.com/MHumm/DelphiEncryptionCompendium
+	shallow = true

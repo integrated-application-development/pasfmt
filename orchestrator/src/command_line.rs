@@ -5,7 +5,9 @@ use std::{
     str::FromStr,
 };
 
-use clap::{builder::PossibleValuesParser, builder::TypedValueParser, Parser};
+pub use clap::Parser;
+use clap::{builder::PossibleValuesParser, builder::TypedValueParser};
+
 use log::LevelFilter;
 
 const DEFAULT_CONFIG_FILE_NAME: &str = "pasfmt.toml";

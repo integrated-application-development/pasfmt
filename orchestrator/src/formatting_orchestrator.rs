@@ -4,8 +4,7 @@ use crate::{command_line::PasFmtConfiguration, file_formatter::FileFormatter};
 
 pub struct FormattingOrchestrator;
 impl FormattingOrchestrator {
-    pub fn run(file_formatter: FileFormatter) {
-        let config = PasFmtConfiguration::new();
+    pub fn run(file_formatter: FileFormatter, config: PasFmtConfiguration) {
         let files = config.get_paths();
         let file_refs: Vec<_> = files.iter().map(|string| string.as_str()).collect();
 
