@@ -167,11 +167,11 @@ mod tests {
             vec![],
             Box::new(DelphiLogicalLineParser {}),
             vec![Box::new(uses_line_consolidator)],
-            vec![Box::new(FormatterSelector::new(
-                |line_type| match line_type {
+            vec![FormatterKind::LineFormatter(Box::new(
+                FormatterSelector::new(|line_type| match line_type {
                     LogicalLineType::UsesClause => Some(uses_formatter),
                     _ => None,
-                },
+                }),
             ))],
             Box::new(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),

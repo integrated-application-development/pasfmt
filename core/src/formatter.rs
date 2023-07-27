@@ -8,7 +8,7 @@ pub struct Formatter {
     token_consolidators: Vec<Box<dyn TokenConsolidator + Sync>>,
     logical_line_parser: Box<dyn LogicalLineParser + Sync>,
     logical_line_consolidators: Vec<Box<dyn LogicalLinesConsolidator + Sync>>,
-    logical_line_formatters: Vec<Box<dyn LogicalLineFormatter + Sync>>,
+    logical_line_formatters: Vec<FormatterKind>,
     reconstructor: Box<dyn LogicalLinesReconstructor + Sync>,
 }
 #[allow(dead_code)]
@@ -18,7 +18,7 @@ impl Formatter {
         token_consolidators: Vec<Box<dyn TokenConsolidator + Sync>>,
         logical_line_parser: Box<dyn LogicalLineParser + Sync>,
         logical_line_consolidators: Vec<Box<dyn LogicalLinesConsolidator + Sync>>,
-        logical_line_formatters: Vec<Box<dyn LogicalLineFormatter + Sync>>,
+        logical_line_formatters: Vec<FormatterKind>,
         reconstructor: Box<dyn LogicalLinesReconstructor + Sync>,
     ) -> Self {
         Formatter {
@@ -53,19 +53,21 @@ impl Formatter {
                     })
                     .into()
             })
-            .map(|(tokens, logical_lines)| {
-                self.logical_line_formatters.iter().fold(
-                    FormattedTokens::new_from_tokens(tokens),
-                    |formatted_tokens, formatter| {
-                        logical_lines.iter().fold(
-                            formatted_tokens,
-                            |mut formatted_tokens, logical_line| {
-                                formatter.format(&mut formatted_tokens, logical_line);
-                                formatted_tokens
-                            },
-                        )
-                    },
-                )
+            .map(|(tokens, mut logical_lines)| {
+                let mut formatted_tokens = FormattedTokens::new_from_tokens(tokens);
+                self.logical_line_formatters
+                    .iter()
+                    .for_each(|formatter| match formatter {
+                        FormatterKind::LineFormatter(formatter) => {
+                            logical_lines.iter_mut().for_each(|logical_line| {
+                                formatter.format(&mut formatted_tokens, logical_line)
+                            })
+                        }
+                        FormatterKind::FileFormatter(formatter) => {
+                            formatter.format(&mut formatted_tokens, &logical_lines)
+                        }
+                    });
+                formatted_tokens
             })
             .map(|formatted_tokens| self.reconstructor.reconstruct(formatted_tokens))
             .unwrap()
@@ -220,7 +222,9 @@ mod tests {
             vec![],
             Box::new(DelphiLogicalLineParser {}),
             vec![Box::new(CombineFirst2Lines {})],
-            vec![Box::new(LogicalLinesOnNewLines {})],
+            vec![FormatterKind::LineFormatter(Box::new(
+                LogicalLinesOnNewLines {},
+            ))],
             Box::new(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
             )),
@@ -246,7 +250,9 @@ mod tests {
                 Box::new(CombineFirst2Lines {}),
                 Box::new(CombineFirst2Lines {}),
             ],
-            vec![Box::new(LogicalLinesOnNewLines {})],
+            vec![FormatterKind::LineFormatter(Box::new(
+                LogicalLinesOnNewLines {},
+            ))],
             Box::new(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
             )),
@@ -290,7 +296,9 @@ mod tests {
             vec![],
             Box::new(DelphiLogicalLineParser {}),
             vec![],
-            vec![Box::new(LogicalLinesOnNewLines {})],
+            vec![FormatterKind::LineFormatter(Box::new(
+                LogicalLinesOnNewLines {},
+            ))],
             Box::new(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
             )),
@@ -314,8 +322,8 @@ mod tests {
             Box::new(DelphiLogicalLineParser {}),
             vec![],
             vec![
-                Box::new(LogicalLinesOnNewLines {}),
-                Box::new(SpaceBeforeSemiColon {}),
+                FormatterKind::LineFormatter(Box::new(LogicalLinesOnNewLines {})),
+                FormatterKind::LineFormatter(Box::new(SpaceBeforeSemiColon {})),
             ],
             Box::new(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
@@ -329,6 +337,152 @@ mod tests {
                 b ;
                 c ;
                 d ;"
+            },
+        );
+    }
+
+    struct IndentBasedOnLineNumber;
+    impl LogicalLineFileFormatter for IndentBasedOnLineNumber {
+        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &[LogicalLine]) {
+            for (index, line) in input
+                .iter()
+                .enumerate()
+                .filter(|(_, line)| !matches!(line.get_line_type(), LogicalLineType::Eof))
+            {
+                let &first_line_token = line.get_tokens().first().unwrap();
+                let formatting_data = formatted_tokens
+                    .get_formatting_data_mut(first_line_token)
+                    .unwrap();
+                *formatting_data.get_spaces_before_mut() = 0;
+                *formatting_data.get_indentations_before_mut() = index;
+            }
+        }
+    }
+
+    #[test]
+    fn single_file_formatter() {
+        let formatter = Formatter::new(
+            Box::new(DelphiLexer {}),
+            vec![Box::new(AddNumberTokenToPrevious {})],
+            Box::new(DelphiLogicalLineParser {}),
+            vec![],
+            vec![FormatterKind::FileFormatter(Box::new(
+                IndentBasedOnLineNumber {},
+            ))],
+            Box::new(DelphiLogicalLinesReconstructor::new(
+                ReconstructionSettings::new("\n".to_owned(), " ".to_owned(), " ".to_owned()),
+            )),
+        );
+        run_test(
+            formatter,
+            "a; b; c; d;",
+            indoc! {"
+                a; b;  c;   d;"
+            },
+        );
+    }
+
+    struct IndentSecondLine3SpacesIfNoNewLine;
+    impl LogicalLineFileFormatter for IndentSecondLine3SpacesIfNoNewLine {
+        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &[LogicalLine]) {
+            let &first_line_token = input[1].get_tokens().first().unwrap();
+            let formatting_data = formatted_tokens
+                .get_formatting_data_mut(first_line_token)
+                .unwrap();
+            if formatting_data.get_newlines_before() == 0 {
+                *formatting_data.get_spaces_before_mut() = 3;
+            }
+            *formatting_data.get_indentations_before_mut() = 0;
+        }
+    }
+
+    #[test]
+    fn multiple_file_formatter() {
+        let formatter = Formatter::new(
+            Box::new(DelphiLexer {}),
+            vec![Box::new(AddNumberTokenToPrevious {})],
+            Box::new(DelphiLogicalLineParser {}),
+            vec![],
+            vec![
+                FormatterKind::FileFormatter(Box::new(IndentBasedOnLineNumber {})),
+                FormatterKind::FileFormatter(Box::new(IndentSecondLine3SpacesIfNoNewLine {})),
+            ],
+            Box::new(DelphiLogicalLinesReconstructor::new(
+                ReconstructionSettings::new("\n".to_owned(), " ".to_owned(), " ".to_owned()),
+            )),
+        );
+        run_test(
+            formatter,
+            "a; b; c; d;",
+            indoc! {"
+                a;   b;  c;   d;"
+            },
+        );
+    }
+
+    struct RetainSpacesLogcialLinesOnNewLines;
+    impl LogicalLineFormatter for RetainSpacesLogcialLinesOnNewLines {
+        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
+            let first_token = *input.get_tokens().first().unwrap();
+            if first_token != 0 && first_token != formatted_tokens.get_tokens().len() - 1 {
+                if let Some(formatting_data) =
+                    formatted_tokens.get_formatting_data_mut(first_token)
+                {
+                    *formatting_data.get_newlines_before_mut() = 1;
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn line_then_file_formatter() {
+        let formatter = Formatter::new(
+            Box::new(DelphiLexer {}),
+            vec![Box::new(AddNumberTokenToPrevious {})],
+            Box::new(DelphiLogicalLineParser {}),
+            vec![],
+            vec![
+                FormatterKind::LineFormatter(Box::new(RetainSpacesLogcialLinesOnNewLines {})),
+                FormatterKind::FileFormatter(Box::new(IndentSecondLine3SpacesIfNoNewLine {})),
+            ],
+            Box::new(DelphiLogicalLinesReconstructor::new(
+                ReconstructionSettings::new("\n".to_owned(), " ".to_owned(), " ".to_owned()),
+            )),
+        );
+        run_test(
+            formatter,
+            "a;b;c;d;",
+            indoc! {"
+                a;
+                b;
+                c;
+                d;"
+            },
+        );
+    }
+    #[test]
+    fn file_then_line_formatter() {
+        let formatter = Formatter::new(
+            Box::new(DelphiLexer {}),
+            vec![Box::new(AddNumberTokenToPrevious {})],
+            Box::new(DelphiLogicalLineParser {}),
+            vec![],
+            vec![
+                FormatterKind::FileFormatter(Box::new(IndentSecondLine3SpacesIfNoNewLine {})),
+                FormatterKind::LineFormatter(Box::new(RetainSpacesLogcialLinesOnNewLines {})),
+            ],
+            Box::new(DelphiLogicalLinesReconstructor::new(
+                ReconstructionSettings::new("\n".to_owned(), " ".to_owned(), " ".to_owned()),
+            )),
+        );
+        run_test(
+            formatter,
+            "a;b;c;d;",
+            indoc! {"
+                a;
+                   b;
+                c;
+                d;"
             },
         );
     }

@@ -18,6 +18,9 @@ pub trait LogicalLinesConsolidator {
 pub trait LogicalLineFormatter {
     fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine);
 }
+pub trait LogicalLineFileFormatter {
+    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &[LogicalLine]);
+}
 
 pub trait LogicalLinesReconstructor {
     fn reconstruct(&self, formatted_tokens: FormattedTokens) -> String;

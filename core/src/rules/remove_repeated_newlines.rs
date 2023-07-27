@@ -32,7 +32,9 @@ mod tests {
             vec![],
             Box::new(DelphiLogicalLineParser {}),
             vec![],
-            vec![Box::new(RemoveRepeatedNewlines {})],
+            vec![FormatterKind::LineFormatter(Box::new(
+                RemoveRepeatedNewlines {},
+            ))],
             Box::new(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),
             )),

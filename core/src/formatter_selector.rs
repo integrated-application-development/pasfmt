@@ -77,13 +77,13 @@ mod tests {
             vec![],
             Box::new(DelphiLogicalLineParser {}),
             vec![],
-            vec![Box::new(FormatterSelector {
+            vec![FormatterKind::LineFormatter(Box::new(FormatterSelector {
                 selector: |line_type| match line_type {
                     LogicalLineType::Unknown => Some(add_1_indentation),
                     LogicalLineType::Eof => Some(add_1_continuation),
                     _ => None,
                 },
-            })],
+            }))],
             Box::new(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), " i".to_owned(), " c".to_owned()),
             )),

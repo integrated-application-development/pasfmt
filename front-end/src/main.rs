@@ -5,7 +5,7 @@ use pasfmt_core::{
     },
     formatter::Formatter,
     formatter_selector::FormatterSelector,
-    lang::{LogicalLineType, ReconstructionSettings},
+    lang::{FormatterKind, LogicalLineType, ReconstructionSettings},
     rules::{
         eof_newline::EofNewline, remove_repeated_newlines::RemoveRepeatedNewlines,
         uses_clause_consolidator::UsesClauseConsolidator,
@@ -52,14 +52,14 @@ fn main() {
             Box::new(DelphiLogicalLineParser {}),
             vec![Box::new(UsesClauseConsolidator {})],
             vec![
-                Box::new(RemoveRepeatedNewlines {}),
-                Box::new(FormatterSelector::new(
+                FormatterKind::LineFormatter(Box::new(RemoveRepeatedNewlines {})),
+                FormatterKind::LineFormatter(Box::new(FormatterSelector::new(
                     |logical_line_type| match logical_line_type {
                         LogicalLineType::UsesClause => Some(uses_clause_formatter),
                         LogicalLineType::Eof => Some(eof_newline_formatter),
                         _ => None,
                     },
-                )),
+                ))),
             ],
             Box::new(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new(

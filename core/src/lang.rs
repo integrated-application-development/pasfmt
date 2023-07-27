@@ -1,3 +1,5 @@
+use crate::traits::{LogicalLineFormatter, LogicalLineFileFormatter};
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum IdentifierOrKeywordKind {
     Absolute,
@@ -368,7 +370,7 @@ impl<'a> LogicalLines<'a> {
     pub fn get_tokens(&self) -> &Vec<Token<'a>> {
         &self.tokens
     }
-    pub fn get_lines(&self) -> &Vec<LogicalLine> {
+    pub fn get_lines(&self) -> &[LogicalLine] {
         &self.lines
     }
 }
@@ -488,4 +490,9 @@ impl<'a> Token<'a> {
             Token::OwningToken(token) => token.token_type = typ,
         }
     }
+}
+
+pub enum FormatterKind {
+    LineFormatter(Box<dyn LogicalLineFormatter + Sync>),
+    FileFormatter(Box<dyn LogicalLineFileFormatter + Sync>),
 }
