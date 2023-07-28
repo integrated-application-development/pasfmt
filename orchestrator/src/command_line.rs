@@ -2,13 +2,15 @@ use std::{
     env,
     fs::{self, read_to_string},
     path::{Path, PathBuf},
+    str::FromStr,
 };
 
-use clap::Parser;
+use clap::{builder::PossibleValuesParser, builder::TypedValueParser, Parser};
+use log::LevelFilter;
 
 const DEFAULT_CONFIG_FILE_NAME: &str = "pasfmt.toml";
 
-#[derive(Parser, Default, Debug)]
+#[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct PasFmtConfiguration {
     /// Paths that will be formatted. Can be a path/dir/glob. If no paths are
@@ -32,9 +34,56 @@ pub struct PasFmtConfiguration {
 
     /// Whether to check the correctness of the formatting of the files. It will
     /// list the files that are different.
-    #[arg(short, long, conflicts_with = "write")]
+    #[arg(long, conflicts_with = "write")]
     verify: bool,
+
+    /// Increase logging verbosity (can be repeated).
+    #[arg(short, long, action = clap::ArgAction::Count, conflicts_with = "log_level")]
+    verbose: u8,
+
+    /// Only show log messages at least this severe.
+    #[arg(short, long, default_value_t = LevelFilter::Warn, value_parser = log_level_parser())]
+    log_level: LevelFilter,
 }
+
+fn log_level_parser() -> impl TypedValueParser {
+    PossibleValuesParser::new(valid_log_levels())
+        .map(|level| LevelFilter::from_str(&level).unwrap())
+}
+
+fn valid_log_levels() -> Vec<&'static str> {
+    LevelFilter::iter()
+        .map(|level| level.as_str())
+        .collect::<Vec<_>>()
+}
+
+// LevelFilter doesn't expose enough to make this possible without duplicating the integer values a bit.
+fn log_level_from_usize(u: usize) -> Option<LevelFilter> {
+    match u {
+        0 => Some(LevelFilter::Off),
+        1 => Some(LevelFilter::Error),
+        2 => Some(LevelFilter::Warn),
+        3 => Some(LevelFilter::Info),
+        4 => Some(LevelFilter::Debug),
+        5 => Some(LevelFilter::Trace),
+        _ => None,
+    }
+}
+
+impl Default for PasFmtConfiguration {
+    fn default() -> Self {
+        Self {
+            paths: Default::default(),
+            files_file: Default::default(),
+            config_file: Default::default(),
+            write: Default::default(),
+            verify: Default::default(),
+            verbose: Default::default(),
+            log_level: LevelFilter::Warn,
+        }
+    }
+}
+
 impl PasFmtConfiguration {
     pub fn new() -> Self {
         PasFmtConfiguration::parse()
@@ -51,6 +100,10 @@ impl PasFmtConfiguration {
             );
         }
         paths
+    }
+    pub fn log_level(&self) -> LevelFilter {
+        log_level_from_usize((self.verbose as usize) + (self.log_level as usize))
+            .unwrap_or(LevelFilter::max())
     }
     pub fn is_write(&self) -> bool {
         self.write

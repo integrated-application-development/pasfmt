@@ -11,3 +11,4 @@ pasfmt-core = { path = "../core" }
 rayon = "1.7.0"
 toml = "0.7.5"
 walkdir = "2.3.3"
+log = "0.4"

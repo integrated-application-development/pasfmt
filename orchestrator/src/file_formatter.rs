@@ -1,3 +1,4 @@
+use log::*;
 use std::{
     fs::{File, OpenOptions},
     io::{Read, Write},
@@ -22,11 +23,11 @@ impl FileFormatter {
     }
 
     fn warn_invalid_glob(&self, path: &str) {
-        eprintln!("WARNING: '{}' is not a valid glob", path);
+        warn!("'{}' is not a valid glob", path);
     }
 
     fn warn_invalid_file(&self, path: &str) {
-        eprintln!("WARNING: '{}' is not a valid file path/glob", path);
+        warn!("'{}' is not a valid file path/glob", path);
     }
 
     fn get_valid_files(&self, paths: Vec<&str>) -> Vec<String> {
@@ -62,12 +63,12 @@ impl FileFormatter {
     }
 
     fn get_file_contents(&self, file_path: &str) -> Result<String, String> {
-        let mut file = File::open(file_path)
-            .map_err(|e| format!("ERROR: Failed to open '{}', {}", file_path, e))?;
+        let mut file =
+            File::open(file_path).map_err(|e| format!("Failed to open '{}', {}", file_path, e))?;
 
         let mut file_bytes = Vec::new();
         file.read_to_end(&mut file_bytes)
-            .map_err(|e| format!("ERROR: Failed to read '{}', {}", file_path, e))?;
+            .map_err(|e| format!("Failed to read '{}', {}", file_path, e))?;
 
         Ok(self.encoding.decode(&file_bytes[..]).0.into_owned())
     }
@@ -82,7 +83,7 @@ impl FileFormatter {
             let file_contents = match self.get_file_contents(&file_path) {
                 Ok(contents) => contents,
                 Err(error) => {
-                    eprintln!("{}", error);
+                    error!("{}", error);
                     return;
                 }
             };
@@ -103,7 +104,7 @@ impl FileFormatter {
             let encoded_output = self.encoding.encode(&formatted_output).0;
             match new_file.write_all(&encoded_output) {
                 Ok(_) => {}
-                Err(error) => eprintln!("ERROR: Failed to write to '{}', {}", file_path, error),
+                Err(error) => error!("Failed to write to '{}', {}", file_path, error),
             }
         })
     }
@@ -120,7 +121,7 @@ impl FileFormatter {
     pub fn check_files(&self, paths: Vec<&str>) {
         self.exec_format(paths, |file_path, file_contents, formatted_output| {
             if formatted_output != file_contents {
-                eprintln!("VERIFY: '{}' has different formatting", file_path);
+                println!("VERIFY: '{}' has different formatting", file_path);
             }
         })
     }

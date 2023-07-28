@@ -7,6 +7,7 @@ use crate::lang::TokenType::*;
 use crate::lang::*;
 use crate::traits::Lexer;
 
+use log::*;
 use nom::branch::*;
 use nom::bytes::complete::*;
 use nom::character::complete::*;
@@ -453,7 +454,7 @@ fn parse_file(input: &str) -> Vec<Token> {
     token_data
         .iter()
         .filter(|(_, (_, token_type))| token_type == &Unknown)
-        .for_each(|(_, (content, _))| eprintln!("WARNING: Found unknown token '{}'", content));
+        .for_each(|(_, (content, _))| warn!("Found unknown token '{}'", content));
 
     token_data
         .into_iter()

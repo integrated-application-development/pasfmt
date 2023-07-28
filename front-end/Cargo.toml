@@ -9,3 +9,4 @@ pasfmt-core = { path = "../core" }
 pasfmt-orchestrator = { path = "../orchestrator" }
 serde = "1.0.164"
 serde_derive = "1.0.164"
+stderrlog = "0.5.4"
