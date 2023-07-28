@@ -28,20 +28,6 @@ struct LocalLogicalLineRef {
     local_logical_line_index: usize,
 }
 
-fn is_token_inline_comment(option_token: Option<&Token>) -> bool {
-    matches!(
-        option_token.map(|token| token.get_token_type()),
-        Some(Comment(CommentKind::InlineBlock)) | Some(Comment(CommentKind::InlineLine))
-    )
-}
-
-fn is_token_conditional_directive(option_token: Option<&Token>) -> bool {
-    matches!(
-        option_token.map(|token| token.get_token_type()),
-        Some(ConditionalDirective(_))
-    )
-}
-
 struct InternalDelphiLogicalLineParser<'a> {
     tokens: &'a Vec<Token<'a>>,
     current_token_index: usize,
@@ -89,15 +75,19 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
             self.parse_file();
             self.parsing_pass += 1;
 
-            while !self.directive_branch_index.is_empty()
-                && self.directive_branch_index.last().unwrap() + 1
-                    >= *self.directive_branch_count.last().unwrap()
-            {
+            while matches!(
+                (
+                    self.directive_branch_index.last(),
+                    self.directive_branch_count.last()
+                ),
+                (Some(&last_branch_index), Some(&last_branch_count))
+                if last_branch_index + 1 >= last_branch_count
+            ) {
                 self.directive_branch_index.pop();
                 self.directive_branch_count.pop();
             }
-            if !self.directive_branch_index.is_empty() {
-                *self.directive_branch_index.last_mut().unwrap() += 1;
+            if let Some(last_directive_branch_index) = self.directive_branch_index.last_mut() {
+                *last_directive_branch_index += 1;
                 assert_eq!(
                     self.directive_branch_index.len(),
                     self.directive_branch_count.len()
@@ -106,8 +96,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                     self.directive_branch_index.last().unwrap()
                         <= self.directive_branch_count.last().unwrap()
                 )
-            }
-            if self.directive_branch_index.is_empty() {
+            } else {
                 break;
             }
         }
@@ -125,8 +114,12 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
     }
 
     fn parse_level(&mut self, opening_begin: Option<usize>) {
-        while !self.is_eof() {
-            match self.get_current_token().unwrap().get_token_type() {
+        loop {
+            let token_type = match self.get_current_token_type_no_eof() {
+                None => break,
+                Some(token_type) => token_type,
+            };
+            match token_type {
                 Comment(CommentKind::IndividualLine)
                 | Comment(CommentKind::IndividualBlock)
                 | Comment(CommentKind::MultilineBlock) => {
@@ -162,10 +155,6 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         self.get_current_logical_line_mut().level += 1;
         self.parse_level(Some(begin_index));
 
-        if self.is_eof() {
-            return;
-        }
-
         self.get_current_logical_line_mut().level -= 1;
         // for end
         self.next_token();
@@ -173,7 +162,11 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
 
     fn parse_structural_element(&mut self) {
         loop {
-            match self.get_current_token().unwrap().get_token_type() {
+            let token_type = match self.get_current_token_type_no_eof() {
+                None => return,
+                Some(token_type) => token_type,
+            };
+            match token_type {
                 Op(LParen) => self.parse_parens(),
                 Op(Semicolon) => {
                     self.next_token();
@@ -191,29 +184,28 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                 }
                 _ => self.next_token(),
             }
-            if self.is_eof() {
-                return;
-            }
         }
     }
 
     fn parse_to_after_next_semicolon(&mut self) {
-        while !self.is_eof()
-            && !matches!(
-                self.get_current_token().unwrap().get_token_type(),
-                TokenType::Op(OperatorKind::Semicolon)
-            )
-        {
+        while !matches!(
+            self.get_current_token_type(),
+            Some(TokenType::Op(OperatorKind::Semicolon))
+        ) {
             self.next_token();
         }
         self.next_token();
     }
 
     fn parse_parens(&mut self) {
-        assert!(self.get_current_token().unwrap().get_token_type() == Op(LParen));
+        assert!(self.get_current_token_type() == Some(Op(LParen)));
         self.next_token();
         loop {
-            match self.get_current_token().unwrap().get_token_type() {
+            let token_type = match self.get_current_token_type_no_eof() {
+                None => return,
+                Some(token_type) => token_type,
+            };
+            match token_type {
                 Op(LParen) => self.parse_parens(),
                 Op(RParen) => {
                     self.next_token();
@@ -221,9 +213,6 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                 }
                 Keyword(Begin) => self.parse_child_block(self.current_token_index),
                 _ => self.next_token(),
-            }
-            if self.is_eof() {
-                return;
             }
         }
     }
@@ -242,7 +231,9 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
             .iter_mut()
             .flat_map(|lines| lines.iter_mut())
             .for_each(|line_ref| {
-                self.get_logical_line_from_ref_mut(line_ref).parent_token = Some(parent_token);
+                if let Some(logical_line) = self.get_logical_line_from_ref_mut(line_ref) {
+                    logical_line.parent_token = Some(parent_token);
+                }
             });
         self.next_token();
     }
@@ -274,8 +265,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
             }
 
             while !self.is_in_compiler_directive()
-                && !self.is_eof()
-                && is_token_conditional_directive(self.get_current_token())
+                && matches!(self.get_current_token_type(), Some(ConditionalDirective(_)))
             {
                 self.distribute_comments(comments_before_next_token);
                 let new_line =
@@ -286,28 +276,31 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                 self.current_logical_line.pop();
             }
 
-            if !self.directive_context.is_empty()
-                && self.directive_context.last().unwrap().0 == DirectiveBranchKind::Unreachable
-                && !self.is_in_compiler_directive()
+            if matches!(
+                self.directive_context.last(),
+                Some((DirectiveBranchKind::Unreachable, _))
+            ) && !self.is_in_compiler_directive()
             {
                 self.current_token_index += 1;
                 continue;
             }
 
-            if !self.is_eof() && !is_token_inline_comment(self.get_current_token()) {
-                self.distribute_comments(comments_before_next_token);
-                return;
-            }
-
-            if !self.is_eof() {
-                comments_before_next_token.push(self.current_token_index);
-            }
+            match self.get_current_token_type_no_eof() {
+                Some(Comment(CommentKind::InlineBlock | CommentKind::InlineLine)) => {
+                    comments_before_next_token.push(self.current_token_index);
+                }
+                Some(_) => {
+                    self.distribute_comments(comments_before_next_token);
+                    return;
+                }
+                None => (),
+            };
 
             self.current_token_index += 1;
         }
     }
 
-    fn add_logical_line_with_level_delta(&mut self, delta: i32) {
+    fn add_logical_line_with_level_delta(&mut self, delta: isize) {
         if self.get_current_logical_line().token_indices.is_empty() {
             return;
         }
@@ -318,16 +311,17 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         };
         let new_logical_line = self.create_new_local_line_with_type(new_line_type);
         self.get_logical_line_from_ref_mut(&new_logical_line)
+            .unwrap()
             .line_type = match self.is_in_compiler_directive() {
             true => LogicalLineType::ConditionalDirective,
             false => LogicalLineType::Unknown,
         };
         let prev_line_ref = &self.current_logical_line.pop().unwrap();
-        let prev_line = self.get_logical_line_from_ref_mut(prev_line_ref);
+        let prev_line = self.get_logical_line_from_ref_mut(prev_line_ref).unwrap();
         let prev_level = prev_line.level;
         prev_line.level = match delta.is_negative() {
-            true => prev_line.level - delta.unsigned_abs() as usize,
-            false => prev_line.level + delta as usize,
+            true => prev_line.level.saturating_sub(delta.unsigned_abs()),
+            false => prev_line.level + delta.unsigned_abs(),
         };
         self.current_logical_line.push(new_logical_line);
         self.get_current_logical_line_mut().level = prev_level;
@@ -345,19 +339,22 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
             return;
         }
 
-        let just_comments = self.get_current_logical_line().token_indices.is_empty();
+        let comments_on_own_line = self.get_current_logical_line().token_indices.is_empty();
+        if comments_on_own_line {
+            self.add_logical_line();
+        }
 
         for comment_index in 0..self.comments_before_next_token.len() {
-            let comment_token = *self.comments_before_next_token.get(comment_index).unwrap();
-            if just_comments {
-                self.add_logical_line();
-            }
+            let comment_token = match self.comments_before_next_token.get(comment_index) {
+                Some(&index) => index,
+                None => continue,
+            };
             self.get_current_logical_line_mut()
                 .token_indices
                 .push(comment_token);
-        }
-        if just_comments {
-            self.add_logical_line();
+            if comments_on_own_line {
+                self.add_logical_line();
+            }
         }
 
         self.comments_before_next_token.clear();
@@ -369,11 +366,14 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         }
         let mut should_push_to_current_line = true;
         for comment_index in 0..comments.len() {
-            let comment_token = *comments.get(comment_index).unwrap();
+            let comment_token = match comments.get(comment_index) {
+                Some(&index) => index,
+                None => continue,
+            };
             if self.is_in_compiler_directive()
                 || matches!(
-                    self.tokens.get(comment_token).unwrap().get_token_type(),
-                    Comment(CommentKind::IndividualLine)
+                    self.tokens.get(comment_token).map(Token::get_token_type),
+                    Some(Comment(CommentKind::IndividualLine))
                 )
             {
                 should_push_to_current_line = false;
@@ -394,17 +394,14 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
 
     fn parse_conditional_directive(&mut self) {
         let prev_level = self.directive_context.len();
-        match self.get_current_token().unwrap().get_token_type() {
-            ConditionalDirective(Ifdef)
-            | ConditionalDirective(Ifndef)
-            | ConditionalDirective(Ifopt)
-            | ConditionalDirective(ConditionalDirectiveKind::If) => {
+        match self.get_current_token_type() {
+            Some(ConditionalDirective(Ifdef | Ifndef | Ifopt | ConditionalDirectiveKind::If)) => {
                 self.parse_directive_if();
             }
-            ConditionalDirective(ConditionalDirectiveKind::Else) | ConditionalDirective(Elseif) => {
+            Some(ConditionalDirective(ConditionalDirectiveKind::Else | Elseif)) => {
                 self.parse_directive_else();
             }
-            ConditionalDirective(Endif) | ConditionalDirective(Ifend) => {
+            Some(ConditionalDirective(Endif | Ifend)) => {
                 self.parse_directive_endif();
             }
             _ => panic!(),
@@ -437,48 +434,34 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
     fn parse_directive_unknown(&mut self) {
         loop {
             self.next_token();
-            if self.is_eof() || is_token_conditional_directive(self.get_prev_token()) {
+            if matches!(self.get_prev_token_type(), Some(ConditionalDirective(_))) {
                 break;
             }
         }
     }
 
     fn conditional_compilation_start(&mut self) {
-        self.directive_depth += 1;
-        if self.directive_depth == self.directive_branch_index.len() + 1 {
+        if self.directive_depth == self.directive_branch_index.len() {
             self.directive_branch_index.push(0);
             self.directive_branch_count.push(0);
         }
         self.directive_chain_branch_index.push_front(0);
-        self.conditional_compilation_condition(
-            *self
-                .directive_branch_index
-                .get(self.directive_depth - 1)
-                .unwrap()
-                > 0,
-        );
+        self.conditional_compilation_condition(matches!(
+            self.directive_branch_index.get(self.directive_depth),
+            Some(&index) if index > 0
+        ));
+        self.directive_depth += 1;
     }
 
     fn conditional_compilation_end(&mut self) {
         assert!(self.directive_depth <= self.directive_branch_index.len());
-        if self.directive_depth > 0
-            && !self.directive_chain_branch_index.is_empty()
-            && self.directive_chain_branch_index.back().unwrap() + 1
-                > *self
-                    .directive_branch_count
-                    .get(self.directive_depth - 1)
-                    .unwrap()
-        {
-            let val = self
-                .directive_branch_count
-                .get_mut(self.directive_depth - 1)
-                .unwrap();
-            *val = self.directive_chain_branch_index.back().unwrap() + 1;
+        self.directive_depth = self.directive_depth.saturating_sub(1);
+        if let (Some(last_directive_chain_branch_index), Some(last_branch_count)) = (
+            self.directive_chain_branch_index.pop_back(),
+            self.directive_branch_count.get_mut(self.directive_depth),
+        ) {
+            *last_branch_count = (last_directive_chain_branch_index + 1).max(*last_branch_count);
         }
-        if self.directive_depth > 0 {
-            self.directive_depth -= 1;
-        }
-        self.directive_chain_branch_index.pop_back();
         self.directive_context.pop();
     }
 
@@ -501,14 +484,15 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         if let Some(top_index) = self.directive_chain_branch_index.pop_back() {
             self.directive_chain_branch_index.push_back(top_index + 1)
         }
-        self.conditional_compilation_condition(
-            self.directive_depth > 0
-                && *self
-                    .directive_branch_index
-                    .get(self.directive_depth - 1)
-                    .unwrap()
-                    != *self.directive_chain_branch_index.back().unwrap(),
-        );
+        let prev_depth_branch_index = self
+            .directive_depth
+            .checked_sub(1)
+            .and_then(|prev_index| self.directive_branch_index.get(prev_index));
+
+        self.conditional_compilation_condition(matches!(
+            (prev_depth_branch_index, self.directive_chain_branch_index.back()),
+            (Some(index), Some(chain_index)) if index != chain_index
+        ));
     }
 
     // Utils
@@ -528,7 +512,9 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         let line_ref = LocalLogicalLineRef {
             local_logical_line_index: self.result_lines.len() - 1,
         };
-        self.pass_logical_lines.last_mut().unwrap().push(line_ref);
+        if let Some(last_logical_line) = self.pass_logical_lines.last_mut() {
+            last_logical_line.push(line_ref);
+        }
         line_ref
     }
     fn create_new_local_line_with_parent(
@@ -547,7 +533,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         self.create_new_local_line_with_parent(None)
     }
 
-    fn is_in_compiler_directive(&mut self) -> bool {
+    fn is_in_compiler_directive(&self) -> bool {
         matches!(
             self.get_current_logical_line().line_type,
             LogicalLineType::ConditionalDirective
@@ -556,48 +542,50 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
 
     fn get_current_logical_line_mut(&mut self) -> &mut LocalLogicalLine {
         let line_ref = *self.current_logical_line.last().unwrap();
-        self.get_logical_line_from_ref_mut(&line_ref)
+        self.get_logical_line_from_ref_mut(&line_ref).unwrap()
     }
 
     fn get_logical_line_from_ref_mut(
         &mut self,
         line_ref: &LocalLogicalLineRef,
-    ) -> &mut LocalLogicalLine {
-        self.result_lines
-            .get_mut(line_ref.local_logical_line_index)
-            .unwrap()
+    ) -> Option<&mut LocalLogicalLine> {
+        self.result_lines.get_mut(line_ref.local_logical_line_index)
     }
 
-    fn get_logical_line_from_ref(&mut self, line_ref: &LocalLogicalLineRef) -> &LocalLogicalLine {
-        self.result_lines
-            .get(line_ref.local_logical_line_index)
-            .unwrap()
+    fn get_logical_line_from_ref(
+        &self,
+        line_ref: &LocalLogicalLineRef,
+    ) -> Option<&LocalLogicalLine> {
+        self.result_lines.get(line_ref.local_logical_line_index)
     }
 
-    fn get_current_logical_line_ref(&mut self) -> &LocalLogicalLineRef {
+    fn get_current_logical_line_ref(&self) -> &LocalLogicalLineRef {
         self.current_logical_line.last().unwrap()
     }
 
-    fn get_current_logical_line(&mut self) -> &LocalLogicalLine {
+    fn get_current_logical_line(&self) -> &LocalLogicalLine {
         let line_ref = *self.current_logical_line.last().unwrap();
-        self.get_logical_line_from_ref(&line_ref)
+        self.get_logical_line_from_ref(&line_ref).unwrap()
     }
 
-    fn get_prev_token(&mut self) -> Option<&Token> {
-        if self.current_token_index == 0 {
-            return None;
-        }
-        self.tokens.get(self.current_token_index - 1)
-    }
-
-    fn get_current_token(&mut self) -> Option<&Token> {
+    fn get_current_token(&self) -> Option<&Token> {
         self.tokens.get(self.current_token_index)
     }
+    fn get_prev_token_type(&self) -> Option<TokenType> {
+        let prev_index = self.current_token_index.checked_sub(1)?;
+        self.tokens.get(prev_index).map(Token::get_token_type)
+    }
+    fn get_current_token_type(&self) -> Option<TokenType> {
+        self.tokens
+            .get(self.current_token_index)
+            .map(Token::get_token_type)
+    }
+    fn get_current_token_type_no_eof(&self) -> Option<TokenType> {
+        self.get_current_token_type()
+            .filter(|&token_type| token_type != Eof)
+    }
     fn is_eof(&self) -> bool {
-        match self.tokens.get(self.current_token_index) {
-            None => true,
-            Some(token) => token.get_token_type() == TokenType::Eof,
-        }
+        matches!(self.get_current_token_type(), Some(TokenType::Eof) | None)
     }
 }
 pub struct DelphiLogicalLineParser {}
@@ -622,12 +610,7 @@ impl LogicalLineParser for DelphiLogicalLineParser {
                 })
                 .collect()
         };
-        lines.sort_by(|a, b| {
-            a.get_tokens()
-                .first()
-                .unwrap()
-                .cmp(b.get_tokens().first().unwrap())
-        });
+        lines.sort_by(|a, b| a.get_tokens().first().cmp(&b.get_tokens().first()));
 
         LogicalLines::new(input, lines)
     }
