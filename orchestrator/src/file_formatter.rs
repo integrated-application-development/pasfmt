@@ -95,11 +95,17 @@ impl FileFormatter {
 
     pub fn format_files(&self, paths: Vec<&str>) {
         self.exec_format(paths, |file_path, _, formatted_output| {
-            let mut new_file = OpenOptions::new()
+            let mut new_file = match OpenOptions::new()
                 .write(true)
                 .truncate(true)
                 .open(file_path)
-                .unwrap();
+            {
+                Ok(file) => file,
+                Err(error) => {
+                    error!("Failed to open '{file_path}' for writing. {error}");
+                    return;
+                }
+            };
 
             let encoded_output = self.encoding.encode(&formatted_output).0;
             match new_file.write_all(&encoded_output) {
