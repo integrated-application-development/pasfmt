@@ -32,7 +32,6 @@ fn get_word_token_type(input: &str) -> TokenType {
         "and" => Op(And),
         "array" => Keyword(Array),
         "as" => Op(As),
-        "asm" => Keyword(Asm),
         "assembler" => IdentifierOrKeyword(Assembler),
         "at" => IdentifierOrKeyword(At),
         "automated" => IdentifierOrKeyword(Automated),
@@ -276,6 +275,72 @@ fn eof_token(input: &str) -> IResult<&str, (&str, (&str, TokenType))> {
     map(take_whitespace, |whitespace| (whitespace, ("", Eof)))(input)
 }
 
+fn asm_label(input: &str) -> IResult<&str, (&str, TokenType)> {
+    map(recognize(tuple((many1(char('@')), identifier))), |text| {
+        (text, TokenType::Identifier)
+    })(input)
+}
+
+fn quoted_asm_string(input: &str) -> IResult<&str, &str> {
+    delimited(
+        tag("\""),
+        // inline assembly escapes double quotes using backslashes
+        recognize(many0(alt((tag("\\\""), is_not("\""))))),
+        tag("\""),
+    )(input)
+}
+
+fn asm_string_literal(input: &str) -> IResult<&str, (&str, TokenType)> {
+    map(recognize(quoted_asm_string), |text| {
+        (text, TokenType::TextLiteral)
+    })(input)
+}
+
+fn asm_identifier(input: &str) -> IResult<&str, (&str, TokenType)> {
+    let (input, ident) = identifier(input)?;
+
+    if ident.eq_ignore_ascii_case("end") {
+        fail(input)
+    } else {
+        Ok((input, (ident, TokenType::Identifier)))
+    }
+}
+
+fn asm_block(input: &str) -> IResult<&str, Vec<(&str, (&str, TokenType))>> {
+    let (mut input, asm) = tuple((
+        take_whitespace,
+        tag_no_case("asm").map(|text| (text, Keyword(Asm))),
+    ))(input)?;
+    let mut tokens = vec![asm];
+
+    while let Ok((next_input, next)) = pair(
+        take_whitespace,
+        alt((
+            asm_identifier,
+            asm_label,
+            line_comment,
+            compiler_directive,
+            block_comment,
+            operator,
+            number_literal,
+            text_literal,
+            asm_string_literal,
+        )),
+    )(input)
+    {
+        input = next_input;
+        tokens.push(next);
+    }
+
+    let (input, end) = tuple((
+        take_whitespace,
+        tag_no_case("end").map(|text| (text, Keyword(End))),
+    ))(input)?;
+    tokens.push(end);
+
+    Ok((input, tokens))
+}
+
 fn identifier_or_keyword_and_type(input: &str) -> IResult<&str, (&str, TokenType)> {
     map(identifier_or_keyword, |token| {
         (token, get_word_token_type(token))
@@ -445,8 +510,24 @@ fn whitespace_and_token(input: &str) -> IResult<&str, (&str, (&str, TokenType))>
     )(input)
 }
 
+fn parse_delphi_file(mut input: &str) -> IResult<&str, Vec<(&str, (&str, TokenType))>> {
+    let mut result = vec![];
+    loop {
+        if let Ok((remaining, new_result)) = asm_block(input) {
+            result.extend(new_result);
+            input = remaining;
+        } else if let Ok((remaining, new_result)) = whitespace_and_token(input) {
+            result.push(new_result);
+            input = remaining;
+        } else {
+            break;
+        }
+    }
+    Ok((input, result))
+}
+
 fn parse_file(input: &str) -> Vec<Token> {
-    let (remaining, mut token_data) = many0(whitespace_and_token)(input).unwrap();
+    let (remaining, mut token_data) = parse_delphi_file(input).unwrap();
     let (remaining, eof_token_data) = eof_token(remaining).unwrap();
     token_data.push(eof_token_data);
 
@@ -765,7 +846,6 @@ mod tests {
             ("add", IdentifierOrKeyword(Add)),
             ("align", IdentifierOrKeyword(Align)),
             ("array", Keyword(Array)),
-            ("asm", Keyword(Asm)),
             ("assembler", IdentifierOrKeyword(Assembler)),
             ("at", IdentifierOrKeyword(At)),
             ("automated", IdentifierOrKeyword(Automated)),
@@ -905,6 +985,195 @@ mod tests {
         run_test(
             "? ? ?",
             vec![("?", Unknown), ("?", Unknown), ("?", Unknown)],
+        );
+    }
+
+    #[test]
+    fn inline_assembly_with_end_in_label() {
+        run_test(
+            indoc! {"
+            asm
+            @@end:
+                XOR RBX, RBX
+            end
+            "},
+            vec![
+                ("asm", Keyword(Asm)),
+                ("@@end", Identifier),
+                (":", Op(Colon)),
+                ("XOR", Identifier),
+                ("RBX", Identifier),
+                (",", Op(Comma)),
+                ("RBX", Identifier),
+                ("end", Keyword(End)),
+            ],
+        );
+    }
+    #[test]
+    fn inline_assembly_with_end_in_ifdef() {
+        run_test(
+            indoc! {"
+            asm
+                XOR RBX, RBX {$ifdef End}
+            end
+            "},
+            vec![
+                ("asm", Keyword(Asm)),
+                ("XOR", Identifier),
+                ("RBX", Identifier),
+                (",", Op(Comma)),
+                ("RBX", Identifier),
+                ("{$ifdef End}", ConditionalDirective(Ifdef)),
+                ("end", Keyword(End)),
+            ],
+        );
+    }
+    #[test]
+    fn inline_assembly_with_end_in_comment() {
+        run_test(
+            indoc! {"
+            asm
+                XOR RBX, RBX // End
+            end
+            "},
+            vec![
+                ("asm", Keyword(Asm)),
+                ("XOR", Identifier),
+                ("RBX", Identifier),
+                (",", Op(Comma)),
+                ("RBX", Identifier),
+                ("// End", Comment(CommentKind::InlineLine)),
+                ("end", Keyword(End)),
+            ],
+        );
+    }
+    #[test]
+    fn inline_assembly_with_end_in_keyword() {
+        run_test(
+            indoc! {"
+            asm
+                XOR RBX, IfEnd
+            end
+            "},
+            vec![
+                ("asm", Keyword(Asm)),
+                ("XOR", Identifier),
+                ("RBX", Identifier),
+                (",", Op(Comma)),
+                ("IfEnd", Identifier),
+                ("end", Keyword(End)),
+            ],
+        );
+    }
+    #[test]
+    fn inline_assembly_with_labels() {
+        run_test(
+            indoc! {"
+            asm
+            @@ClearRBX:
+                XOR RBX, RBX
+            end
+            "},
+            vec![
+                ("asm", Keyword(Asm)),
+                ("@@ClearRBX", Identifier),
+                (":", Op(Colon)),
+                ("XOR", Identifier),
+                ("RBX", Identifier),
+                (",", Op(Comma)),
+                ("RBX", Identifier),
+                ("end", Keyword(End)),
+            ],
+        );
+    }
+    #[test]
+    fn inline_assembly_with_double_quotes() {
+        run_test(
+            indoc! {"
+            asm
+                CMP AL,\"'\"
+                XOR RBX, RBX
+            end
+            "},
+            vec![
+                ("asm", Keyword(Asm)),
+                ("CMP", Identifier),
+                ("AL", Identifier),
+                (",", Op(Comma)),
+                ("\"'\"", TextLiteral),
+                ("XOR", Identifier),
+                ("RBX", Identifier),
+                (",", Op(Comma)),
+                ("RBX", Identifier),
+                ("end", Keyword(End)),
+            ],
+        );
+    }
+
+    #[test]
+    fn inline_assembly_with_escaped_double_quotes() {
+        run_test(
+            indoc! {r#"
+            asm
+                CMP AL,"\""
+            end
+            "#},
+            vec![
+                ("asm", Keyword(Asm)),
+                ("CMP", Identifier),
+                ("AL", Identifier),
+                (",", Op(Comma)),
+                (r#""\"""#, TextLiteral),
+                ("end", Keyword(End)),
+            ],
+        );
+    }
+
+    #[test]
+    fn inline_assembly_with_comments() {
+        run_test(
+            indoc! {"
+            asm
+                MOV RAX, 0 // comment
+                XOR RBX, RBX
+            end
+            "},
+            vec![
+                ("asm", Keyword(Asm)),
+                ("MOV", Identifier),
+                ("RAX", Identifier),
+                (",", Op(Comma)),
+                ("0", NumberLiteral(Decimal)),
+                ("// comment", Comment(CommentKind::InlineLine)),
+                ("XOR", Identifier),
+                ("RBX", Identifier),
+                (",", Op(Comma)),
+                ("RBX", Identifier),
+                ("end", Keyword(End)),
+            ],
+        );
+    }
+    #[test]
+    fn inline_assembly() {
+        run_test(
+            indoc! {"
+            asm
+                MOV RAX, 0
+                XOR RBX, RBX
+            end
+            "},
+            vec![
+                ("asm", Keyword(Asm)),
+                ("MOV", Identifier),
+                ("RAX", Identifier),
+                (",", Op(Comma)),
+                ("0", NumberLiteral(Decimal)),
+                ("XOR", Identifier),
+                ("RBX", Identifier),
+                (",", Op(Comma)),
+                ("RBX", Identifier),
+                ("end", Keyword(End)),
+            ],
         );
     }
 }
