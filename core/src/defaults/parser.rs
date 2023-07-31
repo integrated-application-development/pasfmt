@@ -31,6 +31,7 @@ struct LocalLogicalLineRef {
 struct InternalDelphiLogicalLineParser<'a> {
     tokens: &'a Vec<Token<'a>>,
     current_token_index: usize,
+    result_hash: HashSet<LocalLogicalLine>,
     result_lines: Vec<LocalLogicalLine>,
     comments_before_next_token: Vec<usize>,
     pass_logical_lines: Vec<Vec<LocalLogicalLineRef>>,
@@ -47,6 +48,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         InternalDelphiLogicalLineParser {
             tokens,
             current_token_index: 0,
+            result_hash: Default::default(),
             result_lines: vec![],
             comments_before_next_token: vec![],
             pass_logical_lines: vec![vec![]],
@@ -69,11 +71,14 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
     }
 
     fn parse(&mut self) {
+        self.reset_data();
         loop {
-            self.reset_data();
             self.read_next_token(&mut vec![]);
             self.parse_file();
             self.parsing_pass += 1;
+
+            self.result_hash.extend(self.result_lines.drain(0..));
+            self.reset_data();
 
             while matches!(
                 (
@@ -102,10 +107,11 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         }
         self.add_logical_line();
         self.set_logical_line_type(LogicalLineType::Eof);
-        let eof_token = self.current_token_index;
+        let eof_token = self.tokens.len() - 1;
         self.get_current_logical_line_mut()
             .token_indices
             .push(eof_token);
+        self.result_hash.extend(self.result_lines.drain(0..));
     }
 
     fn parse_file(&mut self) {
@@ -595,11 +601,9 @@ impl LogicalLineParser for DelphiLogicalLineParser {
             let mut parser = InternalDelphiLogicalLineParser::new(&input);
             parser.parse();
             parser
-                .result_lines
+                .result_hash
                 .into_iter()
                 .filter(|line| !line.token_indices.is_empty())
-                .collect::<HashSet<_>>()
-                .into_iter()
                 .map(|line| {
                     LogicalLine::new(
                         line.parent_token,
