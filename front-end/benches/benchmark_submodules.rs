@@ -57,7 +57,7 @@ fn init_submodules() {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let source_dir = std::fs::canonicalize(Path::new(file!()).parent().unwrap()).unwrap();
+    let source_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("benches");
     set_current_dir(&source_dir)
         .unwrap_or_else(|_| panic!("Failed to change into the source directory: {source_dir:?}"));
 
