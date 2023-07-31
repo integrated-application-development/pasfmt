@@ -30,9 +30,9 @@ impl FileFormatter {
         warn!("'{}' is not a valid file path/glob", path);
     }
 
-    fn get_valid_files(&self, paths: Vec<&str>) -> Vec<String> {
+    fn get_valid_files<S: AsRef<str>>(&self, paths: &[S]) -> Vec<String> {
         let mut valid_paths = vec![];
-        paths.iter().for_each(|path_str| {
+        paths.iter().map(AsRef::as_ref).for_each(|path_str| {
             let path = Path::new(path_str);
             if path.is_dir() {
                 valid_paths.extend(WalkDir::new(path_str).into_iter().filter_map(|entry| {
@@ -73,7 +73,7 @@ impl FileFormatter {
         Ok(self.encoding.decode(&file_bytes[..]).0.into_owned())
     }
 
-    fn exec_format<T>(&self, paths: Vec<&str>, result_operation: T)
+    fn exec_format<S: AsRef<str>, T>(&self, paths: &[S], result_operation: T)
     where
         T: Fn(&str, &str, String) + Sync,
     {
@@ -93,7 +93,7 @@ impl FileFormatter {
         });
     }
 
-    pub fn format_files(&self, paths: Vec<&str>) {
+    pub fn format_files<S: AsRef<str>>(&self, paths: &[S]) {
         self.exec_format(paths, |file_path, _, formatted_output| {
             let mut new_file = match OpenOptions::new()
                 .write(true)
@@ -118,13 +118,13 @@ impl FileFormatter {
         let formatted_input = self.formatter.format(input);
         println!("{}", formatted_input);
     }
-    pub fn format_files_to_stdout(&self, paths: Vec<&str>) {
+    pub fn format_files_to_stdout<S: AsRef<str>>(&self, paths: &[S]) {
         self.exec_format(paths, |file_path, _, formatted_output| {
             println!("{}:", file_path);
             println!("{}", formatted_output);
         })
     }
-    pub fn check_files(&self, paths: Vec<&str>) {
+    pub fn check_files<S: AsRef<str>>(&self, paths: &[S]) {
         self.exec_format(paths, |file_path, file_contents, formatted_output| {
             if formatted_output != file_contents {
                 println!("VERIFY: '{}' has different formatting", file_path);
