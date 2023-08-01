@@ -140,6 +140,9 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                     self.parse_block();
                     self.add_logical_line();
                 }
+                Keyword(Asm) => {
+                    self.parse_asm_block();
+                }
                 Keyword(End) => {
                     if opening_begin.is_some() {
                         return;
@@ -164,6 +167,45 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         self.get_current_logical_line_mut().level -= 1;
         // for end
         self.next_token();
+    }
+
+    fn parse_asm_block(&mut self) {
+        self.next_token();
+        self.add_logical_line();
+
+        self.get_current_logical_line_mut().level += 1;
+        self.parse_asm_instructions();
+
+        self.get_current_logical_line_mut().level -= 1;
+        // for end
+        self.next_token();
+        self.add_logical_line();
+    }
+
+    fn parse_asm_instructions(&mut self) {
+        let add_asm_instruction_line = |parser: &mut InternalDelphiLogicalLineParser| {
+            parser.add_logical_line();
+            parser.set_logical_line_type(LogicalLineType::AsmInstruction);
+        };
+
+        loop {
+            let token = match self.get_current_token() {
+                None => break,
+                Some(token) if matches!(token.get_token_type(), Keyword(End) | Eof) => break,
+                Some(token) => token,
+            };
+
+            if matches!(token.get_token_type(), Op(Semicolon)) {
+                self.next_token();
+                add_asm_instruction_line(self);
+            } else if token.get_leading_whitespace().contains('\n') {
+                add_asm_instruction_line(self);
+                self.next_token();
+            } else {
+                self.next_token();
+            }
+        }
+        self.add_logical_line();
     }
 
     fn parse_structural_element(&mut self) {
@@ -871,6 +913,135 @@ mod tests {
                 LogicalLine::new(None, 0, vec![0, 1, 2], LogicalLineType::Unknown),
                 LogicalLine::new(None, 0, vec![3], LogicalLineType::Unknown),
                 LogicalLine::new(None, 0, vec![4, 5, 6, 7, 8], LogicalLineType::UsesClause),
+            ],
+        );
+    }
+
+    #[test]
+    fn parse_inline_assembly_nested_semicolon_separated() {
+        run_test(
+            indoc! {"
+                begin
+                    asm
+                        MOV EAX, 1; XOR EAX, EAX
+                    end
+                end"
+            },
+            vec![
+                LogicalLine::new(None, 0, vec![0], LogicalLineType::Unknown),
+                LogicalLine::new(None, 1, vec![1], LogicalLineType::Unknown),
+                LogicalLine::new(
+                    None,
+                    2,
+                    vec![2, 3, 4, 5, 6],
+                    LogicalLineType::AsmInstruction,
+                ),
+                LogicalLine::new(None, 2, vec![7, 8, 9, 10], LogicalLineType::AsmInstruction),
+                LogicalLine::new(None, 1, vec![11], LogicalLineType::Unknown),
+                LogicalLine::new(None, 0, vec![12], LogicalLineType::Unknown),
+            ],
+        );
+    }
+
+    #[test]
+    fn parse_inline_assembly_nested_newline_separated() {
+        run_test(
+            indoc! {"
+                begin
+                    asm
+                        MOV EAX, 1
+                        XOR EAX, EAX
+                    end
+                end"
+            },
+            vec![
+                LogicalLine::new(None, 0, vec![0], LogicalLineType::Unknown),
+                LogicalLine::new(None, 1, vec![1], LogicalLineType::Unknown),
+                LogicalLine::new(
+                    None,
+                    2,
+                    vec![2, 3, 4, 5],
+                    LogicalLineType::AsmInstruction,
+                ),
+                LogicalLine::new(None, 2, vec![6, 7, 8, 9], LogicalLineType::AsmInstruction),
+                LogicalLine::new(None, 1, vec![10], LogicalLineType::Unknown),
+                LogicalLine::new(None, 0, vec![11], LogicalLineType::Unknown),
+            ],
+        );
+    }
+
+    #[test]
+    fn parse_inline_assembly_nested() {
+        run_test(
+            indoc! {"
+                begin
+                    asm
+                        MOV EAX, 1
+                    end
+                end"
+            },
+            vec![
+                LogicalLine::new(None, 0, vec![0], LogicalLineType::Unknown),
+                LogicalLine::new(None, 1, vec![1], LogicalLineType::Unknown),
+                LogicalLine::new(None, 2, vec![2, 3, 4, 5], LogicalLineType::AsmInstruction),
+                LogicalLine::new(None, 1, vec![6], LogicalLineType::Unknown),
+                LogicalLine::new(None, 0, vec![7], LogicalLineType::Unknown),
+            ],
+        );
+    }
+
+    #[test]
+    fn parse_inline_assembly_top_level_semicolon_separated() {
+        run_test(
+            indoc! {"
+                asm
+                    MOV EAX, 1; XOR EAX, EAX
+                end"
+            },
+            vec![
+                LogicalLine::new(None, 0, vec![0], LogicalLineType::Unknown),
+                LogicalLine::new(
+                    None,
+                    1,
+                    vec![1, 2, 3, 4, 5],
+                    LogicalLineType::AsmInstruction,
+                ),
+                LogicalLine::new(None, 1, vec![6, 7, 8, 9], LogicalLineType::AsmInstruction),
+                LogicalLine::new(None, 0, vec![10], LogicalLineType::Unknown),
+            ],
+        );
+    }
+
+    #[test]
+    fn parse_inline_assembly_top_level_newline_separated() {
+        run_test(
+            indoc! {"
+                asm
+                    MOV EAX, 1
+                    XOR EAX, EAX
+                end"
+            },
+            vec![
+                LogicalLine::new(None, 0, vec![0], LogicalLineType::Unknown),
+                LogicalLine::new(None, 1, vec![1, 2, 3, 4], LogicalLineType::AsmInstruction),
+                LogicalLine::new(None, 1, vec![5, 6, 7, 8], LogicalLineType::AsmInstruction),
+                LogicalLine::new(None, 0, vec![9], LogicalLineType::Unknown),
+            ],
+        );
+    }
+
+    #[test]
+    fn parse_inline_assembly_top_level() {
+        run_test(
+            indoc! {"
+                asm
+                    MOV EAX, 1
+                end"
+            },
+            vec![
+                LogicalLine::new(None, 0, vec![0], LogicalLineType::Unknown),
+                LogicalLine::new(None, 1, vec![1, 2, 3, 4], LogicalLineType::AsmInstruction),
+                LogicalLine::new(None, 0, vec![5], LogicalLineType::Unknown),
             ],
         );
     }

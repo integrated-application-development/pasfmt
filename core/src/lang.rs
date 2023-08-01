@@ -209,6 +209,7 @@ pub enum LogicalLineType {
     ConditionalDirective,
     Eof,
     UsesClause,
+    AsmInstruction,
     Unknown,
 }
 #[derive(Debug, PartialEq, Eq)]
