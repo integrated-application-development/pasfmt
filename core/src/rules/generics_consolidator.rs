@@ -80,13 +80,8 @@ mod tests {
     use itertools::Itertools;
     use spectral::prelude::*;
 
-    use super::*;
-
-    use crate::lang::IdentifierOrKeywordKind;
-    use crate::lang::OperatorKind;
-    use crate::lang::RefToken;
-    use crate::lang::TokenType;
     use crate::lang::TokenType::*;
+    use crate::prelude::*;
 
     fn to_tokens(types: &[TokenType]) -> Vec<Token> {
         types

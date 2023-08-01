@@ -296,12 +296,7 @@ impl BuildFormatter for FormatterBuilder<BeforeBuild> {
 
 #[cfg(test)]
 mod tests {
-    use crate::defaults::{
-        lexer::DelphiLexer, parser::DelphiLogicalLineParser,
-        reconstructor::DelphiLogicalLinesReconstructor,
-    };
-
-    use super::*;
+    use crate::prelude::*;
     use indoc::indoc;
     use spectral::prelude::*;
 

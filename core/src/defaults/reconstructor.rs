@@ -43,7 +43,7 @@ impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::prelude::*;
     use spectral::prelude::*;
 
     fn run_test(input: FormattedTokens, expected_output: &str) {

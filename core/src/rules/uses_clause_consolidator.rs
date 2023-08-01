@@ -106,10 +106,7 @@ mod tests {
     use spectral::prelude::*;
 
     use super::*;
-    use crate::{
-        defaults::lexer::DelphiLexer, defaults::parser::DelphiLogicalLineParser, traits::Lexer,
-        traits::LogicalLineParser,
-    };
+    use crate::prelude::*;
     use indoc::indoc;
 
     fn run_test(input: &str, expected_lines: Vec<LogicalLine>) {

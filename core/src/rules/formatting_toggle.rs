@@ -70,12 +70,7 @@ mod tests {
     use indoc::indoc;
     use spectral::prelude::*;
 
-    use super::*;
-
-    use crate::defaults::lexer::DelphiLexer;
-    use crate::defaults::parser::DelphiLogicalLineParser;
-    use crate::defaults::reconstructor::DelphiLogicalLinesReconstructor;
-    use crate::formatter::*;
+    use crate::prelude::*;
     use crate::traits::LogicalLineFormatter;
 
     struct AddSpaceBeforeEverything {}

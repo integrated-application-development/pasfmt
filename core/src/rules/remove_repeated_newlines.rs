@@ -20,11 +20,7 @@ impl LogicalLineFormatter for RemoveRepeatedNewlines {
 mod tests {
     use spectral::prelude::*;
 
-    use super::*;
-    use crate::{
-        defaults::lexer::DelphiLexer, defaults::parser::DelphiLogicalLineParser,
-        defaults::reconstructor::DelphiLogicalLinesReconstructor, formatter::*,
-    };
+    use crate::prelude::*;
 
     fn run_test(input: &'static str, output: &'static str) {
         let formatter = Formatter::builder()

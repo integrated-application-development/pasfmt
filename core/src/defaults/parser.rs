@@ -957,12 +957,7 @@ mod tests {
             vec![
                 LogicalLine::new(None, 0, vec![0], LogicalLineType::Unknown),
                 LogicalLine::new(None, 1, vec![1], LogicalLineType::Unknown),
-                LogicalLine::new(
-                    None,
-                    2,
-                    vec![2, 3, 4, 5],
-                    LogicalLineType::AsmInstruction,
-                ),
+                LogicalLine::new(None, 2, vec![2, 3, 4, 5], LogicalLineType::AsmInstruction),
                 LogicalLine::new(None, 2, vec![6, 7, 8, 9], LogicalLineType::AsmInstruction),
                 LogicalLine::new(None, 1, vec![10], LogicalLineType::Unknown),
                 LogicalLine::new(None, 0, vec![11], LogicalLineType::Unknown),

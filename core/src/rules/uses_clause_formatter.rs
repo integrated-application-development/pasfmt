@@ -147,16 +147,9 @@ impl LogicalLineFormatter for UsesClauseFormatter {
 
 #[cfg(test)]
 mod tests {
+    use crate::prelude::*;
     use indoc::indoc;
     use spectral::prelude::*;
-
-    use super::*;
-    use crate::{
-        defaults::lexer::DelphiLexer, defaults::parser::DelphiLogicalLineParser,
-        defaults::reconstructor::DelphiLogicalLinesReconstructor, formatter::*,
-        formatter_selector::FormatterSelector,
-        rules::uses_clause_consolidator::UsesClauseConsolidator,
-    };
 
     fn run_test(input: &'static str, expected_output: &'static str) {
         let uses_line_consolidator = UsesClauseConsolidator {};

@@ -164,14 +164,8 @@ impl LogicalLineFormatter for OperatorSpacing {
 
 #[cfg(test)]
 mod tests {
+    use crate::prelude::*;
     use spectral::prelude::*;
-
-    use super::*;
-    use crate::{
-        defaults::lexer::DelphiLexer, defaults::parser::DelphiLogicalLineParser,
-        defaults::reconstructor::DelphiLogicalLinesReconstructor, formatter::*,
-        rules::generics_consolidator::DistinguishGenericTypeParamsConsolidator,
-    };
 
     fn run_test(input: &'static str, output: &'static str) {
         let formatter = Formatter::builder()

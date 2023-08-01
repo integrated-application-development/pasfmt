@@ -32,15 +32,7 @@ where
 #[cfg(test)]
 mod tests {
 
-    use crate::{
-        defaults::{
-            lexer::DelphiLexer, parser::DelphiLogicalLineParser,
-            reconstructor::DelphiLogicalLinesReconstructor,
-        },
-        formatter::*,
-    };
-
-    use super::*;
+    use crate::prelude::*;
     use spectral::prelude::*;
 
     fn run_test(formatter: Formatter, input: &str, expected_output: &str) {

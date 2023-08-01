@@ -1,23 +1,5 @@
-use pasfmt_core::{
-    defaults::{
-        lexer::DelphiLexer, parser::DelphiLogicalLineParser,
-        reconstructor::DelphiLogicalLinesReconstructor,
-    },
-    formatter::{Formatter, *},
-    formatter_selector::FormatterSelector,
-    lang::{LogicalLineType, ReconstructionSettings},
-    rules::{
-        eof_newline::EofNewline, formatting_toggle::FormattingToggler,
-        generics_consolidator::DistinguishGenericTypeParamsConsolidator,
-        operator_spacing::OperatorSpacing, remove_repeated_newlines::RemoveRepeatedNewlines,
-        uses_clause_consolidator::UsesClauseConsolidator,
-        uses_clause_formatter::UsesClauseFormatter,
-    },
-};
-use pasfmt_orchestrator::{
-    command_line::PasFmtConfiguration, file_formatter::FileFormatter,
-    formatting_orchestrator::FormattingOrchestrator,
-};
+use pasfmt_core::prelude::*;
+use pasfmt_orchestrator::predule::*;
 use serde_derive::Deserialize;
 
 #[derive(Deserialize, Default, Debug)]
