@@ -1,7 +1,7 @@
 use log::*;
 use std::{
     fs::{File, OpenOptions},
-    io::{Read, Write},
+    io::{Read, Seek, SeekFrom, Write},
     path::Path,
 };
 
@@ -62,25 +62,38 @@ impl FileFormatter {
         valid_paths
     }
 
-    fn get_file_contents(&self, file_path: &str) -> Result<String, String> {
-        let mut file =
-            File::open(file_path).map_err(|e| format!("Failed to open '{}', {}", file_path, e))?;
-
+    fn get_file_contents(&self, file: &mut File) -> std::io::Result<String> {
         let mut file_bytes = Vec::new();
-        file.read_to_end(&mut file_bytes)
-            .map_err(|e| format!("Failed to read '{}', {}", file_path, e))?;
+        file.read_to_end(&mut file_bytes)?;
 
         Ok(self.encoding.decode(&file_bytes[..]).0.into_owned())
     }
 
-    fn exec_format<S: AsRef<str>, T>(&self, paths: &[S], result_operation: T)
-    where
-        T: Fn(&str, &str, String) + Sync,
+    fn exec_format<S: AsRef<str>, T>(
+        &self,
+        paths: &[S],
+        mut open_options: OpenOptions,
+        result_operation: T,
+    ) where
+        T: Fn(&mut File, &str, &str, String) -> Result<(), String> + Sync,
     {
+        open_options.read(true);
+
         let valid_paths: Vec<_> = self.get_valid_files(paths);
 
         valid_paths.into_par_iter().for_each(|file_path| {
-            let file_contents = match self.get_file_contents(&file_path) {
+            let mut file = match open_options.open(&file_path) {
+                Ok(file) => file,
+                Err(e) => {
+                    error!("Failed to open '{}', {}", &file_path, e);
+                    return;
+                }
+            };
+
+            let file_contents = match self
+                .get_file_contents(&mut file)
+                .map_err(|e| format!("Failed to read '{}', {}", file_path, e))
+            {
                 Ok(contents) => contents,
                 Err(error) => {
                     error!("{}", error);
@@ -89,47 +102,55 @@ impl FileFormatter {
             };
 
             let formatted_file = self.formatter.format(&file_contents);
-            result_operation(&file_path, &file_contents, formatted_file);
+            if let Err(e) = result_operation(&mut file, &file_path, &file_contents, formatted_file)
+            {
+                error!("{e}");
+            }
         });
     }
 
     pub fn format_files<S: AsRef<str>>(&self, paths: &[S]) {
-        self.exec_format(paths, |file_path, _, formatted_output| {
-            let mut new_file = match OpenOptions::new()
-                .write(true)
-                .truncate(true)
-                .open(file_path)
-            {
-                Ok(file) => file,
-                Err(error) => {
-                    error!("Failed to open '{file_path}' for writing. {error}");
-                    return;
-                }
-            };
-
-            let encoded_output = self.encoding.encode(&formatted_output).0;
-            match new_file.write_all(&encoded_output) {
-                Ok(_) => {}
-                Err(error) => error!("Failed to write to '{}', {}", file_path, error),
-            }
-        })
+        self.exec_format(
+            paths,
+            OpenOptions::new().write(true).to_owned(),
+            |file, file_path, _, formatted_output| {
+                let encoded_output = self.encoding.encode(&formatted_output).0;
+                file.set_len(0)
+                    .map_err(|e| format!("Failed to truncate file: {file_path}, {e}"))?;
+                file.seek(SeekFrom::End(0))
+                    .map_err(|e| format!("Failed to seek to start of file: {file_path}, {e}"))?;
+                file.write_all(&encoded_output)
+                    .map_err(|e| format!("Failed to write to '{file_path}', {e}"))?;
+                Ok(())
+            },
+        )
     }
     pub fn format_stdin_to_stdout(&self, input: &str) {
         let formatted_input = self.formatter.format(input);
         println!("{}", formatted_input);
     }
     pub fn format_files_to_stdout<S: AsRef<str>>(&self, paths: &[S]) {
-        self.exec_format(paths, |file_path, _, formatted_output| {
-            println!("{}:", file_path);
-            println!("{}", formatted_output);
-        })
+        self.exec_format(
+            paths,
+            OpenOptions::new(),
+            |_, file_path, _, formatted_output| {
+                println!("{}:", file_path);
+                println!("{}", formatted_output);
+                Ok(())
+            },
+        )
     }
     pub fn check_files<S: AsRef<str>>(&self, paths: &[S]) {
-        self.exec_format(paths, |file_path, file_contents, formatted_output| {
-            if formatted_output != file_contents {
-                println!("VERIFY: '{}' has different formatting", file_path);
-            }
-        })
+        self.exec_format(
+            paths,
+            OpenOptions::new(),
+            |_, file_path, file_contents, formatted_output| {
+                if formatted_output != file_contents {
+                    println!("VERIFY: '{}' has different formatting", file_path);
+                }
+                Ok(())
+            },
+        )
     }
 }
 
