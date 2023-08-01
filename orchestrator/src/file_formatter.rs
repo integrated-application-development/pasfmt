@@ -134,8 +134,7 @@ impl FileFormatter {
             paths,
             OpenOptions::new(),
             |_, file_path, _, formatted_output| {
-                println!("{}:", file_path);
-                println!("{}", formatted_output);
+                println!("{}:\n{}", file_path, formatted_output);
                 Ok(())
             },
         )
