@@ -23,6 +23,9 @@ impl Lexer for DelphiLexer {
     }
 }
 
+type ContentAndTokenType<'a> = (&'a str, TokenType);
+type WhitespaceAndToken<'a> = (&'a str, ContentAndTokenType<'a>);
+
 fn get_word_token_type(input: &str) -> TokenType {
     match input.to_lowercase().as_str() {
         "absolute" => IdentifierOrKeyword(Absolute),
@@ -267,15 +270,15 @@ fn quoted_string(input: &str) -> IResult<&str, &str> {
 }
 // Tokens
 
-fn unknown(input: &str) -> IResult<&str, (&str, TokenType)> {
+fn unknown(input: &str) -> IResult<&str, ContentAndTokenType> {
     map(take(1usize), |token| (token, Unknown))(input)
 }
 
-fn eof_token(input: &str) -> IResult<&str, (&str, (&str, TokenType))> {
+fn eof_token(input: &str) -> IResult<&str, WhitespaceAndToken> {
     map(take_whitespace, |whitespace| (whitespace, ("", Eof)))(input)
 }
 
-fn asm_label(input: &str) -> IResult<&str, (&str, TokenType)> {
+fn asm_label(input: &str) -> IResult<&str, ContentAndTokenType> {
     map(recognize(tuple((many1(char('@')), identifier))), |text| {
         (text, TokenType::Identifier)
     })(input)
@@ -290,13 +293,13 @@ fn quoted_asm_string(input: &str) -> IResult<&str, &str> {
     )(input)
 }
 
-fn asm_string_literal(input: &str) -> IResult<&str, (&str, TokenType)> {
+fn asm_string_literal(input: &str) -> IResult<&str, ContentAndTokenType> {
     map(recognize(quoted_asm_string), |text| {
         (text, TokenType::TextLiteral)
     })(input)
 }
 
-fn asm_identifier(input: &str) -> IResult<&str, (&str, TokenType)> {
+fn asm_identifier(input: &str) -> IResult<&str, ContentAndTokenType> {
     let (input, ident) = identifier(input)?;
 
     if ident.eq_ignore_ascii_case("end") {
@@ -306,7 +309,7 @@ fn asm_identifier(input: &str) -> IResult<&str, (&str, TokenType)> {
     }
 }
 
-fn asm_block(input: &str) -> IResult<&str, Vec<(&str, (&str, TokenType))>> {
+fn asm_block(input: &str) -> IResult<&str, Vec<WhitespaceAndToken>> {
     let (mut input, asm) = tuple((
         take_whitespace,
         tag_no_case("asm").map(|text| (text, Keyword(Asm))),
@@ -341,13 +344,13 @@ fn asm_block(input: &str) -> IResult<&str, Vec<(&str, (&str, TokenType))>> {
     Ok((input, tokens))
 }
 
-fn identifier_or_keyword_and_type(input: &str) -> IResult<&str, (&str, TokenType)> {
+fn identifier_or_keyword_and_type(input: &str) -> IResult<&str, ContentAndTokenType> {
     map(identifier_or_keyword, |token| {
         (token, get_word_token_type(token))
     })(input)
 }
 
-fn text_literal(input: &str) -> IResult<&str, (&str, TokenType)> {
+fn text_literal(input: &str) -> IResult<&str, ContentAndTokenType> {
     map(
         alt((
             recognize(tuple((
@@ -365,7 +368,7 @@ fn text_literal(input: &str) -> IResult<&str, (&str, TokenType)> {
     )(input)
 }
 
-fn number_literal(input: &str) -> IResult<&str, (&str, TokenType)> {
+fn number_literal(input: &str) -> IResult<&str, ContentAndTokenType> {
     alt((
         map(
             recognize(tuple((
@@ -387,7 +390,7 @@ fn number_literal(input: &str) -> IResult<&str, (&str, TokenType)> {
     ))(input)
 }
 
-fn compiler_directive_identifier(input: &str) -> IResult<&str, (&str, TokenType)> {
+fn compiler_directive_identifier(input: &str) -> IResult<&str, ContentAndTokenType> {
     let (remaining, text) = alt((
         tag_no_case("ifdef"),
         tag_no_case("ifndef"),
@@ -413,7 +416,7 @@ fn compiler_directive_identifier(input: &str) -> IResult<&str, (&str, TokenType)
     Ok((remaining, (text, token_type)))
 }
 
-fn compiler_directive(input: &str) -> IResult<&str, (&str, TokenType)> {
+fn compiler_directive(input: &str) -> IResult<&str, ContentAndTokenType> {
     let mut parts = alt((
         tuple((
             tag("{$"),
@@ -433,7 +436,7 @@ fn compiler_directive(input: &str) -> IResult<&str, (&str, TokenType)> {
     Ok((remaining, (token_text, token_type)))
 }
 
-fn block_comment(input: &str) -> IResult<&str, (&str, TokenType)> {
+fn block_comment(input: &str) -> IResult<&str, ContentAndTokenType> {
     map(
         recognize(alt((
             tuple((tag("{"), take_until("}"), tag("}"))),
@@ -451,14 +454,14 @@ fn block_comment(input: &str) -> IResult<&str, (&str, TokenType)> {
     )(input)
 }
 
-fn line_comment(input: &str) -> IResult<&str, (&str, TokenType)> {
+fn line_comment(input: &str) -> IResult<&str, ContentAndTokenType> {
     map(
         recognize(tuple((tag("//"), take_till(is_newline)))),
         |result| (result, Comment(CommentKind::Line)),
     )(input)
 }
 
-fn operator(input: &str) -> IResult<&str, (&str, TokenType)> {
+fn operator(input: &str) -> IResult<&str, ContentAndTokenType> {
     map(
         alt((
             alt((
@@ -494,7 +497,7 @@ fn operator(input: &str) -> IResult<&str, (&str, TokenType)> {
     )(input)
 }
 
-fn whitespace_and_token(input: &str) -> IResult<&str, (&str, (&str, TokenType))> {
+fn whitespace_and_token(input: &str) -> IResult<&str, WhitespaceAndToken> {
     pair(
         take_whitespace,
         alt((
@@ -510,7 +513,7 @@ fn whitespace_and_token(input: &str) -> IResult<&str, (&str, (&str, TokenType))>
     )(input)
 }
 
-fn parse_delphi_file(mut input: &str) -> IResult<&str, Vec<(&str, (&str, TokenType))>> {
+fn parse_delphi_file(mut input: &str) -> IResult<&str, Vec<WhitespaceAndToken>> {
     let mut result = vec![];
     loop {
         if let Ok((remaining, new_result)) = asm_block(input) {
@@ -557,7 +560,7 @@ mod tests {
     use indoc::indoc;
     use spectral::prelude::*;
 
-    fn run_test(input: &str, expected_token_types: Vec<(&str, TokenType)>) {
+    fn run_test(input: &str, expected_token_types: Vec<ContentAndTokenType>) {
         let lexer = DelphiLexer {};
         let tokens = lexer.lex(input);
         let token_types: Vec<_> = tokens
@@ -579,7 +582,7 @@ mod tests {
             .collect::<String>()
     }
 
-    fn run_casing_test((input, expected_token_type): (&str, TokenType)) {
+    fn run_casing_test((input, expected_token_type): ContentAndTokenType) {
         let lowercase = input.to_ascii_lowercase();
         let uppercase = input.to_ascii_uppercase();
         let alternating = alternating_case(input);
