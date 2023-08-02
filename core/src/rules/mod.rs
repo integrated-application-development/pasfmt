@@ -6,6 +6,9 @@ pub mod token_spacing;
 pub mod uses_clause_consolidator;
 pub mod uses_clause_formatter;
 
+#[cfg(test)]
+pub mod test_utils;
+
 pub use eof_newline::*;
 pub use formatting_toggle::*;
 pub use generics_consolidator::*;

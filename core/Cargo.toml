@@ -11,3 +11,4 @@ log = "0.4"
 [dev-dependencies]
 spectral = "0.6.0"
 indoc = "2.0.1"
+yare = "1.0.2"
