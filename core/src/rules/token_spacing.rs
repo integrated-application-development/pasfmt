@@ -6,156 +6,198 @@ pub struct TokenSpacing {}
 impl LogicalLineFileFormatter for TokenSpacing {
     fn format(&self, formatted_tokens: &mut FormattedTokens, _input: &[LogicalLine]) {
         for token_index in 0..formatted_tokens.get_tokens().len() {
-            let token_type_by_idx =
-                |token_idx: usize| formatted_tokens.get_token_type_for_index(token_idx);
-
-            if let Some(TokenType::Op(operator)) = formatted_tokens
-                .get_token(token_index)
-                .map(|(token, _)| token.get_token_type())
+            let (spaces_before, spaces_after) = match formatted_tokens
+                .get_token_type_for_index(token_index)
             {
-                let (spaces_before, spaces_after) = match operator {
-                    // always binary operators
-                    Star | Slash | Assign | Equal | NotEqual | LessEqual | GreaterEqual
-                    | LessThan | GreaterThan | Mod | Div | Shl | Shr | And | As | In | Or | Xor
-                    | Is => (Some(1), Some(1)),
-                    // maybe unary operators
-                    op @ (Plus | Minus | Not) => {
-                        let prev = token_type_by_idx(token_index.wrapping_sub(1));
-                        let unary_trailing_spaces = if op == Not { Some(1) } else { Some(0) };
-                        match prev {
-                            // unary after keyword
-                            Some(TokenType::Keyword(_)) => (Some(1), unary_trailing_spaces),
-                            // unary after opening bracket or start of line
-                            None | Some(TokenType::Op(LParen | LBrack)) => {
-                                (Some(0), unary_trailing_spaces)
-                            }
-                            // unary not after closing bracket
-                            Some(TokenType::Op(typ)) if typ != RBrack && typ != RParen => {
-                                (Some(1), unary_trailing_spaces)
-                            }
-                            // binary operation
-                            _ => (Some(1), Some(1)),
-                        }
-                    }
-                    Comma | Colon => (Some(0), Some(1)),
-                    RBrack | RParen => match token_type_by_idx(token_index + 1) {
-                        Some(
-                            TokenType::Identifier
-                            | TokenType::IdentifierOrKeyword(_)
-                            | TokenType::Keyword(_),
-                        ) => (Some(0), Some(1)),
-                        _ => (Some(0), Some(0)),
-                    },
-                    LBrack | LParen => match token_type_by_idx(token_index.wrapping_sub(1)) {
-                        Some(TokenType::Identifier) | Some(TokenType::IdentifierOrKeyword(_)) => {
-                            (Some(0), Some(0))
-                        }
-                        Some(TokenType::Keyword(
-                            PureKeywordKind::Class
-                            | PureKeywordKind::Interface
-                            | PureKeywordKind::Function
-                            | PureKeywordKind::Procedure
-                            | PureKeywordKind::Array,
-                        )) => (Some(0), Some(0)),
-                        Some(TokenType::Keyword(_)) => (Some(1), Some(0)),
-                        _ => (None, Some(0)),
-                    },
-                    Pointer => {
-                        match (
-                            token_type_by_idx(token_index.wrapping_sub(1)),
-                            token_type_by_idx(token_index + 1),
-                        ) {
-                            // ident|)|]|^ before ^ (e.g. foo^, foo^^, foo()^)
-                            (
-                                Some(
-                                    TokenType::Identifier
-                                    | TokenType::IdentifierOrKeyword(_)
-                                    | TokenType::Op(RBrack | RParen | Pointer),
-                                ),
-                                token_after,
-                            ) => (
-                                Some(0),
-                                match token_after {
-                                    Some(TokenType::Op(RBrack | RParen | LBrack | LParen)) => {
-                                        Some(0)
-                                    }
-                                    _ => Some(1),
-                                },
-                            ),
-                            // ident|(|[ after ^ (e.g. ^foo, foo^(), foo[0]^, foo()^())
-                            (
-                                token_before,
-                                Some(
-                                    TokenType::Identifier
-                                    | TokenType::IdentifierOrKeyword(_)
-                                    | TokenType::Op(LBrack | LParen),
-                                ),
-                            ) => (
-                                match token_before {
-                                    Some(TokenType::Op(RBrack | RParen | LBrack | LParen)) => {
-                                        Some(0)
-                                    }
-                                    _ => Some(1),
-                                },
-                                Some(0),
-                            ),
-                            _ => (None, None),
-                        }
-                    }
-                    Dot | DotDot => (Some(0), Some(0)),
-                    LGeneric => (Some(0), Some(0)),
-                    RGeneric => (
-                        Some(0),
-                        match token_type_by_idx(token_index + 1) {
-                            Some(TokenType::Op(_)) => Some(0),
-                            _ => Some(1),
-                        },
-                    ),
-                    AddressOf => (
-                        match token_type_by_idx(token_index.wrapping_sub(1)) {
-                            None => None,
-                            Some(TokenType::Op(LBrack | LParen)) => Some(0),
-                            _ => Some(1),
-                        },
-                        Some(0),
-                    ),
-                    Semicolon => (
-                        Some(0),
-                        if token_type_by_idx(token_index + 1).is_some() {
-                            Some(1)
-                        } else {
-                            None
-                        },
-                    ),
-                };
+                Some(TokenType::Op(operator)) => {
+                    space_operator(operator, token_index, formatted_tokens)
+                }
+                Some(
+                    TokenType::Comment(_)
+                    | TokenType::CompilerDirective
+                    | TokenType::ConditionalDirective(_),
+                ) => one_space_before(token_index, formatted_tokens),
+                Some(TokenType::Keyword(_)) => one_space_either_side(token_index, formatted_tokens),
+                _ => max_one_either_side(token_index, formatted_tokens),
+            };
 
-                if let Some(spaces_before) = spaces_before {
-                    if let Some(formatting_data) =
-                        formatted_tokens.get_formatting_data_mut(token_index)
-                    {
-                        // TODO will not play nice with the optimising line formatter
-                        if formatting_data.newlines_before == 0 {
-                            formatting_data.spaces_before = spaces_before;
-                        }
+            if let Some(spaces_before) = spaces_before {
+                if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token_index)
+                {
+                    // TODO will not play nice with the optimising line formatter
+                    if formatting_data.newlines_before == 0 {
+                        formatting_data.spaces_before = spaces_before;
                     }
                 }
+            }
 
-                if let Some(spaces_after) = spaces_after {
-                    let next_idx = token_index + 1;
-                    let next_token_type = formatted_tokens.get_token_type_for_index(next_idx);
-                    if let Some(formatting_data) =
-                        formatted_tokens.get_formatting_data_mut(next_idx)
+            if let Some(spaces_after) = spaces_after {
+                let next_idx = token_index + 1;
+                let next_token_type = formatted_tokens.get_token_type_for_index(next_idx);
+                if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(next_idx) {
+                    // TODO will not play nice with the optimising line formatter
+                    if formatting_data.newlines_before == 0
+                        && next_token_type != Some(TokenType::Eof)
                     {
-                        // TODO will not play nice with the optimising line formatter
-                        if formatting_data.newlines_before == 0
-                            && next_token_type != Some(TokenType::Eof)
-                        {
-                            formatting_data.spaces_before = spaces_after;
-                        }
+                        formatting_data.spaces_before = spaces_after;
                     }
                 }
             }
         }
+    }
+}
+
+fn max_one_either_side(
+    token_index: usize,
+    formatted_tokens: &mut FormattedTokens<'_>,
+) -> (Option<usize>, Option<usize>) {
+    (
+        formatted_tokens
+            .get_formatting_data(token_index)
+            .map(|data| data.spaces_before.min(1)),
+        formatted_tokens
+            .get_formatting_data(token_index + 1)
+            .map(|data| data.spaces_before.min(1)),
+    )
+}
+
+fn one_space_either_side(
+    token_index: usize,
+    formatted_tokens: &mut FormattedTokens<'_>,
+) -> (Option<usize>, Option<usize>) {
+    (
+        match formatted_tokens.get_token_type_for_index(token_index.wrapping_sub(1)) {
+            None => None,
+            Some(TokenType::Op(LBrack | LParen)) => Some(0),
+            _ => Some(1),
+        },
+        match formatted_tokens.get_token_type_for_index(token_index + 1) {
+            None => None,
+            Some(TokenType::Op(RBrack | RParen)) => Some(0),
+            _ => Some(1),
+        },
+    )
+}
+
+fn one_space_before(
+    token_index: usize,
+    formatted_tokens: &mut FormattedTokens<'_>,
+) -> (Option<usize>, Option<usize>) {
+    (
+        match formatted_tokens.get_token_type_for_index(token_index.wrapping_sub(1)) {
+            None => None,
+            Some(TokenType::Op(LBrack | LParen)) => Some(0),
+            _ => Some(1),
+        },
+        Some(0),
+    )
+}
+
+fn space_operator(
+    operator: OperatorKind,
+    token_index: usize,
+    formatted_tokens: &mut FormattedTokens<'_>,
+) -> (Option<usize>, Option<usize>) {
+    let token_type_by_idx = |token_idx: usize| formatted_tokens.get_token_type_for_index(token_idx);
+
+    match operator {
+        // always binary operators
+        Star | Slash | Assign | Equal | NotEqual | LessEqual | GreaterEqual | LessThan
+        | GreaterThan | Mod | Div | Shl | Shr | And | As | In | Or | Xor | Is => (Some(1), Some(1)),
+        // maybe unary operators
+        op @ (Plus | Minus | Not) => {
+            let prev = token_type_by_idx(token_index.wrapping_sub(1));
+            let unary_trailing_spaces = if op == Not { Some(1) } else { Some(0) };
+            match prev {
+                // unary after keyword
+                Some(TokenType::Keyword(_)) => (Some(1), unary_trailing_spaces),
+                // unary after opening bracket or start of line
+                None | Some(TokenType::Op(LParen | LBrack)) => (Some(0), unary_trailing_spaces),
+                // unary not after closing bracket
+                Some(TokenType::Op(typ)) if typ != RBrack && typ != RParen => {
+                    (Some(1), unary_trailing_spaces)
+                }
+                // binary operation
+                _ => (Some(1), Some(1)),
+            }
+        }
+        Comma | Colon => (Some(0), Some(1)),
+        RBrack | RParen => match token_type_by_idx(token_index + 1) {
+            Some(
+                TokenType::Identifier | TokenType::IdentifierOrKeyword(_) | TokenType::Keyword(_),
+            ) => (Some(0), Some(1)),
+            _ => (Some(0), Some(0)),
+        },
+        LBrack | LParen => match token_type_by_idx(token_index.wrapping_sub(1)) {
+            Some(TokenType::Identifier) | Some(TokenType::IdentifierOrKeyword(_)) => {
+                (Some(0), Some(0))
+            }
+            Some(TokenType::Keyword(
+                PureKeywordKind::Class
+                | PureKeywordKind::Interface
+                | PureKeywordKind::Function
+                | PureKeywordKind::Procedure
+                | PureKeywordKind::Array,
+            )) => (Some(0), Some(0)),
+            Some(TokenType::Keyword(_)) => (Some(1), Some(0)),
+            _ => (None, Some(0)),
+        },
+        Pointer => {
+            match (
+                token_type_by_idx(token_index.wrapping_sub(1)),
+                token_type_by_idx(token_index + 1),
+            ) {
+                // ident|)|]|^ before ^ (e.g. foo^, foo^^, foo()^)
+                (
+                    Some(
+                        TokenType::Identifier
+                        | TokenType::IdentifierOrKeyword(_)
+                        | TokenType::Op(RBrack | RParen | Pointer),
+                    ),
+                    token_after,
+                ) => (
+                    Some(0),
+                    match token_after {
+                        Some(TokenType::Op(RBrack | RParen | LBrack | LParen)) => Some(0),
+                        _ => Some(1),
+                    },
+                ),
+                // ident|(|[ after ^ (e.g. ^foo, foo^(), foo[0]^, foo()^())
+                (
+                    token_before,
+                    Some(
+                        TokenType::Identifier
+                        | TokenType::IdentifierOrKeyword(_)
+                        | TokenType::Op(LBrack | LParen),
+                    ),
+                ) => (
+                    match token_before {
+                        Some(TokenType::Op(RBrack | RParen | LBrack | LParen)) => Some(0),
+                        _ => Some(1),
+                    },
+                    Some(0),
+                ),
+                _ => (None, None),
+            }
+        }
+        Dot | DotDot => (Some(0), Some(0)),
+        LGeneric => (Some(0), Some(0)),
+        RGeneric => (
+            Some(0),
+            match token_type_by_idx(token_index + 1) {
+                Some(TokenType::Op(_)) => Some(0),
+                _ => Some(1),
+            },
+        ),
+        AddressOf => one_space_before(token_index, formatted_tokens),
+        Semicolon => (
+            Some(0),
+            if token_type_by_idx(token_index + 1).is_some() {
+                Some(1)
+            } else {
+                None
+            },
+        ),
     }
 }
 
@@ -332,5 +374,37 @@ mod tests {
     fn after_semicolon() {
         run_test(";foo", "; foo");
         run_test(";+1", "; +1");
+    }
+
+    #[test]
+    fn space_before_comments_and_directives() {
+        run_test("foo//", "foo //");
+        run_test("foo  //", "foo //");
+        run_test("foo{}", "foo {}");
+        run_test("foo  {}", "foo {}");
+        run_test("foo{$ifdef A}{$endif}", "foo {$ifdef A} {$endif}");
+        run_test("foo{$Message 'A'}", "foo {$Message 'A'}");
+        run_test("foo{$Message 'A'}", "foo {$Message 'A'}");
+    }
+
+    #[test]
+    fn consecutive_keywords() {
+        run_test("begin   end", "begin end");
+        run_test("repeat  until", "repeat until");
+        run_test("then  begin end", "then begin end");
+    }
+
+    #[test]
+    fn fallback_spacing() {
+        run_test("'a'  'a'", "'a' 'a'");
+        run_test("0   1", "0 1");
+        run_test("0   1", "0 1");
+        run_test("!!", "!!");
+        run_test("!  !", "! !");
+    }
+
+    #[test]
+    fn ambiguous_keyword() {
+        run_test("public  private   ReadOnly Message", "public private ReadOnly Message");
     }
 }
