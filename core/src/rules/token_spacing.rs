@@ -2,8 +2,8 @@ use crate::lang::OperatorKind::*;
 use crate::lang::*;
 use crate::prelude::*;
 
-pub struct OperatorSpacing {}
-impl LogicalLineFileFormatter for OperatorSpacing {
+pub struct TokenSpacing {}
+impl LogicalLineFileFormatter for TokenSpacing {
     fn format(&self, formatted_tokens: &mut FormattedTokens, _input: &[LogicalLine]) {
         for token_index in 0..formatted_tokens.get_tokens().len() {
             let token_type_by_idx =
@@ -169,7 +169,7 @@ mod tests {
             .lexer(DelphiLexer {})
             .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
             .parser(DelphiLogicalLineParser {})
-            .file_formatter(OperatorSpacing {})
+            .file_formatter(TokenSpacing {})
             .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),
             ))

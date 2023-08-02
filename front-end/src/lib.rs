@@ -42,7 +42,7 @@ pub fn format_with_settings(formatting_settings: FormattingSettings, config: Pas
             .parser(DelphiLogicalLineParser {})
             .lines_consolidator(UsesClauseConsolidator {})
             .file_formatter(FormattingToggler {})
-            .file_formatter(OperatorSpacing {})
+            .file_formatter(TokenSpacing {})
             .line_formatter(RemoveRepeatedNewlines {})
             .line_formatter(FormatterSelector::new(
                 |logical_line_type| match logical_line_type {
