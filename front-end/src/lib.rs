@@ -42,8 +42,8 @@ pub fn format_with_settings(formatting_settings: FormattingSettings, config: Pas
             .parser(DelphiLogicalLineParser {})
             .lines_consolidator(UsesClauseConsolidator {})
             .file_formatter(FormattingToggler {})
+            .file_formatter(OperatorSpacing {})
             .line_formatter(RemoveRepeatedNewlines {})
-            .line_formatter(OperatorSpacing {})
             .line_formatter(FormatterSelector::new(
                 |logical_line_type| match logical_line_type {
                     LogicalLineType::UsesClause => Some(uses_clause_formatter),

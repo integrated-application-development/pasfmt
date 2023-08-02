@@ -1,16 +1,13 @@
 use crate::lang::OperatorKind::*;
-use crate::{lang::*, traits::LogicalLineFormatter};
+use crate::lang::*;
+use crate::prelude::*;
 
 pub struct OperatorSpacing {}
-impl LogicalLineFormatter for OperatorSpacing {
-    fn format(&self, formatted_tokens: &mut FormattedTokens, input: &LogicalLine) {
-        for (line_index, &token_index) in input.get_tokens().iter().enumerate() {
-            let token_type_by_line_idx = |token_idx: usize| {
-                input
-                    .get_tokens()
-                    .get(token_idx)
-                    .and_then(|t| formatted_tokens.get_token_type_for_index(*t))
-            };
+impl LogicalLineFileFormatter for OperatorSpacing {
+    fn format(&self, formatted_tokens: &mut FormattedTokens, _input: &[LogicalLine]) {
+        for token_index in 0..formatted_tokens.get_tokens().len() {
+            let token_type_by_idx =
+                |token_idx: usize| formatted_tokens.get_token_type_for_index(token_idx);
 
             if let Some(TokenType::Op(operator)) = formatted_tokens
                 .get_token(token_index)
@@ -23,7 +20,7 @@ impl LogicalLineFormatter for OperatorSpacing {
                     | Is => (Some(1), Some(1)),
                     // maybe unary operators
                     op @ (Plus | Minus | Not) => {
-                        let prev = token_type_by_line_idx(line_index.wrapping_sub(1));
+                        let prev = token_type_by_idx(token_index.wrapping_sub(1));
                         let unary_trailing_spaces = if op == Not { Some(1) } else { Some(0) };
                         match prev {
                             // unary after keyword
@@ -41,7 +38,7 @@ impl LogicalLineFormatter for OperatorSpacing {
                         }
                     }
                     Comma | Colon => (Some(0), Some(1)),
-                    RBrack | RParen => match token_type_by_line_idx(line_index + 1) {
+                    RBrack | RParen => match token_type_by_idx(token_index + 1) {
                         Some(
                             TokenType::Identifier
                             | TokenType::IdentifierOrKeyword(_)
@@ -49,7 +46,7 @@ impl LogicalLineFormatter for OperatorSpacing {
                         ) => (Some(0), Some(1)),
                         _ => (Some(0), Some(0)),
                     },
-                    LBrack | LParen => match token_type_by_line_idx(line_index.wrapping_sub(1)) {
+                    LBrack | LParen => match token_type_by_idx(token_index.wrapping_sub(1)) {
                         Some(TokenType::Identifier) | Some(TokenType::IdentifierOrKeyword(_)) => {
                             (Some(0), Some(0))
                         }
@@ -65,8 +62,8 @@ impl LogicalLineFormatter for OperatorSpacing {
                     },
                     Pointer => {
                         match (
-                            token_type_by_line_idx(line_index.wrapping_sub(1)),
-                            token_type_by_line_idx(line_index + 1),
+                            token_type_by_idx(token_index.wrapping_sub(1)),
+                            token_type_by_idx(token_index + 1),
                         ) {
                             // ident|)|]|^ before ^ (e.g. foo^, foo^^, foo()^)
                             (
@@ -109,13 +106,13 @@ impl LogicalLineFormatter for OperatorSpacing {
                     LGeneric => (Some(0), Some(0)),
                     RGeneric => (
                         Some(0),
-                        match token_type_by_line_idx(line_index + 1) {
+                        match token_type_by_idx(token_index + 1) {
                             Some(TokenType::Op(_)) => Some(0),
                             _ => Some(1),
                         },
                     ),
                     AddressOf => (
-                        match token_type_by_line_idx(line_index.wrapping_sub(1)) {
+                        match token_type_by_idx(token_index.wrapping_sub(1)) {
                             None => None,
                             Some(TokenType::Op(LBrack | LParen)) => Some(0),
                             _ => Some(1),
@@ -124,7 +121,7 @@ impl LogicalLineFormatter for OperatorSpacing {
                     ),
                     Semicolon => (
                         Some(0),
-                        if token_type_by_line_idx(line_index + 1).is_some() {
+                        if token_type_by_idx(token_index + 1).is_some() {
                             Some(1)
                         } else {
                             None
@@ -172,7 +169,7 @@ mod tests {
             .lexer(DelphiLexer {})
             .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
             .parser(DelphiLogicalLineParser {})
-            .line_formatter(OperatorSpacing {})
+            .file_formatter(OperatorSpacing {})
             .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),
             ))
@@ -200,7 +197,6 @@ mod tests {
         run_test("Foo( + 1);", "Foo(+1);");
         run_test("while+1;", "while +1;");
         run_test("+ 1;", "+1;");
-        run_test(";+ 1;", ";+1;");
     }
 
     #[test]
@@ -210,7 +206,7 @@ mod tests {
         run_test("while  not  False;", "while not False;");
         run_test("Foo  not  False;", "Foo not False;");
         run_test("not(Foo)", "not (Foo)");
-        run_test(";not Bar;", ";not Bar;");
+        run_test("not Bar;", "not Bar;");
     }
 
     #[test]
@@ -330,5 +326,11 @@ mod tests {
         // ambiguous >= token, room for improvement
         run_test("Foo<Bar>=T", "Foo < Bar >= T");
         run_test("Foo<Bar, Baz>=T", "Foo < Bar, Baz >= T");
+    }
+
+    #[test]
+    fn after_semicolon() {
+        run_test(";foo", "; foo");
+        run_test(";+1", "; +1");
     }
 }
