@@ -68,12 +68,12 @@ impl LogicalLineFormatter for OperatorSpacing {
                             token_type_by_line_idx(line_index.wrapping_sub(1)),
                             token_type_by_line_idx(line_index + 1),
                         ) {
-                            // ident|)|] before ^ (e.g. foo^, foo()^)
+                            // ident|)|]|^ before ^ (e.g. foo^, foo^^, foo()^)
                             (
                                 Some(
                                     TokenType::Identifier
                                     | TokenType::IdentifierOrKeyword(_)
-                                    | TokenType::Op(RBrack | RParen),
+                                    | TokenType::Op(RBrack | RParen | Pointer),
                                 ),
                                 token_after,
                             ) => (
@@ -264,6 +264,12 @@ mod tests {
     #[test]
     fn pointer_before_dot() {
         run_test("if Foo ^ .Bar then", "if Foo^.Bar then");
+    }
+
+    #[test]
+    fn double_pointer() {
+        run_test("Foo^ ^ .Bar", "Foo^^.Bar");
+        run_test("Foo^ ^ (Bar)", "Foo^^(Bar)");
     }
 
     #[test]
