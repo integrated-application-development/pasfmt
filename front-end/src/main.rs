@@ -1,6 +1,6 @@
 use pasfmt::format_with_settings;
 use pasfmt::FormattingSettings;
-use pasfmt_orchestrator::command_line::PasFmtConfiguration;
+use pasfmt_orchestrator::predule::*;
 
 fn main() {
     let config = PasFmtConfiguration::new();

@@ -10,6 +10,8 @@ use clap::{builder::PossibleValuesParser, builder::TypedValueParser};
 
 use log::LevelFilter;
 
+use crate::formatting_orchestrator::FormatterConfiguration;
+
 const DEFAULT_CONFIG_FILE_NAME: &str = "pasfmt.toml";
 
 #[derive(Parser, Debug)]
@@ -90,29 +92,6 @@ impl PasFmtConfiguration {
     pub fn new() -> Self {
         PasFmtConfiguration::parse()
     }
-    pub fn get_paths(&self) -> Vec<String> {
-        let mut paths = self.paths.clone();
-        if let Some(arg_file) = &self.files_file {
-            paths.extend(
-                read_to_string(arg_file)
-                    .unwrap()
-                    .lines()
-                    .map(String::from)
-                    .collect::<Vec<_>>(),
-            );
-        }
-        paths
-    }
-    pub fn log_level(&self) -> LevelFilter {
-        log_level_from_usize((self.verbose as usize) + (self.log_level as usize))
-            .unwrap_or(LevelFilter::max())
-    }
-    pub fn is_write(&self) -> bool {
-        self.write
-    }
-    pub fn is_verify(&self) -> bool {
-        self.verify
-    }
 
     fn get_config_file(&self) -> Option<String> {
         if self.config_file.is_some() {
@@ -138,6 +117,7 @@ impl PasFmtConfiguration {
             }
         }
     }
+
     pub fn get_config_object<T>(&self) -> T
     where
         T: for<'de> toml::macros::Deserialize<'de> + Default,
@@ -153,5 +133,30 @@ impl PasFmtConfiguration {
         }
 
         toml::from_str::<T>(&config_file_contents.unwrap()).unwrap_or_default()
+    }
+}
+impl FormatterConfiguration for PasFmtConfiguration {
+    fn get_paths(&self) -> Vec<String> {
+        let mut paths = self.paths.clone();
+        if let Some(arg_file) = &self.files_file {
+            paths.extend(
+                read_to_string(arg_file)
+                    .unwrap()
+                    .lines()
+                    .map(String::from)
+                    .collect::<Vec<_>>(),
+            );
+        }
+        paths
+    }
+    fn log_level(&self) -> LevelFilter {
+        log_level_from_usize((self.verbose as usize) + (self.log_level as usize))
+            .unwrap_or(LevelFilter::max())
+    }
+    fn is_write(&self) -> bool {
+        self.write
+    }
+    fn is_verify(&self) -> bool {
+        self.verify
     }
 }

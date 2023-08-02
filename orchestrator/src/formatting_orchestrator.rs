@@ -1,10 +1,18 @@
 use std::io::Read;
 
-use crate::{command_line::PasFmtConfiguration, file_formatter::FileFormatter};
+use crate::file_formatter::FileFormatter;
+use log::LevelFilter;
+
+pub trait FormatterConfiguration {
+    fn get_paths(&self) -> Vec<String>;
+    fn log_level(&self) -> LevelFilter;
+    fn is_write(&self) -> bool;
+    fn is_verify(&self) -> bool;
+}
 
 pub struct FormattingOrchestrator;
 impl FormattingOrchestrator {
-    pub fn run(file_formatter: FileFormatter, config: PasFmtConfiguration) {
+    pub fn run<T: FormatterConfiguration>(file_formatter: FileFormatter, config: T) {
         let files = config.get_paths();
         if files.is_empty() {
             let mut input = String::new();
