@@ -71,6 +71,7 @@ mod tests {
     use spectral::prelude::*;
 
     use crate::prelude::*;
+    use crate::rules::test_utils::formatter_test_group;
     use crate::traits::LogicalLineFormatter;
 
     struct AddSpaceBeforeEverything {}
@@ -87,8 +88,8 @@ mod tests {
         }
     }
 
-    fn run_test(input: &str, expected_output: &str) {
-        let formatter = Formatter::builder()
+    fn formatter() -> Formatter {
+        Formatter::builder()
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
             .line_formatter(AddSpaceBeforeEverything {})
@@ -96,20 +97,13 @@ mod tests {
             .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),
             ))
-            .build();
-
-        let formatted_output = formatter.format(input);
-        assert_that(&formatted_output).is_equal_to(expected_output.to_string());
+            .build()
     }
 
-    #[test]
-    fn not_disabled() {
-        run_test("Foo(Bar + Baz)", " Foo ( Bar  +  Baz ) ");
-    }
-
-    #[test]
-    fn disabled_single_line() {
-        run_test(
+    formatter_test_group!(
+        formatting_toggle,
+        not_disabled = {"Foo(Bar + Baz)", " Foo ( Bar  +  Baz ) "},
+        disabled_single_line = {
             indoc! {
               "
               Foo(Bar);
@@ -124,6 +118,6 @@ mod tests {
               Foo(Bar);
               "
             },
-        );
-    }
+        },
+    );
 }
