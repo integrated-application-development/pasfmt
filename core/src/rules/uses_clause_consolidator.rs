@@ -8,7 +8,7 @@ impl LogicalLinesConsolidator for UsesClauseConsolidator {
         let uses_token_indices: Vec<usize> = tokens
             .iter()
             .filter_map(|token| match token.get_token_type() {
-                TokenType::Keyword(PureKeywordKind::Uses) => Some(token.get_index()),
+                TokenType::Keyword(KeywordKind::Uses) => Some(token.get_index()),
                 _ => None,
             })
             .collect();

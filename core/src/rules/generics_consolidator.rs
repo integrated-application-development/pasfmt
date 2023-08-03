@@ -1,5 +1,5 @@
 use crate::{
-    lang::{OperatorKind, PureKeywordKind, Token, TokenType},
+    lang::{KeywordKind, OperatorKind, Token, TokenType},
     traits::TokenConsolidator,
 };
 
@@ -39,9 +39,7 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                         | TokenType::Comment(_)
                         | TokenType::ConditionalDirective(_)
                         | TokenType::Keyword(
-                            PureKeywordKind::Class
-                            | PureKeywordKind::Record
-                            | PureKeywordKind::Constructor,
+                            KeywordKind::Class | KeywordKind::Record | KeywordKind::Constructor,
                         ),
                     ) => {}
                     Some(TokenType::Op(OperatorKind::GreaterThan)) => {
@@ -49,7 +47,8 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                             if let Some(
                                 TokenType::Identifier
                                 | TokenType::IdentifierOrKeyword(_)
-                                | TokenType::Op(OperatorKind::AddressOf | OperatorKind::Not),
+                                | TokenType::Op(OperatorKind::AddressOf)
+                                | TokenType::Keyword(KeywordKind::Not),
                             ) = tokens.get(next_idx + 1).map(Token::get_token_type)
                             {
                                 // cases where it cannot be generics
@@ -134,13 +133,13 @@ mod tests {
     const GE: TokenType = Op(OperatorKind::GreaterEqual);
     const LG: TokenType = Op(OperatorKind::LGeneric);
     const RG: TokenType = Op(OperatorKind::RGeneric);
-    const AND: TokenType = Op(OperatorKind::And);
+    const AND: TokenType = Keyword(KeywordKind::And);
     const DOT: TokenType = Op(OperatorKind::Dot);
     const ADDR: TokenType = Op(OperatorKind::AddressOf);
-    const NOT: TokenType = Op(OperatorKind::Not);
+    const NOT: TokenType = Keyword(KeywordKind::Not);
     const PLUS: TokenType = Op(OperatorKind::Plus);
 
-    const CLASS: TokenType = TokenType::Keyword(PureKeywordKind::Class);
+    const CLASS: TokenType = TokenType::Keyword(KeywordKind::Class);
 
     #[test]
     fn non_generics_are_unchanged() {
@@ -184,8 +183,8 @@ mod tests {
 
     #[test]
     fn type_constraints() {
-        const REC: TokenType = TokenType::Keyword(PureKeywordKind::Record);
-        const CON: TokenType = TokenType::Keyword(PureKeywordKind::Constructor);
+        const REC: TokenType = TokenType::Keyword(KeywordKind::Record);
+        const CON: TokenType = TokenType::Keyword(KeywordKind::Constructor);
 
         // A<B: C>
         run_test(&[ID, LT, ID, COL, ID, GT], &[ID, LG, ID, COL, ID, RG]);
@@ -199,7 +198,7 @@ mod tests {
 
     #[test]
     fn followed_by_ident() {
-        const IDKW: TokenType = TokenType::IdentifierOrKeyword(IdentifierOrKeywordKind::SafeCall);
+        const IDKW: TokenType = TokenType::IdentifierOrKeyword(KeywordKind::SafeCall);
 
         // A<B> C
         run_test(&[ID, LT, ID, GT, ID], &[ID, LG, ID, RG, ID]);

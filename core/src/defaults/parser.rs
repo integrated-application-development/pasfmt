@@ -4,8 +4,8 @@ use std::collections::VecDeque;
 
 use crate::lang::ConditionalDirectiveKind::*;
 
+use crate::lang::KeywordKind::*;
 use crate::lang::OperatorKind::*;
-use crate::lang::PureKeywordKind::*;
 use crate::lang::TokenType::*;
 use crate::lang::*;
 use crate::traits::LogicalLineParser;
@@ -48,7 +48,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         InternalDelphiLogicalLineParser {
             tokens,
             current_token_index: 0,
-            result_hash: Default::default(),
+            result_hash: std::default::Default::default(),
             result_lines: vec![],
             comments_before_next_token: vec![],
             pass_logical_lines: vec![vec![]],

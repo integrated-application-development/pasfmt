@@ -18,7 +18,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
             if !matches!(
                 formatted_tokens.get_token_type_for_index(token_index),
                 Some(
-                    TokenType::Keyword(PureKeywordKind::Uses)
+                    TokenType::Keyword(KeywordKind::Uses)
                         | TokenType::Comment(
                             CommentKind::IndividualLine
                                 | CommentKind::IndividualBlock
@@ -35,7 +35,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
 
             if matches!(
                 formatted_tokens.get_token_type_for_index(token_index),
-                Some(TokenType::Keyword(PureKeywordKind::Uses))
+                Some(TokenType::Keyword(KeywordKind::Uses))
             ) {
                 if let Some(token_formatting_data) =
                     formatted_tokens.get_formatting_data_mut(token_index)
@@ -83,7 +83,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
             } else if matches!(
                 formatted_tokens.get_token_type_for_index(token_index),
                 Some(
-                    TokenType::Op(OperatorKind::In)
+                    TokenType::Keyword(KeywordKind::In)
                         | TokenType::TextLiteral
                         | TokenType::Comment(_)
                 )
@@ -126,7 +126,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                 && matches!(
                     formatted_tokens.get_token_type_for_index(token_index - 1),
                     Some(
-                        TokenType::Keyword(PureKeywordKind::Uses)
+                        TokenType::Keyword(KeywordKind::Uses)
                             | TokenType::ConditionalDirective(_)
                             | TokenType::Comment(
                                 CommentKind::IndividualLine | CommentKind::InlineLine

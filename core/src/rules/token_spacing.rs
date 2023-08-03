@@ -105,20 +105,20 @@ fn space_operator(
     match operator {
         // always binary operators
         Star | Slash | Assign | Equal | NotEqual | LessEqual | GreaterEqual | LessThan
-        | GreaterThan | Mod | Div | Shl | Shr | And | As | In | Or | Xor | Is => binary_op_spacing,
+        | GreaterThan => binary_op_spacing,
+
         // maybe unary operators
-        op @ (Plus | Minus | Not) => {
+        Plus | Minus => {
             let prev = token_type_by_idx(token_index.wrapping_sub(1));
-            let unary_trailing_spaces = if op == Not { Some(1) } else { Some(0) };
             match prev {
                 // unary after keyword
-                Some(TokenType::Keyword(_)) => (Some(1), unary_trailing_spaces),
+                Some(TokenType::Keyword(_)) => (Some(1), Some(0)),
                 // unary after opening bracket or start of line
-                None | Some(TokenType::Op(LParen | LBrack)) => (Some(0), unary_trailing_spaces),
+                None | Some(TokenType::Op(LParen | LBrack)) => (Some(0), Some(0)),
                 // binary after closing bracket or closing generics
                 Some(TokenType::Op(RBrack | RParen | RGeneric)) => binary_op_spacing,
                 // unary after any other operator
-                Some(TokenType::Op(_)) => (Some(1), unary_trailing_spaces),
+                Some(TokenType::Op(_)) => (Some(1), Some(0)),
                 // default to binary
                 _ => binary_op_spacing,
             }
@@ -135,11 +135,11 @@ fn space_operator(
                 (Some(0), Some(0))
             }
             Some(TokenType::Keyword(
-                PureKeywordKind::Class
-                | PureKeywordKind::Interface
-                | PureKeywordKind::Function
-                | PureKeywordKind::Procedure
-                | PureKeywordKind::Array,
+                KeywordKind::Class
+                | KeywordKind::Interface
+                | KeywordKind::Function
+                | KeywordKind::Procedure
+                | KeywordKind::Array,
             )) => (Some(0), Some(0)),
             Some(TokenType::Keyword(_)) => (Some(1), Some(0)),
             _ => (None, Some(0)),
