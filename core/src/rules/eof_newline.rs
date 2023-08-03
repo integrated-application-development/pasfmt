@@ -19,35 +19,24 @@ impl LogicalLineFormatter for EofNewline {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::{prelude::*, rules::test_utils::formatter_test_group};
     use spectral::prelude::*;
 
-    fn run_test(input: &'static str, output: &'static str) {
-        let formatter = Formatter::builder()
+    fn formatter() -> Formatter {
+        Formatter::builder()
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
             .line_formatter(EofNewline {})
             .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
             ))
-            .build();
-
-        let formatted_output = formatter.format(input);
-        assert_that(&formatted_output).is_equal_to(output.to_string());
+            .build()
     }
 
-    #[test]
-    fn trailing_newline_on_single_line_input() {
-        run_test("Foo; Bar;", "Foo; Bar;\n");
-    }
-
-    #[test]
-    fn trailing_newline_on_multiline_input() {
-        run_test("Foo;\nBar;", "Foo;\nBar;\n");
-    }
-
-    #[test]
-    fn trailing_newline_on_multiline_and_trailing_whitespace_input() {
-        run_test("Foo;\nBar;  ", "Foo;\nBar;\n");
-    }
+    formatter_test_group!(
+        trailing_newlines,
+        single_line = {"Foo; Bar;", "Foo; Bar;\n"},
+        multiline = {"Foo;\nBar;", "Foo;\nBar;\n"},
+        multiline_and_trailing_whitespace = {"Foo;\nBar;  ", "Foo;\nBar;\n"},
+    );
 }
