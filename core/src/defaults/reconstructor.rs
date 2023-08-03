@@ -5,7 +5,6 @@ use crate::{lang::*, traits::LogicalLinesReconstructor};
 pub struct DelphiLogicalLinesReconstructor {
     reconstruction_settings: ReconstructionSettings,
 }
-#[allow(dead_code)]
 impl DelphiLogicalLinesReconstructor {
     pub fn new(reconstruction_settings: ReconstructionSettings) -> Self {
         DelphiLogicalLinesReconstructor {

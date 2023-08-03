@@ -219,7 +219,6 @@ pub struct LogicalLine {
     tokens: Vec<usize>,
     line_type: LogicalLineType,
 }
-#[allow(dead_code)]
 impl LogicalLine {
     pub fn new(
         parent_token: Option<usize>,
@@ -251,7 +250,6 @@ impl LogicalLine {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Default)]
 pub struct FormattingData {
     pub ignored: bool,
@@ -260,7 +258,6 @@ pub struct FormattingData {
     pub continuations_before: usize,
     pub spaces_before: usize,
 }
-#[allow(dead_code)]
 impl FormattingData {
     pub fn from(leading_whitespace: &str) -> Self {
         let newlines_before = leading_whitespace
@@ -286,11 +283,9 @@ impl FormattingData {
     }
 }
 
-#[allow(dead_code)]
 pub struct FormattedTokens<'a> {
     tokens: Vec<(Token<'a>, FormattingData)>,
 }
-#[allow(dead_code)]
 impl<'a> FormattedTokens<'a> {
     pub fn new_from_tokens(tokens: Vec<Token<'a>>) -> Self {
         FormattedTokens {
@@ -330,12 +325,10 @@ impl<'a> FormattedTokens<'a> {
     }
 }
 
-#[allow(dead_code)]
 pub struct LogicalLines<'a> {
     tokens: Vec<Token<'a>>,
     lines: Vec<LogicalLine>,
 }
-#[allow(dead_code)]
 impl<'a> LogicalLines<'a> {
     pub fn new(tokens: Vec<Token<'a>>, lines: Vec<LogicalLine>) -> Self {
         LogicalLines { tokens, lines }
@@ -358,7 +351,6 @@ pub struct ReconstructionSettings {
     indentation_str: String,
     continuation_str: String,
 }
-#[allow(dead_code)]
 impl ReconstructionSettings {
     pub fn new(newline_str: String, indentation_str: String, continuation_str: String) -> Self {
         ReconstructionSettings {
@@ -408,7 +400,6 @@ pub struct OwningToken {
     content: String,
     token_type: TokenType,
 }
-#[allow(dead_code)]
 impl OwningToken {
     pub fn new(
         index: usize,
@@ -428,7 +419,6 @@ impl OwningToken {
 #[derive(Debug, PartialEq, Eq)]
 pub enum Token<'a> {
     RefToken(RefToken<'a>),
-    #[allow(dead_code)]
     OwningToken(OwningToken),
 }
 impl<'a> Token<'a> {

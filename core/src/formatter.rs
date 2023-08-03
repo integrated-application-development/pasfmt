@@ -4,7 +4,6 @@ use crate::lang::*;
 use crate::traits::*;
 use itertools::Itertools;
 
-#[allow(dead_code)]
 pub struct Formatter {
     lexer: Box<dyn Lexer + Sync>,
     token_consolidators: Vec<Box<dyn TokenConsolidator + Sync>>,
@@ -13,7 +12,6 @@ pub struct Formatter {
     logical_line_formatters: Vec<FormatterKind>,
     reconstructor: Box<dyn LogicalLinesReconstructor + Sync>,
 }
-#[allow(dead_code)]
 impl Formatter {
     pub fn builder() -> FormatterBuilder<BeforeLexer> {
         FormatterBuilder::default()

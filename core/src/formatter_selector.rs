@@ -1,14 +1,12 @@
 use crate::lang::*;
 use crate::traits::*;
 
-#[allow(dead_code)]
 pub struct FormatterSelector<'a, T>
 where
     T: Fn(LogicalLineType) -> Option<&'a dyn LogicalLineFormatter>,
 {
     selector: T,
 }
-#[allow(dead_code)]
 impl<'a, T> FormatterSelector<'a, T>
 where
     T: Fn(LogicalLineType) -> Option<&'a dyn LogicalLineFormatter>,
@@ -17,7 +15,6 @@ where
         FormatterSelector { selector }
     }
 }
-#[allow(dead_code)]
 impl<'a, T> LogicalLineFormatter for FormatterSelector<'a, T>
 where
     T: Fn(LogicalLineType) -> Option<&'a dyn LogicalLineFormatter>,
