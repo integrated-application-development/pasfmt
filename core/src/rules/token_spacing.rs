@@ -100,10 +100,12 @@ fn space_operator(
 ) -> (Option<usize>, Option<usize>) {
     let token_type_by_idx = |token_idx: usize| formatted_tokens.get_token_type_for_index(token_idx);
 
+    let binary_op_spacing = (Some(1), Some(1));
+
     match operator {
         // always binary operators
         Star | Slash | Assign | Equal | NotEqual | LessEqual | GreaterEqual | LessThan
-        | GreaterThan | Mod | Div | Shl | Shr | And | As | In | Or | Xor | Is => (Some(1), Some(1)),
+        | GreaterThan | Mod | Div | Shl | Shr | And | As | In | Or | Xor | Is => binary_op_spacing,
         // maybe unary operators
         op @ (Plus | Minus | Not) => {
             let prev = token_type_by_idx(token_index.wrapping_sub(1));
@@ -113,12 +115,12 @@ fn space_operator(
                 Some(TokenType::Keyword(_)) => (Some(1), unary_trailing_spaces),
                 // unary after opening bracket or start of line
                 None | Some(TokenType::Op(LParen | LBrack)) => (Some(0), unary_trailing_spaces),
-                // unary not after closing bracket
-                Some(TokenType::Op(typ)) if typ != RBrack && typ != RParen => {
-                    (Some(1), unary_trailing_spaces)
-                }
-                // binary operation
-                _ => (Some(1), Some(1)),
+                // binary after closing bracket or closing generics
+                Some(TokenType::Op(RBrack | RParen | RGeneric)) => binary_op_spacing,
+                // unary after any other operator
+                Some(TokenType::Op(_)) => (Some(1), unary_trailing_spaces),
+                // default to binary
+                _ => binary_op_spacing,
             }
         }
         Comma | Colon => (Some(0), Some(1)),
