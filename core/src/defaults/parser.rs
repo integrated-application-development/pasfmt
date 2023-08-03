@@ -132,6 +132,14 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                     self.next_token();
                     self.add_logical_line();
                 }
+                Keyword(Class) => {
+                    // If class is the first token in the line, allow the next
+                    // token to dictate how it will be parsed.
+                    self.next_token();
+                }
+                Keyword(Property) => {
+                    self.parse_property_declaration();
+                }
                 Op(Semicolon) => {
                     self.next_token();
                     self.add_logical_line();
@@ -208,6 +216,17 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         self.add_logical_line();
     }
 
+    fn parse_property_declaration(&mut self) {
+        self.set_logical_line_type(LogicalLineType::PropertyDeclaration);
+        self.next_token();
+        self.parse_to_after_next_semicolon_or_before_end();
+        if let Some(IdentifierOrKeyword(Default)) = self.get_current_token_type() {
+            self.next_token();
+            self.parse_to_after_next_semicolon_or_before_end();
+        }
+        self.add_logical_line();
+    }
+
     fn parse_structural_element(&mut self) {
         loop {
             let token_type = match self.get_current_token_type_no_eof() {
@@ -235,10 +254,22 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         }
     }
 
+    fn parse_to_after_next_semicolon_or_before_end(&mut self) {
+        while !matches!(
+            self.get_current_token_type_no_eof(),
+            Some(TokenType::Op(OperatorKind::Semicolon) | Keyword(End)) | None
+        ) {
+            self.next_token();
+        }
+        if let Some(TokenType::Op(OperatorKind::Semicolon)) = self.get_current_token_type() {
+            self.next_token();
+        }
+    }
+
     fn parse_to_after_next_semicolon(&mut self) {
         while !matches!(
-            self.get_current_token_type(),
-            Some(TokenType::Op(OperatorKind::Semicolon))
+            self.get_current_token_type_no_eof(),
+            Some(TokenType::Op(OperatorKind::Semicolon)) | None
         ) {
             self.next_token();
         }
@@ -913,6 +944,140 @@ mod tests {
                 LogicalLine::new(None, 0, vec![0, 1, 2], LogicalLineType::Unknown),
                 LogicalLine::new(None, 0, vec![3], LogicalLineType::Unknown),
                 LogicalLine::new(None, 0, vec![4, 5, 6, 7, 8], LogicalLineType::UsesClause),
+            ],
+        );
+    }
+
+    #[test]
+    fn property_declaration() {
+        run_test(
+            "property Foo;",
+            vec![LogicalLine::new(
+                None,
+                0,
+                vec![0, 1, 2],
+                LogicalLineType::PropertyDeclaration,
+            )],
+        );
+        run_test(
+            "property Foo read A;",
+            vec![LogicalLine::new(
+                None,
+                0,
+                vec![0, 1, 2, 3, 4],
+                LogicalLineType::PropertyDeclaration,
+            )],
+        );
+        run_test(
+            "property Foo read A write A;",
+            vec![LogicalLine::new(
+                None,
+                0,
+                vec![0, 1, 2, 3, 4, 5, 6],
+                LogicalLineType::PropertyDeclaration,
+            )],
+        );
+        run_test(
+            "property Foo read A write A; default;",
+            vec![LogicalLine::new(
+                None,
+                0,
+                vec![0, 1, 2, 3, 4, 5, 6, 7, 8],
+                LogicalLineType::PropertyDeclaration,
+            )],
+        );
+        // TODO begin to be replaced with class
+        run_test(
+            "begin property Foo read A write A end",
+            vec![
+                LogicalLine::new(None, 0, vec![0], LogicalLineType::Unknown),
+                LogicalLine::new(
+                    None,
+                    1,
+                    vec![1, 2, 3, 4, 5, 6],
+                    LogicalLineType::PropertyDeclaration,
+                ),
+                LogicalLine::new(None, 0, vec![7], LogicalLineType::Unknown),
+            ],
+        );
+        run_test(
+            "begin property Foo read A write A; default end",
+            vec![
+                LogicalLine::new(None, 0, vec![0], LogicalLineType::Unknown),
+                LogicalLine::new(
+                    None,
+                    1,
+                    vec![1, 2, 3, 4, 5, 6, 7, 8],
+                    LogicalLineType::PropertyDeclaration,
+                ),
+                LogicalLine::new(None, 0, vec![9], LogicalLineType::Unknown),
+            ],
+        );
+    }
+
+    #[test]
+    fn class_property_declaration() {
+        run_test(
+            "class property Foo;",
+            vec![LogicalLine::new(
+                None,
+                0,
+                vec![0, 1, 2, 3],
+                LogicalLineType::PropertyDeclaration,
+            )],
+        );
+        run_test(
+            "class property Foo read A;",
+            vec![LogicalLine::new(
+                None,
+                0,
+                vec![0, 1, 2, 3, 4, 5],
+                LogicalLineType::PropertyDeclaration,
+            )],
+        );
+        run_test(
+            "class property Foo read A write A;",
+            vec![LogicalLine::new(
+                None,
+                0,
+                vec![0, 1, 2, 3, 4, 5, 6, 7],
+                LogicalLineType::PropertyDeclaration,
+            )],
+        );
+        run_test(
+            "class property Foo read A write A; default;",
+            vec![LogicalLine::new(
+                None,
+                0,
+                vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                LogicalLineType::PropertyDeclaration,
+            )],
+        );
+        // TODO begin to be replaced with class
+        run_test(
+            "begin class property Foo read A write A end",
+            vec![
+                LogicalLine::new(None, 0, vec![0], LogicalLineType::Unknown),
+                LogicalLine::new(
+                    None,
+                    1,
+                    vec![1, 2, 3, 4, 5, 6, 7],
+                    LogicalLineType::PropertyDeclaration,
+                ),
+                LogicalLine::new(None, 0, vec![8], LogicalLineType::Unknown),
+            ],
+        );
+        run_test(
+            "begin class property Foo read A write A; default end",
+            vec![
+                LogicalLine::new(None, 0, vec![0], LogicalLineType::Unknown),
+                LogicalLine::new(
+                    None,
+                    1,
+                    vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    LogicalLineType::PropertyDeclaration,
+                ),
+                LogicalLine::new(None, 0, vec![10], LogicalLineType::Unknown),
             ],
         );
     }
