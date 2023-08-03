@@ -203,11 +203,11 @@ fn space_operator(
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::{prelude::*, rules::test_utils::formatter_test_group};
     use spectral::prelude::*;
 
-    fn run_test(input: &'static str, output: &'static str) {
-        let formatter = Formatter::builder()
+    fn formatter() -> Formatter {
+        Formatter::builder()
             .lexer(DelphiLexer {})
             .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
             .parser(DelphiLogicalLineParser {})
@@ -215,196 +215,175 @@ mod tests {
             .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),
             ))
-            .build();
-
-        let formatted_output = formatter.format(input);
-        assert_that(&formatted_output).is_equal_to(output.to_string());
+            .build()
     }
 
-    #[test]
-    fn parens_after_special_pure_keywords() {
-        run_test("class ( TObject);", "class(TObject);");
-        run_test("interface ( IInterface);", "interface(IInterface);");
-        run_test("procedure ();", "procedure();");
-        run_test("function  ();", "function();");
-    }
+    formatter_test_group!(
+        parens_after_special_pure_keywords,
+        class_before_parens = {"class ( TObject);", "class(TObject);"},
+        interface_before_parens = {"interface ( IInterface);", "interface(IInterface);"},
+        procedure_before_parens = {"procedure ();", "procedure();"},
+        function_before_parens = {"function  ();", "function();"},
+    );
 
-    #[test]
-    fn plus() {
-        run_test("Foo+Bar;", "Foo + Bar;");
-    }
+    formatter_test_group!(
+        plus,
+        plus_between_idents = {"Foo+Bar;", "Foo + Bar;"},
+    );
 
-    #[test]
-    fn unary_plus() {
-        run_test("Foo( + 1);", "Foo(+1);");
-        run_test("while+1;", "while +1;");
-        run_test("+ 1;", "+1;");
-    }
+    formatter_test_group!(
+        unary_plus,
+        plus_after_parens = {"Foo( + 1);", "Foo(+1);"},
+        plus_after_square = {"Foo[ + 1];", "Foo[+1];"},
+        plus_after_keyword = {"while+1;", "while +1;"},
+        plus_at_start_of_input = {"+ 1;", "+1;"},
+    );
 
-    #[test]
-    fn unary_not() {
-        run_test("Foo( not False);", "Foo(not False);");
-        run_test("Foo[ not False];", "Foo[not False];");
-        run_test("while  not  False;", "while not False;");
-        run_test("Foo  not  False;", "Foo not False;");
-        run_test("not(Foo)", "not (Foo)");
-        run_test("not Bar;", "not Bar;");
-    }
+    formatter_test_group!(
+        unary_not,
+        not_after_parens = {"Foo( not False);", "Foo(not False);"},
+        not_after_square_bracket = {"Foo[ not False];", "Foo[not False];"},
+        not_after_keyword = {"while  not  False;", "while not False;"},
+        not_after_ident = {"Foo  not  False;", "Foo not False;"},
+        not_before_parens = {"not(Foo)", "not (Foo)"},
+        not_before_ident = {"not Bar;", "not Bar;"},
+    );
 
-    #[test]
-    fn other() {
-        run_test("Foo(Position+1, 0, 0);", "Foo(Position + 1, 0, 0);")
-    }
+    formatter_test_group!(
+        parens,
+        after_right_bracket = {"if Foo(0 )then", "if Foo(0) then"},
+    );
 
-    #[test]
-    fn space_after_right_brackets() {
-        run_test("if Foo(0 )then", "if Foo(0) then")
-    }
+    formatter_test_group!(
+        square_bracket,
+        before_left_square_bracket = {"Foo(0,[])", "Foo(0, [])"},
+        not_between_left_parens_left_square = {"Foo([])", "Foo([])"},
+        after_comma_before_left_square = {"Foo(0,  [])", "Foo(0, [])"},
+        not_between_array_left_square = {"array [0..2]", "array[0..2]"},
+    );
 
-    #[test]
-    fn space_before_left_brackets() {
-        run_test("Foo(0,[])", "Foo(0, [])");
-        run_test("Foo(0,  [])", "Foo(0, [])");
-        run_test("Foo([])", "Foo([])");
-        run_test("array [0..2]", "array[0..2]");
-    }
+    formatter_test_group!(
+        pointer,
+        pointer_before = {"if  ^ Foo then", "if ^Foo then"},
+        pointer_after = {"if Foo ^ then", "if Foo^ then"},
+        pointer_after_parens = {"if Foo() ^ then", "if Foo()^ then"},
+        pointer_after_brackets = {"if Foo[] ^then", "if Foo[]^ then"},
+        pointer_before_parens = {"if Foo ^ () then", "if Foo^() then"},
+        pointer_before_brackets = {"if Foo ^ [] then", "if Foo^[] then"},
+        pointer_before_dot = {"if Foo ^ .Bar then", "if Foo^.Bar then"},
+        double_pointer_before_dot = {"Foo^ ^ .Bar", "Foo^^.Bar"},
+        double_pointer_before_parens = {"Foo^ ^ (Bar)", "Foo^^(Bar)"},
+    );
 
-    #[test]
-    fn pointer_before() {
-        run_test("if  ^ Foo then", "if ^Foo then");
-    }
-
-    #[test]
-    fn pointer_after() {
-        run_test("if Foo ^ then", "if Foo^ then");
-    }
-
-    #[test]
-    fn pointer_after_parens() {
-        run_test("if Foo() ^ then", "if Foo()^ then");
-    }
-
-    #[test]
-    fn pointer_after_brackets() {
-        run_test("if Foo[] ^then", "if Foo[]^ then");
-    }
-
-    #[test]
-    fn pointer_before_parens() {
-        run_test("if Foo ^ () then", "if Foo^() then");
-    }
-
-    #[test]
-    fn pointer_before_brackets() {
-        run_test("if Foo ^ [] then", "if Foo^[] then");
-    }
-
-    #[test]
-    fn pointer_before_dot() {
-        run_test("if Foo ^ .Bar then", "if Foo^.Bar then");
-    }
-
-    #[test]
-    fn double_pointer() {
-        run_test("Foo^ ^ .Bar", "Foo^^.Bar");
-        run_test("Foo^ ^ (Bar)", "Foo^^(Bar)");
-    }
-
-    #[test]
-    fn function_declaration() {
-        run_test(
+    formatter_test_group!(
+        routine_declaration,
+        function_declaration = {
             "function Foo ( Bar :String ;Baz:Integer) :Integer;",
             "function Foo(Bar: String; Baz: Integer): Integer;",
-        );
-        run_test(
+        },
+        procedure_declaration = {
             "procedure Foo ( Bar :String ;Baz:Integer) ;",
             "procedure Foo(Bar: String; Baz: Integer);",
-        )
+        }
+    );
+
+    formatter_test_group!(
+        address_operator,
+        assign_address_ident = {"Foo :=@ Bar", "Foo := @Bar"},
+        plus_address_ident = {"Foo + @ Bar", "Foo + @Bar"},
+        parens_address_ident = {"Foo( @ Bar)", "Foo(@Bar)"},
+        square_address_ident = {"Foo[ @ Bar]", "Foo[@Bar]"},
+        left_address_ident_assign = {"@ Foo := Bar", "@Foo := Bar"},
+    );
+
+    macro_rules! binary_op_cases {
+        ($(($name: ident, $symbol: expr)),* $(,)?)=> {
+            formatter_test_group!(
+                binary_operators,
+                $($name = {concat!("A  ", $symbol, "  B"), concat!("A ", $symbol, " B")}),*
+            );
+        };
     }
 
-    #[test]
-    fn address_operator() {
-        run_test("Foo :=@ Bar", "Foo := @Bar");
-        run_test("Foo + @ Bar", "Foo + @Bar");
-        run_test("Foo( @ Bar)", "Foo(@Bar)");
-        run_test("Foo[ @ Bar]", "Foo[@Bar]");
-        run_test("@ Foo := Bar", "@Foo := Bar");
-    }
+    binary_op_cases!(
+        (star, "*"),
+        (slash, "/"),
+        (assign, ":="),
+        (equal, "="),
+        (not_equal, "<>"),
+        (less_equal, "<="),
+        (greater_equal, ">="),
+        (less_than, "<"),
+        (greater_than, ">"),
+        (r#mod, "mod"),
+        (div, "div"),
+        (shl, "shl"),
+        (shr, "shr"),
+        (and, "and"),
+        (r#as, "as"),
+        (r#in, "in"),
+        (or, "or"),
+        (xor, "xor"),
+        (is, "is")
+    );
 
-    #[test]
-    fn always_binary_operators() {
-        run_test("Field^:=Self", "Field^ := Self");
-        run_test("Field^<>Self", "Field^ <> Self");
-        run_test("Field<=  Self", "Field <= Self");
-        run_test("Field  >=Self", "Field >= Self");
-        run_test("Foo()=Self", "Foo() = Self");
-        run_test(" = Self", " = Self");
-        run_test("Foo[0]  /Self", "Foo[0] / Self");
-        run_test("Foo[0]  *Self", "Foo[0] * Self");
-    }
+    formatter_test_group!(
+        generic_type_params,
+        two_type_param_function_call = {"Foo < Bar, Baz > ()", "Foo<Bar, Baz>()"},
+        two_type_param_type_def = {"class Foo < Bar, Baz > =T", "class Foo<Bar, Baz> = T"},
+        single_type_param_type_def = {"class Foo < Bar > =T", "class Foo<Bar> = T"},
+        nested_multi_generic_param_list = {"Foo < Bar< Baz >, FooBar >", "Foo<Bar<Baz>, FooBar>"},
+        multi_type_param_list_nested_function_call = {"Foo(Bar < T, U > (V))", "Foo(Bar<T, U>(V))"},
+        multi_type_param_list_nested_array_index = {"Foo(Bar < T, U > [1])", "Foo(Bar<T, U>[1])"},
+        multi_type_param_list_nested_before_address_op = {"Foo(Bar < T, U > @V)", "Foo(Bar < T, U > @V)"},
+        type_params_inside_array_literal = {"[Bar < T > (V)]", "[Bar<T>(V)]"},
+        single_type_param_equality = {"Foo<Bar>  =T", "Foo<Bar> = T"},
 
-    #[test]
-    fn comparison_operators() {
-        run_test("", "");
-        run_test("a<b", "a < b");
-        run_test("a>b", "a > b");
-        // this is not what we want, but it would be hard to distinguish this from generics without
-        // proper parsing.
-        run_test("Foo(Bar < Baz, Baz > Bar)", "Foo(Bar < Baz, Baz > Bar)");
-    }
-
-    #[test]
-    fn generic_type_params() {
-        run_test("Foo < Bar, Baz > ()", "Foo<Bar, Baz>()");
-        run_test("class Foo < Bar, Baz > =T", "class Foo<Bar, Baz> = T");
-        run_test("Foo < Bar< Baz >, FooBar >", "Foo<Bar<Baz>, FooBar>");
-        run_test("Foo(Bar < T, U > (V))", "Foo(Bar<T, U>(V))");
-        run_test("[Bar < T > (V)]", "[Bar<T>(V)]");
-        run_test("Foo(Bar < T, U > [1])", "Foo(Bar<T, U>[1])");
-        run_test("Foo(Bar < T, U > @V)", "Foo(Bar < T, U > @V)");
-
-        run_test("Foo<Bar>  =T", "Foo<Bar> = T");
+        identifier_after_multi_type_param_list = {"Foo(Bar < Baz, Baz > Bar)", "Foo(Bar < Baz, Baz > Bar)"},
+        address_op_after_multi_type_param_list = {"Foo(Bar < Baz, Baz > @Bar)", "Foo(Bar < Baz, Baz > @Bar)"},
+        not_op_after_multi_type_param_list = {"Foo(Bar < Baz, Baz > not Bar)", "Foo(Bar < Baz, Baz > not Bar)"},
+        maybe_binary_op_after_multi_type_param_list = {"Foo(Bar < Baz, Baz > + Bar)", "Foo(Bar<Baz, Baz> + Bar)"},
+        binary_op_after_multi_type_param_list = {"Foo(Bar < Baz, Baz > / Bar)", "Foo(Bar<Baz, Baz> / Bar)"},
 
         // ambiguous >= token, room for improvement
-        run_test("Foo<Bar>=T", "Foo < Bar >= T");
-        run_test("Foo<Bar, Baz>=T", "Foo < Bar, Baz >= T");
-    }
+        ambiguous_greater_equal_single_type_param_type_def = {"Foo<Bar>=T", "Foo < Bar >= T"},
+        ambiguous_greater_equal_multi_type_param_type_def = {"Foo<Bar, Baz>=T", "Foo < Bar, Baz >= T"},
+    );
 
-    #[test]
-    fn after_semicolon() {
-        run_test(";foo", "; foo");
-        run_test(";+1", "; +1");
-    }
+    formatter_test_group!(
+        after_semicolon,
+        semicolon_at_start = {";foo", "; foo"},
+        semicolon_in_middle = {"1;2", "1; 2"},
+        semicolon_at_end = {"1;", "1;"},
+    );
 
-    #[test]
-    fn space_before_comments_and_directives() {
-        run_test("foo//", "foo //");
-        run_test("foo  //", "foo //");
-        run_test("foo{}", "foo {}");
-        run_test("foo  {}", "foo {}");
-        run_test("foo{$ifdef A}{$endif}", "foo {$ifdef A} {$endif}");
-        run_test("foo{$Message 'A'}", "foo {$Message 'A'}");
-        run_test("foo{$Message 'A'}", "foo {$Message 'A'}");
-    }
+    formatter_test_group!(
+        space_before_comments_and_directives,
+        eol_line_comment = {"foo//", "foo //"},
+        eol_line_comment_double_space = {"foo  //", "foo //"},
+        eol_block_comment_no_space = {"foo{}", "foo {}"},
+        eol_block_comment_double_space = {"foo  {}", "foo {}"},
+        ifdef = {"foo{$ifdef A}{$endif}", "foo {$ifdef A} {$endif}"},
+        directive = {"foo{$Message 'A'}", "foo {$Message 'A'}"},
+    );
 
-    #[test]
-    fn consecutive_keywords() {
-        run_test("begin   end", "begin end");
-        run_test("repeat  until", "repeat until");
-        run_test("then  begin end", "then begin end");
-    }
+    formatter_test_group!(
+        consecutive_keywords,
+        begin_end = {"begin   end", "begin end"},
+        repeat_until = {"repeat  until", "repeat until"},
+        then_begin_end = {"then  begin end", "then begin end"},
+    );
 
-    #[test]
-    fn fallback_spacing() {
-        run_test("'a'  'a'", "'a' 'a'");
-        run_test("0   1", "0 1");
-        run_test("0   1", "0 1");
-        run_test("!!", "!!");
-        run_test("!  !", "! !");
-    }
+    formatter_test_group!(
+        fallback_spacing,
+        adjacent_text_literals = {"'a'  'a'", "'a' 'a'"},
+        adjacent_number_literals = {"0   1", "0 1"},
+        adjacent_unknown_tokens_without_space = {"!!", "!!"},
+        adjacent_unknown_tokens_with_space = {"!  !", "! !"}
+    );
 
-    #[test]
-    fn ambiguous_keyword() {
-        run_test("public  private   ReadOnly Message", "public private ReadOnly Message");
-    }
+    formatter_test_group!(
+        ambiguous_keyword,
+        max_one_space_around_ambiguous_keywords = {"public  private   ReadOnly Message", "public private ReadOnly Message"},
+    );
 }
