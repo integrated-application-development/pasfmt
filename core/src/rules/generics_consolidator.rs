@@ -52,11 +52,19 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                                 | TokenType::Op(OperatorKind::AddressOf | OperatorKind::Not),
                             ) = tokens.get(next_idx + 1).map(Token::get_token_type)
                             {
-                                // cases where it could still be a comparison:
+                                // cases where it cannot be generics
                                 //   Foo(X < Y, U > V)
-                                //   Foo(X < Y, U > +V)   (or any other operator that isn't a left bracket)
                                 //   Foo(X < Y, U > @V)
-                                // In some other cases it's still ambiguous but we would prefer to treat it like generics
+                                //   Foo(X < Y, U > not V)
+
+                                // cases where it is ambiguous but we prefer to treat it as generics
+                                //   Foo(X < Y, U > +V)
+                                //   Foo(X < Y, U > -V)
+                                //   Foo(X < Y, U > (V))
+                                //   Foo(X < Y, U > [V])
+
+                                // cases where it must be generics
+                                //   Foo(X < Y, U > /V)   (or any other binary operator)
                                 break;
                             }
                         }
@@ -116,6 +124,8 @@ mod tests {
     const ID: TokenType = TokenType::Identifier;
     const LP: TokenType = Op(OperatorKind::LParen);
     const RP: TokenType = Op(OperatorKind::RParen);
+    const LB: TokenType = Op(OperatorKind::LBrack);
+    const RB: TokenType = Op(OperatorKind::RBrack);
     const SEMI: TokenType = Op(OperatorKind::Semicolon);
     const COL: TokenType = Op(OperatorKind::Colon);
     const COM: TokenType = Op(OperatorKind::Comma);
@@ -126,6 +136,9 @@ mod tests {
     const RG: TokenType = Op(OperatorKind::RGeneric);
     const AND: TokenType = Op(OperatorKind::And);
     const DOT: TokenType = Op(OperatorKind::Dot);
+    const ADDR: TokenType = Op(OperatorKind::AddressOf);
+    const NOT: TokenType = Op(OperatorKind::Not);
+    const PLUS: TokenType = Op(OperatorKind::Plus);
 
     const CLASS: TokenType = TokenType::Keyword(PureKeywordKind::Class);
 
@@ -195,16 +208,82 @@ mod tests {
         // A<B, B2> C
         run_test_unchanged(&[ID, LT, ID, COM, ID, GT, ID]);
         run_test_unchanged(&[ID, LT, ID, COM, ID, GT, IDKW]);
+
+        // A(B < C, D > E)
+        run_test_unchanged(&[ID, LP, ID, LT, ID, COM, ID, GT, ID, RP]);
     }
 
     #[test]
     fn followed_by_address_op() {
-        const ADDR: TokenType = TokenType::Op(OperatorKind::AddressOf);
         // A<B> @
         run_test(&[ID, LG, ID, RG, ADDR], &[ID, LG, ID, RG, ADDR]);
 
         // A<B, C> @
         run_test_unchanged(&[ID, LT, ID, COM, ID, GT, ADDR]);
+
+        // Foo(A<B, C> @B)
+        run_test_unchanged(&[ID, LP, ID, LT, ID, COM, ID, GT, ADDR, ID, RP]);
+    }
+
+    #[test]
+    fn followed_by_not_op() {
+        // A<B> not C
+        run_test(&[ID, LT, ID, GT, NOT, ID], &[ID, LG, ID, RG, NOT, ID]);
+
+        // A<B, C> not D
+        run_test_unchanged(&[ID, LT, ID, COM, ID, GT, NOT, ID]);
+
+        // Foo(A < B, C > not D)
+        run_test_unchanged(&[ID, LP, ID, LT, ID, COM, ID, GT, NOT, ID, RP]);
+    }
+
+    #[test]
+    fn followed_by_maybe_unary_op() {
+        // A<B> + C
+        run_test(&[ID, LT, ID, GT, PLUS, ID], &[ID, LG, ID, RG, PLUS, ID]);
+
+        // A<B, C> + D
+        run_test(
+            &[ID, LT, ID, COM, ID, GT, PLUS, ID],
+            &[ID, LG, ID, COM, ID, RG, PLUS, ID],
+        );
+
+        // Foo(A < B, C > + D)
+        run_test(
+            &[ID, LP, ID, LT, ID, COM, ID, GT, PLUS, ID, RP],
+            &[ID, LP, ID, LG, ID, COM, ID, RG, PLUS, ID, RP],
+        );
+    }
+
+    #[test]
+    fn followed_by_parens() {
+        // A<B> (C)
+        run_test(&[ID, LT, ID, GT, LP, ID, RP], &[ID, LG, ID, RG, LP, ID, RP]);
+        // A<B> [C]
+        run_test(&[ID, LT, ID, GT, LB, ID, RB], &[ID, LG, ID, RG, LB, ID, RB]);
+
+        // A<B, C> (D)
+        run_test(
+            &[ID, LT, ID, COM, ID, GT, LP, ID, RP],
+            &[ID, LG, ID, COM, ID, RG, LP, ID, RP],
+        );
+        // A<B, C> [D]
+        run_test(
+            &[ID, LT, ID, COM, ID, GT, LB, ID, RB],
+            &[ID, LG, ID, COM, ID, RG, LB, ID, RB],
+        );
+
+        // ambiguous, but treated like generics
+        // Foo(A < B, C > (D))
+        run_test(
+            &[ID, LP, ID, LT, ID, COM, ID, GT, LP, ID, RP, RP],
+            &[ID, LP, ID, LG, ID, COM, ID, RG, LP, ID, RP, RP],
+        );
+        // Foo(A < B, C > [D])
+        run_test(
+            &[ID, LP, ID, LT, ID, COM, ID, GT, LB, ID, RB, RP],
+            &[ID, LP, ID, LG, ID, COM, ID, RG, LB, ID, RB, RP],
+        );
     }
 
     #[test]
