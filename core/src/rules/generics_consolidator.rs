@@ -49,7 +49,7 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                             if let Some(
                                 TokenType::Identifier
                                 | TokenType::IdentifierOrKeyword(_)
-                                | TokenType::Op(OperatorKind::AddressOf),
+                                | TokenType::Op(OperatorKind::AddressOf | OperatorKind::Not),
                             ) = tokens.get(next_idx + 1).map(Token::get_token_type)
                             {
                                 // cases where it could still be a comparison:
