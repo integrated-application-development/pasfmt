@@ -35,6 +35,7 @@ fn get_word_token_type(input: &str) -> TokenType {
         "and" => Op(And),
         "array" => Keyword(Array),
         "as" => Op(As),
+        "asm" => Keyword(Asm),
         "assembler" => IdentifierOrKeyword(Assembler),
         "at" => IdentifierOrKeyword(At),
         "automated" => IdentifierOrKeyword(Automated),
@@ -309,12 +310,8 @@ fn asm_identifier(input: &str) -> IResult<&str, ContentAndTokenType> {
     }
 }
 
-fn asm_block(input: &str) -> IResult<&str, Vec<WhitespaceAndToken>> {
-    let (mut input, asm) = tuple((
-        take_whitespace,
-        tag_no_case("asm").map(|text| (text, Keyword(Asm))),
-    ))(input)?;
-    let mut tokens = vec![asm];
+fn asm_block(mut input: &str) -> IResult<&str, Vec<WhitespaceAndToken>> {
+    let mut tokens = vec![];
 
     while let Ok((next_input, next)) = pair(
         take_whitespace,
@@ -516,12 +513,17 @@ fn whitespace_and_token(input: &str) -> IResult<&str, WhitespaceAndToken> {
 fn parse_delphi_file(mut input: &str) -> IResult<&str, Vec<WhitespaceAndToken>> {
     let mut result = vec![];
     loop {
-        if let Ok((remaining, new_result)) = asm_block(input) {
-            result.extend(new_result);
-            input = remaining;
-        } else if let Ok((remaining, new_result)) = whitespace_and_token(input) {
+        if let Ok((remaining, new_result)) = whitespace_and_token(input) {
+            let (_, (_, token_type)) = new_result;
             result.push(new_result);
             input = remaining;
+
+            if token_type == Keyword(Asm) {
+                if let Ok((remaining, new_result)) = asm_block(input) {
+                    result.extend(new_result);
+                    input = remaining;
+                }
+            }
         } else {
             break;
         }
@@ -1176,6 +1178,23 @@ mod tests {
                 (",", Op(Comma)),
                 ("RBX", Identifier),
                 ("end", Keyword(End)),
+            ],
+        );
+    }
+
+    #[test]
+    fn identifier_starting_with_asm() {
+        run_test(
+            "begin var asmA := 0; end;",
+            vec![
+                ("begin", Keyword(Begin)),
+                ("var", Keyword(Var)),
+                ("asmA", Identifier),
+                (":=", Op(Assign)),
+                ("0", NumberLiteral(Decimal)),
+                (";", Op(Semicolon)),
+                ("end", Keyword(End)),
+                (";", Op(Semicolon)),
             ],
         );
     }
