@@ -6,20 +6,20 @@ pub struct TokenSpacing {}
 impl LogicalLineFileFormatter for TokenSpacing {
     fn format(&self, formatted_tokens: &mut FormattedTokens, _input: &[LogicalLine]) {
         for token_index in 0..formatted_tokens.get_tokens().len() {
-            let (spaces_before, spaces_after) = match formatted_tokens
-                .get_token_type_for_index(token_index)
-            {
-                Some(TokenType::Op(operator)) => {
-                    space_operator(operator, token_index, formatted_tokens)
-                }
-                Some(
-                    TokenType::Comment(_)
-                    | TokenType::CompilerDirective
-                    | TokenType::ConditionalDirective(_),
-                ) => one_space_before(token_index, formatted_tokens),
-                Some(TokenType::Keyword(_)) => one_space_either_side(token_index, formatted_tokens),
-                _ => max_one_either_side(token_index, formatted_tokens),
-            };
+            let (spaces_before, spaces_after) =
+                match formatted_tokens.get_token_type_for_index(token_index) {
+                    Some(TokenType::Op(operator)) => {
+                        space_operator(operator, token_index, formatted_tokens)
+                    }
+                    Some(TokenType::Comment(CommentKind::InlineLine)) => (Some(1), None),
+                    Some(
+                        TokenType::Comment(_)
+                        | TokenType::CompilerDirective
+                        | TokenType::ConditionalDirective(_)
+                        | TokenType::Keyword(_),
+                    ) => one_space_either_side(token_index, formatted_tokens),
+                    _ => max_one_either_side(token_index, formatted_tokens),
+                };
 
             if let Some(spaces_before) = spaces_before {
                 if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token_index)
@@ -61,21 +61,35 @@ fn max_one_either_side(
     )
 }
 
+fn spaces_before(token_type: Option<TokenType>, spaces: usize) -> Option<usize> {
+    match token_type {
+        None => None,
+        Some(TokenType::Op(LBrack | LParen | LGeneric)) => Some(0),
+        _ => Some(spaces),
+    }
+}
+
+fn spaces_after(token_type: Option<TokenType>, spaces: usize) -> Option<usize> {
+    match token_type {
+        None => None,
+        Some(TokenType::Op(RBrack | RParen | RGeneric)) => Some(0),
+        _ => Some(spaces),
+    }
+}
+
 fn one_space_either_side(
     token_index: usize,
     formatted_tokens: &mut FormattedTokens<'_>,
 ) -> (Option<usize>, Option<usize>) {
     (
-        match formatted_tokens.get_token_type_for_index(token_index.wrapping_sub(1)) {
-            None => None,
-            Some(TokenType::Op(LBrack | LParen)) => Some(0),
-            _ => Some(1),
-        },
-        match formatted_tokens.get_token_type_for_index(token_index + 1) {
-            None => None,
-            Some(TokenType::Op(RBrack | RParen)) => Some(0),
-            _ => Some(1),
-        },
+        spaces_before(
+            formatted_tokens.get_token_type_for_index(token_index.wrapping_sub(1)),
+            1,
+        ),
+        spaces_after(
+            formatted_tokens.get_token_type_for_index(token_index + 1),
+            1,
+        ),
     )
 }
 
@@ -84,11 +98,10 @@ fn one_space_before(
     formatted_tokens: &mut FormattedTokens<'_>,
 ) -> (Option<usize>, Option<usize>) {
     (
-        match formatted_tokens.get_token_type_for_index(token_index.wrapping_sub(1)) {
-            None => None,
-            Some(TokenType::Op(LBrack | LParen)) => Some(0),
-            _ => Some(1),
-        },
+        spaces_before(
+            formatted_tokens.get_token_type_for_index(token_index.wrapping_sub(1)),
+            1,
+        ),
         Some(0),
     )
 }
@@ -367,6 +380,15 @@ mod tests {
         eol_block_comment_double_space = {"foo  {}", "foo {}"},
         ifdef = {"foo{$ifdef A}{$endif}", "foo {$ifdef A} {$endif}"},
         directive = {"foo{$Message 'A'}", "foo {$Message 'A'}"},
+        eol_line_comment_after_parens = {"foo(//\n)", "foo( //\n)"},
+        eol_line_comment_inside_generics = {"Foo<//\nA>", "Foo< //\nA>"},
+        eol_block_comment_after_parens = {"foo( {}\n)", "foo({}\n)"},
+        eol_block_comment_inside_generics = {"Foo< {}\nA>", "Foo<{}\nA>"},
+        block_comment_after_parens = {"foo( {})", "foo({})"},
+        block_comment_before_parens = {"foo(\n{} )", "foo(\n{})"},
+        block_comment_inside_generics = {"Foo< {}A, B{} >", "Foo<{} A, B {}>"},
+        ifdef_inside_parens = {"foo( {$ifdef A}'a'{$else}'b'{$ifend} )", "foo({$ifdef A} 'a' {$else} 'b' {$ifend})"},
+        ifdef_inside_generics = {"Foo< {$ifdef A}A{$else}B{$ifend} >", "Foo<{$ifdef A} A {$else} B {$ifend}>"},
     );
 
     formatter_test_group!(
