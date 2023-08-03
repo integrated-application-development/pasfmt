@@ -119,5 +119,157 @@ mod tests {
               "
             },
         },
+        disabled_and_reenabled = {
+            indoc! {
+              "
+              Foo(Bar);
+              // pasfmt off
+              Foo(Bar);
+              Foo(Bar);
+              // pasfmt on
+              Foo(Bar);
+              // pasfmt off
+              Foo(Bar);
+              "
+            },
+            indoc! {
+              "
+               Foo ( Bar ) ;
+              // pasfmt off
+              Foo(Bar);
+              Foo(Bar);
+              // pasfmt on
+               Foo ( Bar ) ;
+              // pasfmt off
+              Foo(Bar);
+              "
+            },
+        },
+        disabled_with_block_comment = {
+            indoc! {
+              "
+              Foo(Bar);
+              { pasfmt off }
+              Foo(Bar);
+              "
+            },
+            indoc! {
+              "
+               Foo ( Bar ) ;
+              { pasfmt off }
+              Foo(Bar);
+              "
+            },
+        },
+        disabled_with_block_comment_alt = {
+            indoc! {
+              "
+              Foo(Bar);
+              (* pasfmt off *)
+              Foo(Bar);
+              "
+            },
+            indoc! {
+              "
+               Foo ( Bar ) ;
+              (* pasfmt off *)
+              Foo(Bar);
+              "
+            },
+        },
+        whitespace_at_start_of_toggle = {
+            indoc! {
+              "
+              Foo(Bar);
+              {
+                pasfmt off
+              }
+              Foo(Bar);
+              "
+            },
+            indoc! {
+              "
+               Foo ( Bar ) ;
+              {
+                pasfmt off
+              }
+              Foo(Bar);
+              "
+            },
+        },
+        no_whitespace_around_toggle = {
+            indoc! {
+              "
+              Foo(Bar);
+              {pasfmt off}
+              Foo(Bar);
+              "
+            },
+            indoc! {
+              "
+               Foo ( Bar ) ;
+              {pasfmt off}
+              Foo(Bar);
+              "
+            },
+        },
+        trailing_content_in_toggle = {
+            indoc! {
+              "
+              Foo(Bar);
+              // pasfmt off (because of xyz)
+              Foo(Bar);
+              {
+                pasfmt on
+                (because of zyx)
+              }
+              Foo(Bar);
+              "
+            },
+            indoc! {
+              "
+               Foo ( Bar ) ;
+              // pasfmt off (because of xyz)
+              Foo(Bar);
+              {
+                pasfmt on
+                (because of zyx)
+              }
+               Foo ( Bar ) ;
+              "
+            },
+        },
+        word_break_after_off_on = {
+            indoc! {
+              "
+              Foo(Bar);
+              // pasfmt offa
+              Foo(Bar);
+              // pasfmt off1
+              Foo(Bar);
+              // pasfmt off!
+              Foo(Bar);
+              // pasfmt onA
+              Foo(Bar);
+              // pasfmt on)
+              Foo(Bar);
+              "
+            },
+            indoc! {
+              "
+               Foo ( Bar ) ;
+               // pasfmt offa
+               Foo ( Bar ) ;
+               // pasfmt off1
+               Foo ( Bar ) ;
+              // pasfmt off!
+              Foo(Bar);
+              // pasfmt onA
+              Foo(Bar);
+              // pasfmt on)
+               Foo ( Bar ) ;
+              "
+            },
+        }
     );
 }
