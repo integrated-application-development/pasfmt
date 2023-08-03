@@ -511,20 +511,16 @@ fn whitespace_and_token(input: &str) -> IResult<&str, WhitespaceAndToken> {
 
 fn parse_delphi_file(mut input: &str) -> IResult<&str, Vec<WhitespaceAndToken>> {
     let mut result = vec![];
-    loop {
-        if let Ok((remaining, new_result)) = whitespace_and_token(input) {
-            let (_, (_, token_type)) = new_result;
-            result.push(new_result);
-            input = remaining;
+    while let Ok((remaining, new_result)) = whitespace_and_token(input) {
+        let (_, (_, token_type)) = new_result;
+        result.push(new_result);
+        input = remaining;
 
-            if token_type == Keyword(Asm) {
-                if let Ok((remaining, new_result)) = asm_block(input) {
-                    result.extend(new_result);
-                    input = remaining;
-                }
+        if token_type == Keyword(Asm) {
+            if let Ok((remaining, new_result)) = asm_block(input) {
+                result.extend(new_result);
+                input = remaining;
             }
-        } else {
-            break;
         }
     }
     Ok((input, result))
