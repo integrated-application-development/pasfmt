@@ -1,6 +1,7 @@
 use crate::lang::*;
 use crate::traits::LogicalLineFileFormatter;
 
+use log::warn;
 use nom::branch::*;
 use nom::bytes::complete::*;
 use nom::character::complete::*;
@@ -14,11 +15,13 @@ enum FormattingToggle {
 }
 
 fn parse_pasfmt_toggle(input: &str) -> IResult<&str, FormattingToggle> {
-    if input.eq_ignore_ascii_case("off") {
-        Ok(("", FormattingToggle::Off))
-    } else if input.eq_ignore_ascii_case("on") {
-        Ok(("", FormattingToggle::On))
+    let (input, word) = alphanumeric1(input)?;
+    if word.eq_ignore_ascii_case("on") {
+        Ok((input, FormattingToggle::On))
+    } else if word.eq_ignore_ascii_case("off") {
+        Ok((input, FormattingToggle::Off))
     } else {
+        warn!("pasfmt directive comment found but '{word}' is neither 'on' nor 'off'.");
         fail(input)
     }
 }
@@ -80,6 +83,7 @@ mod tests {
             for &token_index in input.get_tokens() {
                 if let Some(formatting_data) = formatted_tokens
                     .get_token_type_for_index(token_index)
+                    .filter(|token_type| token_type != &TokenType::Eof)
                     .and_then(|_| formatted_tokens.get_formatting_data_mut(token_index))
                 {
                     formatting_data.spaces_before += 1;
@@ -102,7 +106,7 @@ mod tests {
 
     formatter_test_group!(
         formatting_toggle,
-        not_disabled = {"Foo(Bar + Baz)", " Foo ( Bar  +  Baz ) "},
+        not_disabled = {"Foo(Bar + Baz)", " Foo ( Bar  +  Baz )"},
         disabled_single_line = {
             indoc! {
               "
