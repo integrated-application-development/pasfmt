@@ -459,3 +459,13 @@ pub enum FormatterKind {
     LineFormatter(Box<dyn LogicalLineFormatter + Sync>),
     FileFormatter(Box<dyn LogicalLineFileFormatter + Sync>),
 }
+impl LogicalLineFileFormatter for FormatterKind {
+    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &[LogicalLine]) {
+        match self {
+            FormatterKind::LineFormatter(formatter) => input
+                .iter()
+                .for_each(|logical_line| formatter.format(formatted_tokens, logical_line)),
+            FormatterKind::FileFormatter(formatter) => formatter.format(formatted_tokens, input),
+        }
+    }
+}

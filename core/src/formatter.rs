@@ -2,7 +2,6 @@ use std::marker::PhantomData;
 
 use crate::lang::*;
 use crate::traits::*;
-use itertools::Itertools;
 
 pub struct Formatter {
     lexer: Box<dyn Lexer + Sync>,
@@ -17,46 +16,20 @@ impl Formatter {
         FormatterBuilder::default()
     }
     pub fn format(&self, input: &str) -> String {
-        Some(input)
-            .map(|input| self.lexer.lex(input))
-            .map(|tokens| {
-                self.token_consolidators
-                    .iter()
-                    .fold(tokens, |tokens, consolidator| {
-                        consolidator
-                            .consolidate(tokens)
-                            .into_iter()
-                            .sorted_by_key(|token| token.get_index())
-                            .collect::<Vec<Token>>()
-                    })
-            })
-            .map(|tokens| self.logical_line_parser.parse(tokens))
-            .map(|logical_lines| {
-                self.logical_line_consolidators
-                    .iter()
-                    .fold(logical_lines, |logical_lines, consolidator| {
-                        consolidator.consolidate(logical_lines)
-                    })
-                    .into()
-            })
-            .map(|(tokens, mut logical_lines)| {
-                let mut formatted_tokens = FormattedTokens::new_from_tokens(tokens);
-                self.logical_line_formatters
-                    .iter()
-                    .for_each(|formatter| match formatter {
-                        FormatterKind::LineFormatter(formatter) => {
-                            logical_lines.iter_mut().for_each(|logical_line| {
-                                formatter.format(&mut formatted_tokens, logical_line)
-                            })
-                        }
-                        FormatterKind::FileFormatter(formatter) => {
-                            formatter.format(&mut formatted_tokens, &logical_lines)
-                        }
-                    });
-                formatted_tokens
-            })
-            .map(|formatted_tokens| self.reconstructor.reconstruct(formatted_tokens))
-            .unwrap()
+        let mut tokens = self.lexer.lex(input);
+        for token_consolidator in self.token_consolidators.iter() {
+            tokens = token_consolidator.consolidate(tokens);
+        }
+        let mut logical_lines = self.logical_line_parser.parse(tokens);
+        for line_consolidator in self.logical_line_consolidators.iter() {
+            logical_lines = line_consolidator.consolidate(logical_lines);
+        }
+        let (tokens, logical_lines) = logical_lines.into();
+        let mut formatted_tokens = FormattedTokens::new_from_tokens(tokens);
+        for formatter in self.logical_line_formatters.iter() {
+            formatter.format(&mut formatted_tokens, &logical_lines);
+        }
+        self.reconstructor.reconstruct(formatted_tokens)
     }
 }
 
@@ -313,12 +286,15 @@ mod tests {
                     let second_token = tokens.remove(token_index);
                     let first_token = tokens.remove(token_index - 1);
 
-                    tokens.push(Token::OwningToken(OwningToken::new(
-                        first_token.get_index(),
-                        first_token.get_leading_whitespace().to_owned(),
-                        first_token.get_content().to_owned() + second_token.get_content(),
-                        first_token.get_token_type(),
-                    )))
+                    tokens.insert(
+                        token_index,
+                        Token::OwningToken(OwningToken::new(
+                            first_token.get_index(),
+                            first_token.get_leading_whitespace().to_owned(),
+                            first_token.get_content().to_owned() + second_token.get_content(),
+                            first_token.get_token_type(),
+                        )),
+                    );
                 }
             }
             tokens
