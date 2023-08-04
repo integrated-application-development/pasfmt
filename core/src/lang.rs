@@ -1,3 +1,5 @@
+use std::vec::Drain;
+
 use crate::traits::{LogicalLineFileFormatter, LogicalLineFormatter};
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -211,6 +213,7 @@ pub enum LogicalLineType {
     AsmInstruction,
     PropertyDeclaration,
     Unknown,
+    Voided,
 }
 #[derive(Debug, PartialEq, Eq)]
 pub struct LogicalLine {
@@ -247,6 +250,10 @@ impl LogicalLine {
     }
     pub fn get_line_type(&self) -> LogicalLineType {
         self.line_type
+    }
+    pub fn void_and_drain(&mut self) -> Drain<usize> {
+        self.line_type = LogicalLineType::Voided;
+        self.tokens.drain(0..)
     }
 }
 
