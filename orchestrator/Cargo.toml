@@ -12,3 +12,6 @@ rayon = "1.7.0"
 toml = "0.7.5"
 walkdir = "2.3.3"
 log = "0.4"
+
+[dev-dependencies]
+yare = "1.0.2"

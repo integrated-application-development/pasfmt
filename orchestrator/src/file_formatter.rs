@@ -153,6 +153,55 @@ impl FileFormatter {
     }
 }
 
+fn has_extension(path: &str, extension: &str) -> bool {
+    let rsplit = &mut path.rsplit('.');
+    rsplit.next().map(|ext| ext.eq_ignore_ascii_case(extension)) == Some(true)
+        && rsplit.next().is_some()
+}
+
 fn formattable_file_path(path: &str) -> bool {
-    path.ends_with(".pas") || path.ends_with(".dpr") || path.ends_with(".dpk")
+    has_extension(path, "pas") || has_extension(path, "dpr") || has_extension(path, "dpk")
+}
+
+#[cfg(test)]
+mod tests {
+    use yare::parameterized;
+
+    use crate::file_formatter::formattable_file_path;
+
+    #[parameterized(
+        pas_lower = {"a.pas"},
+        pas_upper = {"a.PAS"},
+        pas_mixed = {"a.Pas"},
+        dpr_lower = {"b.dpr"},
+        dpr_upper = {"b.DPR"},
+        dpr_mixed = {"b.Dpr"},
+        dpk_lower = {"c.dpk"},
+        dpk_upper = {"c.DPK"},
+        dpk_mixed = {"c.Dpk"},
+        only_dot_pas = {".pas"},
+        only_dot_dpr = {".dpr"},
+        only_dot_dpk = {".dpk"},
+    )]
+    fn formattable_file_paths(path: &str) {
+        assert!(formattable_file_path(path));
+    }
+
+    #[parameterized(
+        no_dot_pas = {"pas"},
+        starts_pas = {"a.pas1"},
+        ends_pas = {"a.unpas"},
+        contains_dot_pas = {"a.pas.x"},
+        no_dot_dpr = {"dpr"},
+        starts_dpr = {"a.dpr1"},
+        ends_dpr = {"a.undpr"},
+        contains_dot_dpr = {"a.dpr.x"},
+        no_dot_dpk = {"dpk"},
+        starts_dpk = {"a.dpk1"},
+        ends_dpk = {"a.undpk"},
+        contains_dot_dpk = {"a.dpk.x"},
+    )]
+    fn non_formattable_file_paths(path: &str) {
+        assert!(!formattable_file_path(path));
+    }
 }
