@@ -93,7 +93,10 @@ impl LogicalLinesConsolidator for UsesClauseConsolidator {
                 .iter()
                 .rev()
                 .for_each(|conditional_line_index| {
-                    lines.remove(*conditional_line_index);
+                    lines
+                        .get_mut(*conditional_line_index)
+                        .unwrap()
+                        .void_and_drain();
                 });
         }
 
@@ -122,7 +125,12 @@ mod tests {
             .map(|logical_lines| consolidator.consolidate(logical_lines))
             .unwrap()
             .into();
-        lines.retain(|line| line.get_line_type() != LogicalLineType::Eof);
+        lines.retain(|line| {
+            !matches!(
+                line.get_line_type(),
+                LogicalLineType::Eof | LogicalLineType::Voided
+            )
+        });
 
         assert_that(&lines).has_length(expected_lines.len());
         expected_lines.iter().for_each(|expected_line| {
