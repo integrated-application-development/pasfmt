@@ -267,7 +267,9 @@ mod tests {
 
     formatter_test_group!(
         parens,
-        after_right_bracket = {"if Foo(0 )then", "if Foo(0) then"},
+        keyword_after_right_bracket = {"if Foo(0 )then", "if Foo(0) then"},
+        maybe_keyword_after_right_bracket = {"Foo(0 )read", "Foo(0) read"},
+        ident_after_right_bracket = {"Foo(0 )bar", "Foo(0) bar"},
     );
 
     formatter_test_group!(
