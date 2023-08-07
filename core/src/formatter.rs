@@ -14,7 +14,7 @@ pub struct Formatter {
     reconstructor: Box<dyn LogicalLinesReconstructor + Sync>,
 }
 impl Formatter {
-    pub fn builder() -> FormatterBuilder<BeforeLexer> {
+    pub fn builder() -> FormatterBuilder<WithNothing> {
         FormatterBuilder::default()
     }
     pub fn format(&self, input: &str) -> String {
@@ -90,19 +90,23 @@ macro_rules! builder_state {
     };
 }
 
-trait WithParserMarker {}
-trait WithTokenRemoverMarker {}
-trait WithFormattersMarker {}
-trait WithReconstructorMarker {}
+trait CanAddLexer {}
+trait CanAddTokenConsolidator {}
+trait CanAddParser {}
+trait CanAddLinesConsolidator {}
+trait CanAddTokenRemover {}
+trait CanAddFormatter {}
+trait CanAddReconstructor {}
+trait CanBuild {}
 
-builder_state!(BeforeLexer);
-builder_state!(BeforeTokenConsolidators: [WithParserMarker]);
-builder_state!(BeforeParsers: [WithParserMarker]);
-builder_state!(BeforeLineConsolidators: [WithFormattersMarker, WithReconstructorMarker, WithTokenRemoverMarker]);
-builder_state!(BeforeTokenRemovers: [WithFormattersMarker, WithReconstructorMarker, WithTokenRemoverMarker]);
-builder_state!(BeforeFormatters: [WithFormattersMarker, WithReconstructorMarker]);
-builder_state!(BeforeReconstructor: [WithReconstructorMarker]);
-builder_state!(BeforeBuild);
+builder_state!(WithNothing: [CanAddLexer]);
+builder_state!(WithLexer: [CanAddTokenConsolidator, CanAddParser]);
+builder_state!(WithTokenConsolidator: [CanAddTokenConsolidator, CanAddParser]);
+builder_state!(WithParser: [CanAddLinesConsolidator, CanAddTokenRemover, CanAddFormatter, CanAddReconstructor]);
+builder_state!(WithLinesConsolidator: [CanAddLinesConsolidator, CanAddTokenRemover, CanAddFormatter, CanAddReconstructor]);
+builder_state!(WithTokenRemover: [CanAddTokenRemover, CanAddFormatter, CanAddReconstructor]);
+builder_state!(WithFormatter: [CanAddFormatter, CanAddReconstructor]);
+builder_state!(WithReconstructor: [CanBuild]);
 
 trait FormattingBuilderData: Sized {
     fn set_lexer<L: Lexer + Sync + 'static>(self, lexer: L) -> Self;
@@ -125,51 +129,48 @@ trait FormattingBuilderData: Sized {
     fn convert_type<U>(self) -> FormatterBuilder<U>;
 }
 
-pub trait WithLexer {
-    fn lexer<T: Lexer + Sync + 'static>(
-        self,
-        lexer: T,
-    ) -> FormatterBuilder<BeforeTokenConsolidators>;
+pub trait AddLexer {
+    fn lexer<T: Lexer + Sync + 'static>(self, lexer: T) -> FormatterBuilder<WithLexer>;
 }
-pub trait WithTokenConsolidator {
+pub trait AddTokenConsolidator {
     fn token_consolidator<T: TokenConsolidator + Sync + 'static>(
         self,
         token_consolidator: T,
-    ) -> FormatterBuilder<BeforeTokenConsolidators>;
+    ) -> FormatterBuilder<WithTokenConsolidator>;
 }
-pub trait WithParser {
+pub trait AddParser {
     fn parser<T: LogicalLineParser + Sync + 'static>(
         self,
         parser: T,
-    ) -> FormatterBuilder<BeforeLineConsolidators>;
+    ) -> FormatterBuilder<WithParser>;
 }
-pub trait WithLineConsolidator {
+pub trait AddLinesConsolidator {
     fn lines_consolidator<T: LogicalLinesConsolidator + Sync + 'static>(
         self,
         lines_consolidator: T,
-    ) -> FormatterBuilder<BeforeLineConsolidators>;
+    ) -> FormatterBuilder<WithLinesConsolidator>;
 }
-pub trait WithTokenRemover {
+pub trait AddTokenRemover {
     fn token_remover<T: TokenRemover + Sync + 'static>(
         self,
         token_remover: T,
-    ) -> FormatterBuilder<BeforeTokenRemovers>;
+    ) -> FormatterBuilder<WithTokenRemover>;
 }
-pub trait WithFormatter {
+pub trait AddFormatter {
     fn line_formatter<T: LogicalLineFormatter + Sync + 'static>(
         self,
         formatter: T,
-    ) -> FormatterBuilder<BeforeFormatters>;
+    ) -> FormatterBuilder<WithFormatter>;
     fn file_formatter<T: LogicalLineFileFormatter + Sync + 'static>(
         self,
         formatter: T,
-    ) -> FormatterBuilder<BeforeFormatters>;
+    ) -> FormatterBuilder<WithFormatter>;
 }
-pub trait WithReconstructor {
+pub trait AddReconstructor {
     fn reconstructor<T: LogicalLinesReconstructor + Sync + 'static>(
         self,
         reconstructor: T,
-    ) -> FormatterBuilder<BeforeBuild>;
+    ) -> FormatterBuilder<WithReconstructor>;
 }
 pub trait BuildFormatter {
     fn build(self) -> Formatter;
@@ -254,53 +255,50 @@ impl<T> FormattingBuilderData for FormatterBuilder<T> {
     }
 }
 
-impl WithLexer for FormatterBuilder<BeforeLexer> {
-    fn lexer<T: Lexer + Sync + 'static>(
-        self,
-        lexer: T,
-    ) -> FormatterBuilder<BeforeTokenConsolidators> {
+impl<U: CanAddLexer> AddLexer for FormatterBuilder<U> {
+    fn lexer<T: Lexer + Sync + 'static>(self, lexer: T) -> FormatterBuilder<WithLexer> {
         self.set_lexer(lexer).convert_type()
     }
 }
-impl WithTokenConsolidator for FormatterBuilder<BeforeTokenConsolidators> {
+impl<U: CanAddTokenConsolidator> AddTokenConsolidator for FormatterBuilder<U> {
     fn token_consolidator<T: TokenConsolidator + Sync + 'static>(
         self,
         token_consolidator: T,
-    ) -> FormatterBuilder<BeforeTokenConsolidators> {
+    ) -> FormatterBuilder<WithTokenConsolidator> {
         self.add_token_consolidator(token_consolidator)
             .convert_type()
     }
 }
-impl<U: WithParserMarker> WithParser for FormatterBuilder<U> {
+impl<U: CanAddParser> AddParser for FormatterBuilder<U> {
     fn parser<T: LogicalLineParser + Sync + 'static>(
         self,
         parser: T,
-    ) -> FormatterBuilder<BeforeLineConsolidators> {
+    ) -> FormatterBuilder<WithParser> {
         self.set_line_parser(parser).convert_type()
     }
 }
-impl WithLineConsolidator for FormatterBuilder<BeforeLineConsolidators> {
+impl<U: CanAddLinesConsolidator> AddLinesConsolidator for FormatterBuilder<U> {
     fn lines_consolidator<T: LogicalLinesConsolidator + Sync + 'static>(
         self,
         lines_consolidator: T,
-    ) -> FormatterBuilder<BeforeLineConsolidators> {
+    ) -> FormatterBuilder<WithLinesConsolidator> {
         self.add_lines_consolidator(lines_consolidator)
             .convert_type()
     }
 }
-impl<U: WithTokenRemoverMarker> WithTokenRemover for FormatterBuilder<U> {
+impl<U: CanAddTokenRemover> AddTokenRemover for FormatterBuilder<U> {
     fn token_remover<T: TokenRemover + Sync + 'static>(
         self,
         token_remover: T,
-    ) -> FormatterBuilder<BeforeTokenRemovers> {
+    ) -> FormatterBuilder<WithTokenRemover> {
         self.add_token_remover(token_remover).convert_type()
     }
 }
-impl<U: WithFormattersMarker> WithFormatter for FormatterBuilder<U> {
+impl<U: CanAddFormatter> AddFormatter for FormatterBuilder<U> {
     fn line_formatter<T: LogicalLineFormatter + Sync + 'static>(
         self,
         formatter: T,
-    ) -> FormatterBuilder<BeforeFormatters> {
+    ) -> FormatterBuilder<WithFormatter> {
         self.add_formatter(FormatterKind::LineFormatter(Box::new(formatter)))
             .convert_type()
     }
@@ -308,20 +306,20 @@ impl<U: WithFormattersMarker> WithFormatter for FormatterBuilder<U> {
     fn file_formatter<T: LogicalLineFileFormatter + Sync + 'static>(
         self,
         formatter: T,
-    ) -> FormatterBuilder<BeforeFormatters> {
+    ) -> FormatterBuilder<WithFormatter> {
         self.add_formatter(FormatterKind::FileFormatter(Box::new(formatter)))
             .convert_type()
     }
 }
-impl<U: WithReconstructorMarker> WithReconstructor for FormatterBuilder<U> {
+impl<U: CanAddReconstructor> AddReconstructor for FormatterBuilder<U> {
     fn reconstructor<T: LogicalLinesReconstructor + Sync + 'static>(
         self,
         reconstructor: T,
-    ) -> FormatterBuilder<BeforeBuild> {
+    ) -> FormatterBuilder<WithReconstructor> {
         self.set_reconstructor(reconstructor).convert_type()
     }
 }
-impl BuildFormatter for FormatterBuilder<BeforeBuild> {
+impl<U: CanBuild> BuildFormatter for FormatterBuilder<U> {
     fn build(self) -> Formatter {
         Formatter {
             lexer: self.lexer.unwrap(),
