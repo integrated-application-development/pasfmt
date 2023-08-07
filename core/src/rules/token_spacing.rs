@@ -215,8 +215,9 @@ mod tests {
     fn formatter() -> Formatter {
         Formatter::builder()
             .lexer(DelphiLexer {})
-            .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
             .parser(DelphiLogicalLineParser {})
+            .lines_consolidator(PropertyDeclarationConsolidator {})
+            .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
             .file_formatter(TokenSpacing {})
             .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),
@@ -362,6 +363,13 @@ mod tests {
         // ambiguous >= token, room for improvement
         ambiguous_greater_equal_single_type_param_type_def = {"Foo<Bar>=T", "Foo < Bar >= T"},
         ambiguous_greater_equal_multi_type_param_type_def = {"Foo<Bar, Baz>=T", "Foo < Bar, Baz >= T"},
+
+        one_generic_param_in_property_type = {"property Foo: TFoo < A >", "property Foo: TFoo<A>"},
+        two_generic_params_in_property_type = {"property Foo: TFoo < A , B >", "property Foo: TFoo<A, B>"},
+        one_generic_param_in_property_type_before_read = {"property Foo : TFoo < A > read FFoo", "property Foo: TFoo<A> read FFoo"},
+        two_generic_params_in_property_type_before_read = {"property Foo : TFoo < A ,  B > read FFoo", "property Foo: TFoo<A, B> read FFoo"},
+        one_generic_param_in_property_type_before_write = {"property Foo : TFoo < A > write FFoo", "property Foo: TFoo<A> write FFoo"},
+        two_generic_params_in_property_type_before_write = {"property Foo : TFoo < A ,  B > write FFoo", "property Foo: TFoo<A, B> write FFoo"},
     );
 
     formatter_test_group!(
