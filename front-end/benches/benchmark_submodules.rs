@@ -13,8 +13,8 @@ use pasfmt_orchestrator::command_line::PasFmtConfiguration;
 
 fn bench_format_submodules(submodules: &[(&str, &PathBuf)], c: &mut Criterion) {
     let mut group = c.benchmark_group("submodules");
-    group.measurement_time(Duration::from_secs(10));
-    group.sample_size(50);
+    group.measurement_time(Duration::from_secs(30));
+    group.sample_size(100);
 
     for (name, path) in submodules {
         group.bench_function(*name, |b| {
