@@ -162,7 +162,15 @@ fn space_operator(
                 token_type_by_idx(token_index.wrapping_sub(1)),
                 token_type_by_idx(token_index + 1),
             ) {
-                // ident|)|]|^ before ^ (e.g. foo^, foo^^, foo()^)
+                /*
+                           | matching the operator in this column
+                           v
+
+                       foo ^
+                      foo^ ^
+                     foo() ^
+                    foo[0] ^
+                */
                 (
                     Some(
                         TokenType::Identifier
@@ -173,25 +181,18 @@ fn space_operator(
                 ) => (
                     Some(0),
                     match token_after {
-                        Some(TokenType::Op(RBrack | RParen | LBrack | LParen)) => Some(0),
+                        Some(
+                            TokenType::Identifier
+                            | TokenType::IdentifierOrKeyword(_)
+                            | TokenType::Op(LBrack | LParen),
+                        ) => Some(0),
                         _ => Some(1),
                     },
                 ),
-                // ident|(|[ after ^ (e.g. ^foo, foo^(), foo[0]^, foo()^())
-                (
-                    token_before,
-                    Some(
-                        TokenType::Identifier
-                        | TokenType::IdentifierOrKeyword(_)
-                        | TokenType::Op(LBrack | LParen),
-                    ),
-                ) => (
-                    match token_before {
-                        Some(TokenType::Op(RBrack | RParen | LBrack | LParen)) => Some(0),
-                        _ => Some(1),
-                    },
-                    Some(0),
-                ),
+                // just ^foo
+                (_, Some(TokenType::Identifier | TokenType::IdentifierOrKeyword(_))) => {
+                    (None, Some(0))
+                }
                 _ => (None, None),
             }
         }
