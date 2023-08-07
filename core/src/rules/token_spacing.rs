@@ -124,14 +124,10 @@ fn space_operator(
         Plus | Minus => {
             let prev = token_type_by_idx(token_index.wrapping_sub(1));
             match prev {
-                // unary after keyword
-                Some(TokenType::Keyword(_)) => (Some(1), Some(0)),
-                // unary after opening bracket or start of line
-                None | Some(TokenType::Op(LParen | LBrack)) => (Some(0), Some(0)),
                 // binary after closing bracket or closing generics
                 Some(TokenType::Op(RBrack | RParen | RGeneric)) => binary_op_spacing,
-                // unary after any other operator
-                Some(TokenType::Op(_)) => (Some(1), Some(0)),
+                // unary after keyword, start of line, or any other operator
+                None | Some(TokenType::Op(_) | TokenType::Keyword(_)) => (None, Some(0)),
                 // default to binary
                 _ => binary_op_spacing,
             }
@@ -144,16 +140,17 @@ fn space_operator(
             _ => (Some(0), Some(0)),
         },
         LBrack | LParen => match token_type_by_idx(token_index.wrapping_sub(1)) {
-            Some(TokenType::Identifier) | Some(TokenType::IdentifierOrKeyword(_)) => {
-                (Some(0), Some(0))
-            }
-            Some(TokenType::Keyword(
-                KeywordKind::Class
-                | KeywordKind::Interface
-                | KeywordKind::Function
-                | KeywordKind::Procedure
-                | KeywordKind::Array,
-            )) => (Some(0), Some(0)),
+            Some(
+                TokenType::Identifier
+                | TokenType::IdentifierOrKeyword(_)
+                | TokenType::Keyword(
+                    KeywordKind::Class
+                    | KeywordKind::Interface
+                    | KeywordKind::Function
+                    | KeywordKind::Procedure
+                    | KeywordKind::Array,
+                ),
+            ) => (Some(0), Some(0)),
             Some(TokenType::Keyword(_)) => (Some(1), Some(0)),
             _ => (None, Some(0)),
         },
@@ -206,14 +203,7 @@ fn space_operator(
             },
         ),
         AddressOf => one_space_before(token_index, formatted_tokens),
-        Semicolon => (
-            Some(0),
-            if token_type_by_idx(token_index + 1).is_some() {
-                Some(1)
-            } else {
-                None
-            },
-        ),
+        Semicolon => (Some(0), Some(1)),
     }
 }
 
