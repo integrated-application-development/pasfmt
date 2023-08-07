@@ -29,7 +29,7 @@ struct LocalLogicalLineRef {
 }
 
 struct InternalDelphiLogicalLineParser<'a> {
-    tokens: &'a Vec<Token<'a>>,
+    tokens: &'a [Token<'a>],
     current_token_index: usize,
     result_hash: HashSet<LocalLogicalLine>,
     result_lines: Vec<LocalLogicalLine>,
@@ -44,7 +44,7 @@ struct InternalDelphiLogicalLineParser<'a> {
     parsing_pass: usize,
 }
 impl<'a> InternalDelphiLogicalLineParser<'a> {
-    fn new(tokens: &'a Vec<Token<'a>>) -> Self {
+    fn new(tokens: &'a [Token<'a>]) -> Self {
         InternalDelphiLogicalLineParser {
             tokens,
             current_token_index: 0,
@@ -669,9 +669,9 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
 }
 pub struct DelphiLogicalLineParser {}
 impl LogicalLineParser for DelphiLogicalLineParser {
-    fn parse<'a>(&self, input: Vec<Token<'a>>) -> LogicalLines<'a> {
+    fn parse<'a>(&self, input: &'a [Token<'a>]) -> Vec<LogicalLine> {
         let mut lines: Vec<LogicalLine> = {
-            let mut parser = InternalDelphiLogicalLineParser::new(&input);
+            let mut parser = InternalDelphiLogicalLineParser::new(input);
             parser.parse();
             parser
                 .result_hash
@@ -688,8 +688,7 @@ impl LogicalLineParser for DelphiLogicalLineParser {
                 .collect()
         };
         lines.sort_by(|a, b| a.get_tokens().first().cmp(&b.get_tokens().first()));
-
-        LogicalLines::new(input, lines)
+        lines
     }
 }
 
@@ -705,7 +704,7 @@ mod tests {
         let lexer = DelphiLexer {};
         let parser = DelphiLogicalLineParser {};
         let tokens = lexer.lex(input);
-        let (tokens, mut lines) = parser.parse(tokens).into();
+        let mut lines = parser.parse(&tokens);
 
         lines.retain(|line| line.get_line_type() != LogicalLineType::Eof);
         lines.iter().for_each(|line| {
@@ -879,7 +878,7 @@ mod tests {
         let lexer = DelphiLexer {};
         let parser = DelphiLogicalLineParser {};
         let tokens = lexer.lex("");
-        let (_, lines) = parser.parse(tokens).into();
+        let lines = parser.parse(&tokens);
 
         assert_that(&lines).is_equal_to(&vec![LogicalLine::new(
             None,
@@ -894,7 +893,7 @@ mod tests {
         let lexer = DelphiLexer {};
         let parser = DelphiLogicalLineParser {};
         let tokens = lexer.lex("Foo;");
-        let (_, lines) = parser.parse(tokens).into();
+        let lines = parser.parse(&tokens);
 
         assert_that(&lines).is_equal_to(&vec![
             LogicalLine::new(None, 0, vec![0, 1], LogicalLineType::Unknown),

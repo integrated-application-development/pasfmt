@@ -2,9 +2,7 @@ use crate::{lang::*, traits::LogicalLinesConsolidator};
 
 pub struct UsesClauseConsolidator {}
 impl LogicalLinesConsolidator for UsesClauseConsolidator {
-    fn consolidate<'a>(&self, input: LogicalLines<'a>) -> LogicalLines<'a> {
-        let (tokens, mut lines) = input.into();
-
+    fn consolidate(&self, (tokens, lines): (&mut [Token<'_>], &mut [LogicalLine])) {
         let uses_token_indices: Vec<usize> = tokens
             .iter()
             .filter_map(|token| match token.get_token_type() {
@@ -93,19 +91,17 @@ impl LogicalLinesConsolidator for UsesClauseConsolidator {
                 .iter()
                 .rev()
                 .for_each(|conditional_line_index| {
-                    lines
-                        .get_mut(*conditional_line_index)
-                        .unwrap()
-                        .void_and_drain();
+                    if let Some(logical_line) = lines.get_mut(*conditional_line_index) {
+                        logical_line.void_and_drain();
+                    }
                 });
         }
-
-        LogicalLines::new(tokens, lines)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
     use spectral::prelude::*;
 
     use super::*;
@@ -119,18 +115,19 @@ mod tests {
         let parser = DelphiLogicalLineParser {};
         let consolidator = UsesClauseConsolidator {};
 
-        let (_, mut lines) = Some(input)
-            .map(|input| lexer.lex(input))
-            .map(|tokens| parser.parse(tokens))
-            .map(|logical_lines| consolidator.consolidate(logical_lines))
-            .unwrap()
-            .into();
-        lines.retain(|line| {
-            !matches!(
-                line.get_line_type(),
-                LogicalLineType::Eof | LogicalLineType::Voided
-            )
-        });
+        let mut tokens = lexer.lex(input);
+        let mut lines = parser.parse(&tokens);
+        consolidator.consolidate((&mut tokens, &mut lines));
+
+        let lines = lines
+            .iter()
+            .filter(|line| {
+                !matches!(
+                    line.get_line_type(),
+                    LogicalLineType::Eof | LogicalLineType::Voided
+                )
+            })
+            .collect_vec();
 
         assert_that(&lines).has_length(expected_lines.len());
         expected_lines.iter().for_each(|expected_line| {

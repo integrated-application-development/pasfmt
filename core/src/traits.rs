@@ -5,15 +5,15 @@ pub trait Lexer {
 }
 
 pub trait TokenConsolidator {
-    fn consolidate<'a>(&self, tokens: Vec<Token<'a>>) -> Vec<Token<'a>>;
+    fn consolidate(&self, tokens: &mut [Token]);
 }
 
 pub trait LogicalLineParser {
-    fn parse<'a>(&self, input: Vec<Token<'a>>) -> LogicalLines<'a>;
+    fn parse<'a>(&self, input: &'a [Token<'a>]) -> Vec<LogicalLine>;
 }
 
 pub trait LogicalLinesConsolidator {
-    fn consolidate<'a>(&self, input: LogicalLines<'a>) -> LogicalLines<'a>;
+    fn consolidate(&self, input: (&mut [Token], &mut [LogicalLine]));
 }
 pub trait LogicalLineFormatter {
     fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine);

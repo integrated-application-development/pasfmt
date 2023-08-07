@@ -18,16 +18,15 @@ impl Formatter {
     pub fn format(&self, input: &str) -> String {
         let mut tokens = self.lexer.lex(input);
         for token_consolidator in self.token_consolidators.iter() {
-            tokens = token_consolidator.consolidate(tokens);
+            token_consolidator.consolidate(&mut tokens);
         }
-        let mut logical_lines = self.logical_line_parser.parse(tokens);
+        let mut lines = self.logical_line_parser.parse(&tokens);
         for line_consolidator in self.logical_line_consolidators.iter() {
-            logical_lines = line_consolidator.consolidate(logical_lines);
+            line_consolidator.consolidate((&mut tokens, &mut lines));
         }
-        let (tokens, logical_lines) = logical_lines.into();
-        let mut formatted_tokens = FormattedTokens::new_from_tokens(tokens);
+        let mut formatted_tokens = FormattedTokens::new_from_tokens(&tokens);
         for formatter in self.logical_line_formatters.iter() {
-            formatter.format(&mut formatted_tokens, &logical_lines);
+            formatter.format(&mut formatted_tokens, &lines);
         }
         self.reconstructor.reconstruct(formatted_tokens)
     }
@@ -269,6 +268,7 @@ impl BuildFormatter for FormatterBuilder<BeforeBuild> {
 mod tests {
     use crate::prelude::*;
     use indoc::indoc;
+    use itertools::Itertools;
     use spectral::prelude::*;
 
     fn run_test(formatter: Formatter, input: &str, expected_output: &str) {
@@ -276,53 +276,46 @@ mod tests {
         assert_that(&output).is_equal_to(expected_output.to_string());
     }
 
-    struct AddNumberTokenToPrevious;
-    impl TokenConsolidator for AddNumberTokenToPrevious {
-        fn consolidate<'a>(&self, mut tokens: Vec<Token<'a>>) -> Vec<Token<'a>> {
-            for token_index in (1..tokens.len()).rev() {
-                if tokens.get(token_index).unwrap().get_token_type()
-                    == TokenType::NumberLiteral(NumberLiteralKind::Decimal)
-                {
-                    let second_token = tokens.remove(token_index);
-                    let first_token = tokens.remove(token_index - 1);
-
-                    tokens.insert(
-                        token_index,
-                        Token::OwningToken(OwningToken::new(
-                            first_token.get_index(),
-                            first_token.get_leading_whitespace().to_owned(),
-                            first_token.get_content().to_owned() + second_token.get_content(),
-                            first_token.get_token_type(),
-                        )),
-                    );
+    struct MakeMultiplySignIdentifier;
+    impl TokenConsolidator for MakeMultiplySignIdentifier {
+        fn consolidate(&self, tokens: &mut [Token]) {
+            for token in tokens.iter_mut() {
+                if token.get_token_type() == TokenType::Op(OperatorKind::Star) {
+                    token.set_token_type(TokenType::Identifier);
                 }
             }
-            tokens
         }
     }
 
-    struct Append1ToAllTokens;
-    impl TokenConsolidator for Append1ToAllTokens {
-        fn consolidate<'a>(&self, mut tokens: Vec<Token<'a>>) -> Vec<Token<'a>> {
-            let tokens_to_remove: Vec<_> = (0..tokens.len() - 1)
-                .map(|token_index| {
-                    println!("{}", token_index);
-                    let token = tokens.get(token_index).unwrap();
-
-                    tokens.push(Token::OwningToken(OwningToken::new(
+    struct Append1ToAllIdentifiers;
+    impl TokenConsolidator for Append1ToAllIdentifiers {
+        fn consolidate(&self, tokens: &mut [Token]) {
+            (0..tokens.len() - 1).for_each(|token_index| {
+                if let Some(token) = tokens.get_mut(token_index) {
+                    if token.get_token_type() != TokenType::Identifier {
+                        return;
+                    }
+                    *token = Token::OwningToken(OwningToken::new(
                         token.get_index(),
                         token.get_leading_whitespace().to_owned(),
                         token.get_content().to_owned() + "1",
                         token.get_token_type(),
-                    )));
-
-                    token_index
-                })
-                .collect();
-            tokens_to_remove.into_iter().rev().for_each(|index| {
-                tokens.remove(index);
+                    ));
+                }
             });
-            tokens
+        }
+    }
+
+    struct AddSpaceBeforeIdentifier;
+    impl LogicalLineFormatter for AddSpaceBeforeIdentifier {
+        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
+            for &token in input.get_tokens() {
+                if formatted_tokens.get_token_type_for_index(token) == Some(TokenType::Identifier) {
+                    if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token) {
+                        formatting_data.spaces_before = 1;
+                    }
+                }
+            }
         }
     }
 
@@ -342,54 +335,69 @@ mod tests {
     fn single_token_consolidator() {
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
-            .token_consolidator(AddNumberTokenToPrevious {})
+            .token_consolidator(MakeMultiplySignIdentifier {})
             .parser(DelphiLogicalLineParser {})
+            .line_formatter(AddSpaceBeforeIdentifier {})
             .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
             ))
             .build();
-        run_test(formatter, "a 1 b 2 c 3", "a1 b2 c3");
+        run_test(formatter, "1*1*1", "1 *1 *1");
     }
 
     #[test]
     fn multiple_token_consolidators() {
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
-            .token_consolidator(AddNumberTokenToPrevious {})
-            .token_consolidator(Append1ToAllTokens {})
+            .token_consolidator(MakeMultiplySignIdentifier {})
+            .token_consolidator(Append1ToAllIdentifiers {})
             .parser(DelphiLogicalLineParser {})
+            .line_formatter(AddSpaceBeforeIdentifier {})
             .reconstructor(DelphiLogicalLinesReconstructor::new(
                 ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
             ))
             .build();
-        run_test(formatter, "a 1 b 2 c 3", "a11 b21 c31");
+        run_test(formatter, "1*1*1", "1 *11 *11");
     }
 
     struct CombineFirst2Lines;
     impl LogicalLinesConsolidator for CombineFirst2Lines {
-        fn consolidate<'a>(&self, input: LogicalLines<'a>) -> LogicalLines<'a> {
-            let (tokens, mut lines) = input.into();
-            let second_line = lines.remove(1);
-            let second_line_tokens = second_line.get_tokens();
+        fn consolidate(&self, (_, lines): (&mut [Token<'_>], &mut [LogicalLine])) {
+            let (second_non_void_line_index, _) = match lines
+                .iter()
+                .enumerate()
+                .filter(|(_, line)| line.get_line_type() != LogicalLineType::Voided)
+                .take(2)
+                .last()
+            {
+                Some(line) => line,
+                _ => return,
+            };
+
+            let second_line_tokens = match lines.get_mut(second_non_void_line_index) {
+                Some(line) => line.void_and_drain().collect_vec(),
+                _ => return,
+            };
+
             lines
                 .get_mut(0)
                 .unwrap()
                 .get_tokens_mut()
                 .extend(second_line_tokens);
-
-            LogicalLines::new(tokens, lines)
         }
     }
 
     struct LogicalLinesOnNewLines;
     impl LogicalLineFormatter for LogicalLinesOnNewLines {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
-            let first_token = *input.get_tokens().first().unwrap();
-            if first_token != 0 && first_token != formatted_tokens.get_tokens().len() - 1 {
-                if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(first_token)
-                {
-                    formatting_data.spaces_before = 0;
-                    formatting_data.newlines_before = 1;
+            if let Some(&first_token) = input.get_tokens().first() {
+                if first_token != 0 && first_token != formatted_tokens.get_tokens().len() - 1 {
+                    if let Some(formatting_data) =
+                        formatted_tokens.get_formatting_data_mut(first_token)
+                    {
+                        formatting_data.spaces_before = 0;
+                        formatting_data.newlines_before = 1;
+                    }
                 }
             }
         }
@@ -399,7 +407,7 @@ mod tests {
     fn single_line_consolidator() {
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
-            .token_consolidator(AddNumberTokenToPrevious {})
+            .token_consolidator(MakeMultiplySignIdentifier {})
             .parser(DelphiLogicalLineParser {})
             .lines_consolidator(CombineFirst2Lines {})
             .line_formatter(LogicalLinesOnNewLines {})
@@ -487,7 +495,7 @@ mod tests {
     fn multiple_line_formatters() {
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
-            .token_consolidator(AddNumberTokenToPrevious {})
+            .token_consolidator(MakeMultiplySignIdentifier {})
             .parser(DelphiLogicalLineParser {})
             .line_formatter(LogicalLinesOnNewLines {})
             .line_formatter(SpaceBeforeSemiColon {})
@@ -562,7 +570,7 @@ mod tests {
     fn multiple_file_formatter() {
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
-            .token_consolidator(AddNumberTokenToPrevious {})
+            .token_consolidator(MakeMultiplySignIdentifier {})
             .parser(DelphiLogicalLineParser {})
             .file_formatter(IndentBasedOnLineNumber {})
             .file_formatter(IndentSecondLine3SpacesIfNoNewLine {})

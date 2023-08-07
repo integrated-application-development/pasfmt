@@ -69,11 +69,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    Token::RefToken(RefToken::new(0, "\n\n  ", "token1", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(0, "\n\n  ", "token1", TokenType::Unknown)),
                     FormattingData::from("\n\n  "),
                 ),
                 (
-                    Token::RefToken(RefToken::new(1, " ", "token2", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(1, " ", "token2", TokenType::Unknown)),
                     FormattingData::from(" "),
                 ),
             ]),
@@ -94,11 +94,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
                     formatting_data1,
                 ),
                 (
-                    Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
                     formatting_data2,
                 ),
             ]),
@@ -119,11 +119,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
                     formatting_data1,
                 ),
                 (
-                    Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
                     formatting_data2,
                 ),
             ]),
@@ -144,11 +144,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
                     formatting_data1,
                 ),
                 (
-                    Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
                     formatting_data2,
                 ),
             ]),
@@ -165,11 +165,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
                     formatting_data1,
                 ),
                 (
-                    Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
                     ignored_formatting_data(),
                 ),
             ]),
@@ -182,11 +182,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
                     ignored_formatting_data(),
                 ),
                 (
-                    Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
                     formatting_data2,
                 ),
             ]),
@@ -199,11 +199,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
                     ignored_formatting_data(),
                 ),
                 (
-                    Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
                     ignored_formatting_data(),
                 ),
             ]),
@@ -216,11 +216,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
                     ignored_formatting_data(),
                 ),
                 (
-                    Token::RefToken(RefToken::new(1, "\n", "", TokenType::Eof)),
+                    &Token::RefToken(RefToken::new(1, "\n", "", TokenType::Eof)),
                     ignored_formatting_data(),
                 ),
             ]),
@@ -232,7 +232,7 @@ mod tests {
     fn unrepresentable_leading_whitespace() {
         run_test(
             FormattedTokens::new(vec![(
-                Token::RefToken(RefToken::new(0, "\n \n\t", "token1", TokenType::Unknown)),
+                &Token::RefToken(RefToken::new(0, "\n \n\t", "token1", TokenType::Unknown)),
                 ignored_formatting_data(),
             )]),
             "\n \n\ttoken1",
@@ -244,11 +244,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    Token::RefToken(RefToken::new(1, " ", "token2", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(1, " ", "token2", TokenType::Unknown)),
                     ignored_formatting_data(),
                 ),
                 (
-                    Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    &Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
                     ignored_formatting_data(),
                 ),
             ]),

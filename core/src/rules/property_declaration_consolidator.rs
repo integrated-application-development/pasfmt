@@ -22,14 +22,13 @@ const PROPERTY_DECLARATION_KEYWORDS: [KeywordKind; 10] = [
 
 pub struct PropertyDeclarationConsolidator {}
 impl LogicalLinesConsolidator for PropertyDeclarationConsolidator {
-    fn consolidate<'a>(&self, input: LogicalLines<'a>) -> LogicalLines<'a> {
-        let (mut tokens, mut lines) = input.into();
-        lines
-            .iter_mut()
+    fn consolidate(&self, (tokens, lines): (&mut [Token<'_>], &mut [LogicalLine])) {
+        for line in lines
+            .iter()
             .filter(|line| line.get_line_type() == LogicalLineType::PropertyDeclaration)
-            .flat_map(|line| line.get_tokens())
-            .for_each(|&token_index| {
-                let token = match tokens.get_mut(token_index) {
+        {
+            for token_index in line.get_tokens() {
+                let token = match tokens.get_mut(*token_index) {
                     Some(token) => token,
                     _ => return,
                 };
@@ -39,8 +38,8 @@ impl LogicalLinesConsolidator for PropertyDeclarationConsolidator {
                         token.set_token_type(Keyword(keyword_kind));
                     };
                 }
-            });
-        LogicalLines::new(tokens, lines)
+            }
+        }
     }
 }
 
@@ -59,27 +58,21 @@ mod tests {
             .collect()
     }
 
-    fn to_logical_lines(tokens: Vec<Token>) -> LogicalLines {
-        let lines = vec![LogicalLine::new(
+    fn to_logical_lines(tokens: &[Token]) -> Vec<LogicalLine> {
+        vec![LogicalLine::new(
             None,
             0,
             tokens.iter().map(|token| token.get_index()).collect(),
             LogicalLineType::PropertyDeclaration,
-        )];
-        LogicalLines::new(tokens, lines)
+        )]
     }
 
     fn run_test(tokens: &[TokenType], expected_tokens: &[TokenType]) {
         let consolidator = &PropertyDeclarationConsolidator {};
-        assert_that(
-            &consolidator
-                .consolidate(to_logical_lines(to_tokens(tokens)))
-                .get_tokens()
-                .iter()
-                .map(|t| t.get_token_type())
-                .collect_vec(),
-        )
-        .is_equal_to(
+        let mut tokens = to_tokens(tokens);
+        let mut lines = to_logical_lines(&tokens);
+        consolidator.consolidate((&mut tokens, &mut lines));
+        assert_that(&tokens.iter().map(|t| t.get_token_type()).collect_vec()).is_equal_to(
             to_tokens(expected_tokens)
                 .iter()
                 .map(|t| t.get_token_type())

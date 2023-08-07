@@ -5,7 +5,7 @@ use crate::{
 
 pub struct DistinguishGenericTypeParamsConsolidator;
 impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
-    fn consolidate<'a>(&self, mut tokens: Vec<Token<'a>>) -> Vec<Token<'a>> {
+    fn consolidate(&self, tokens: &mut [Token]) {
         let mut token_idx = 0;
         let mut opening_idxs = vec![];
         while token_idx < tokens.len() {
@@ -79,7 +79,6 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
             }
             token_idx = next_idx;
         }
-        tokens
     }
 }
 
@@ -101,14 +100,9 @@ mod tests {
 
     fn run_test(tokens: &[TokenType], expected_tokens: &[TokenType]) {
         let consolidator = &DistinguishGenericTypeParamsConsolidator {};
-        assert_that(
-            &consolidator
-                .consolidate(to_tokens(tokens))
-                .iter()
-                .map(|t| t.get_token_type())
-                .collect_vec(),
-        )
-        .is_equal_to(
+        let mut tokens = to_tokens(tokens);
+        consolidator.consolidate(&mut tokens);
+        assert_that(&tokens.iter().map(|t| t.get_token_type()).collect_vec()).is_equal_to(
             to_tokens(expected_tokens)
                 .iter()
                 .map(|t| t.get_token_type())

@@ -291,13 +291,13 @@ impl FormattingData {
 }
 
 pub struct FormattedTokens<'a> {
-    tokens: Vec<(Token<'a>, FormattingData)>,
+    tokens: Vec<(&'a Token<'a>, FormattingData)>,
 }
 impl<'a> FormattedTokens<'a> {
-    pub fn new_from_tokens(tokens: Vec<Token<'a>>) -> Self {
+    pub fn new_from_tokens(tokens: &'a [Token<'a>]) -> Self {
         FormattedTokens {
             tokens: tokens
-                .into_iter()
+                .iter()
                 .map(|token| {
                     let formatting_data = FormattingData::from(token.get_leading_whitespace());
                     (token, formatting_data)
@@ -305,18 +305,18 @@ impl<'a> FormattedTokens<'a> {
                 .collect(),
         }
     }
-    pub fn new(tokens: Vec<(Token<'a>, FormattingData)>) -> Self {
+    pub fn new(tokens: Vec<(&'a Token<'a>, FormattingData)>) -> Self {
         FormattedTokens { tokens }
     }
-    pub fn get_tokens(&self) -> &Vec<(Token<'a>, FormattingData)> {
+    pub fn get_tokens(&self) -> &Vec<(&'a Token<'a>, FormattingData)> {
         &self.tokens
     }
 
-    pub fn get_token(&self, index: usize) -> Option<&(Token<'a>, FormattingData)> {
+    pub fn get_token(&self, index: usize) -> Option<&(&'a Token<'a>, FormattingData)> {
         self.tokens.get(index)
     }
 
-    pub fn get_token_mut(&mut self, index: usize) -> Option<&mut (Token<'a>, FormattingData)> {
+    pub fn get_token_mut(&mut self, index: usize) -> Option<&mut (&'a Token<'a>, FormattingData)> {
         self.tokens.get_mut(index)
     }
 
@@ -333,21 +333,27 @@ impl<'a> FormattedTokens<'a> {
 }
 
 pub struct LogicalLines<'a> {
-    tokens: Vec<Token<'a>>,
+    tokens: &'a mut [Token<'a>],
     lines: Vec<LogicalLine>,
 }
 impl<'a> LogicalLines<'a> {
-    pub fn new(tokens: Vec<Token<'a>>, lines: Vec<LogicalLine>) -> Self {
+    pub fn new(tokens: &'a mut [Token<'a>], lines: Vec<LogicalLine>) -> Self {
         LogicalLines { tokens, lines }
     }
-    pub fn get_tokens(&self) -> &Vec<Token<'a>> {
-        &self.tokens
+    pub fn get_tokens(&'a self) -> &'a [Token<'a>] {
+        self.tokens
+    }
+    pub fn get_tokens_mut(&'a mut self) -> &'a mut [Token<'a>] {
+        self.tokens
     }
     pub fn get_lines(&self) -> &[LogicalLine] {
         &self.lines
     }
+    pub fn get_lines_mut(&mut self) -> &mut [LogicalLine] {
+        &mut self.lines
+    }
 }
-impl<'a> From<LogicalLines<'a>> for (Vec<Token<'a>>, Vec<LogicalLine>) {
+impl<'a> From<LogicalLines<'a>> for (&'a [Token<'a>], Vec<LogicalLine>) {
     fn from(val: LogicalLines<'a>) -> Self {
         (val.tokens, val.lines)
     }
