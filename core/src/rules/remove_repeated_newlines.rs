@@ -27,9 +27,7 @@ mod tests {
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
             .line_formatter(RemoveRepeatedNewlines {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
 
         let formatted_output = formatter.format(input);

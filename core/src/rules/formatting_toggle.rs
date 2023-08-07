@@ -74,7 +74,7 @@ mod tests {
     use spectral::prelude::*;
 
     use crate::prelude::*;
-    use crate::rules::test_utils::formatter_test_group;
+    use crate::test_utils::formatter_test_group;
     use crate::traits::LogicalLineFormatter;
 
     struct AddSpaceBeforeEverything {}
@@ -98,9 +98,7 @@ mod tests {
             .parser(DelphiLogicalLineParser {})
             .line_formatter(AddSpaceBeforeEverything {})
             .file_formatter(FormattingToggler {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build()
     }
 

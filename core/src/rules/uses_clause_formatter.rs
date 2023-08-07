@@ -162,9 +162,7 @@ mod tests {
                 LogicalLineType::UsesClause => Some(uses_formatter),
                 _ => None,
             }))
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
 
         let formatted_output = formatter.format(input);

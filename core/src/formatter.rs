@@ -504,9 +504,7 @@ mod tests {
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
             .token_remover(RemoveAllParens {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(formatter, "(a)", "a");
     }
@@ -518,9 +516,7 @@ mod tests {
             .parser(DelphiLogicalLineParser {})
             .token_remover(RemoveAllParens {})
             .token_remover(RemoveAllAsteriscs {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(formatter, "([*a*])", "[a]");
     }
@@ -585,9 +581,7 @@ mod tests {
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(formatter, "a 1 b 2 c 3", "a 1 b 2 c 3");
     }
@@ -599,9 +593,7 @@ mod tests {
             .token_consolidator(MakeMultiplySignIdentifier {})
             .parser(DelphiLogicalLineParser {})
             .line_formatter(AddSpaceBeforeIdentifier {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(formatter, "1*1*1", "1 *1 *1");
     }
@@ -614,9 +606,7 @@ mod tests {
             .token_consolidator(Append1ToAllIdentifiers {})
             .parser(DelphiLogicalLineParser {})
             .line_formatter(AddSpaceBeforeIdentifier {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(formatter, "1*1*1", "1 *11 *11");
     }
@@ -628,9 +618,7 @@ mod tests {
             .parser(DelphiLogicalLineParser {})
             .token_consolidator(MakeMultiplySignIdentifier {})
             .line_formatter(AddSpaceBeforeIdentifier {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(formatter, "1*1*1", "1 *1 *1");
     }
@@ -643,9 +631,7 @@ mod tests {
             .token_consolidator(MakeMultiplySignIdentifier {})
             .token_consolidator(Append1ToAllIdentifiers {})
             .line_formatter(AddSpaceBeforeIdentifier {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(formatter, "1*1*1", "1 *11 *11");
     }
@@ -673,9 +659,7 @@ mod tests {
             .parser(DelphiLogicalLineParser {})
             .lines_consolidator(MakeFirstMultiplySignIdentifierInFirstLine {})
             .token_consolidator(Append1ToAllIdentifiers {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(formatter, "A*B*C;D*E", "A1*1B1*C1;D1*E1");
     }
@@ -687,9 +671,7 @@ mod tests {
             .parser(DelphiLogicalLineParser {})
             .token_consolidator(Append1ToAllIdentifiers {})
             .lines_consolidator(MakeFirstMultiplySignIdentifierInFirstLine {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(formatter, "A*B*C;D*E", "A1*B1*C1;D1*E1");
     }
@@ -745,9 +727,7 @@ mod tests {
             .parser(DelphiLogicalLineParser {})
             .lines_consolidator(CombineFirst2Lines {})
             .line_formatter(LogicalLinesOnNewLines {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(
             formatter,
@@ -768,9 +748,7 @@ mod tests {
             .lines_consolidator(CombineFirst2Lines {})
             .lines_consolidator(CombineFirst2Lines {})
             .line_formatter(LogicalLinesOnNewLines {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(
             formatter,
@@ -810,9 +788,7 @@ mod tests {
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
             .line_formatter(LogicalLinesOnNewLines {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(
             formatter,
@@ -833,9 +809,7 @@ mod tests {
             .parser(DelphiLogicalLineParser {})
             .line_formatter(LogicalLinesOnNewLines {})
             .line_formatter(SpaceBeforeSemiColon {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(
             formatter,
@@ -941,9 +915,7 @@ mod tests {
             .parser(DelphiLogicalLineParser {})
             .line_formatter(RetainSpacesLogcialLinesOnNewLines {})
             .file_formatter(IndentSecondLine3SpacesIfNoNewLine {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build();
         run_test(
             formatter,

@@ -14,3 +14,13 @@ macro_rules! formatter_test_group {
 }
 
 pub(crate) use formatter_test_group;
+
+use crate::prelude::{DelphiLogicalLinesReconstructor, ReconstructionSettings};
+
+pub fn default_test_reconstructor() -> DelphiLogicalLinesReconstructor {
+    DelphiLogicalLinesReconstructor::new(ReconstructionSettings::new(
+        "\n".to_owned(),
+        "  ".to_owned(),
+        "  ".to_owned(),
+    ))
+}

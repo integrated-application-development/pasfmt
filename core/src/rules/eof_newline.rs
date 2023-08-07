@@ -19,7 +19,7 @@ impl LogicalLineFormatter for EofNewline {
 
 #[cfg(test)]
 mod tests {
-    use crate::{prelude::*, rules::test_utils::formatter_test_group};
+    use crate::{prelude::*, test_utils::formatter_test_group};
     use spectral::prelude::*;
 
     fn formatter() -> Formatter {
@@ -27,9 +27,7 @@ mod tests {
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
             .line_formatter(EofNewline {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build()
     }
 

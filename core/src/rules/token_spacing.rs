@@ -209,7 +209,7 @@ fn space_operator(
 
 #[cfg(test)]
 mod tests {
-    use crate::{prelude::*, rules::test_utils::formatter_test_group};
+    use crate::{prelude::*, test_utils::formatter_test_group};
     use spectral::prelude::*;
 
     fn formatter() -> Formatter {
@@ -219,9 +219,7 @@ mod tests {
             .lines_consolidator(PropertyDeclarationConsolidator {})
             .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
             .file_formatter(TokenSpacing {})
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_string(), "  ".to_string(), "  ".to_string()),
-            ))
+            .reconstructor(default_test_reconstructor())
             .build()
     }
 
