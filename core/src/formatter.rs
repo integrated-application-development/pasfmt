@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::marker::PhantomData;
 
 use crate::lang::*;
@@ -8,6 +9,7 @@ pub struct Formatter {
     token_consolidators: Vec<Box<dyn TokenConsolidator + Sync>>,
     logical_line_parser: Box<dyn LogicalLineParser + Sync>,
     logical_line_consolidators: Vec<Box<dyn LogicalLinesConsolidator + Sync>>,
+    token_removers: Vec<Box<dyn TokenRemover + Sync>>,
     logical_line_formatters: Vec<FormatterKind>,
     reconstructor: Box<dyn LogicalLinesReconstructor + Sync>,
 }
@@ -24,11 +26,55 @@ impl Formatter {
         for line_consolidator in self.logical_line_consolidators.iter() {
             line_consolidator.consolidate((&mut tokens, &mut lines));
         }
+        let mut tokens_marked_for_deletion: HashSet<usize> = HashSet::new();
+        for token_remover in self.token_removers.iter() {
+            token_remover.remove_tokens((&tokens, &lines), &mut tokens_marked_for_deletion);
+        }
+        delete_marked_tokens(tokens_marked_for_deletion, &mut tokens, &mut lines);
+        delete_voided_logical_lines(&mut lines);
+
         let mut formatted_tokens = FormattedTokens::new_from_tokens(&tokens);
         for formatter in self.logical_line_formatters.iter() {
             formatter.format(&mut formatted_tokens, &lines);
         }
         self.reconstructor.reconstruct(formatted_tokens)
+    }
+}
+
+fn delete_voided_logical_lines(lines: &mut Vec<LogicalLine>) {
+    lines.retain(|line| line.get_line_type() != LogicalLineType::Voided);
+}
+
+fn delete_marked_tokens(
+    marked_tokens: HashSet<usize>,
+    tokens: &mut Vec<Token>,
+    lines: &mut [LogicalLine],
+) {
+    let mut new_indices: Vec<usize> = Vec::with_capacity(tokens.len());
+    let mut current_index = 0;
+
+    for token in tokens.iter() {
+        new_indices.push(current_index);
+        if !marked_tokens.contains(&token.get_index()) {
+            current_index += 1;
+        }
+    }
+    tokens.retain(|token| !marked_tokens.contains(&token.get_index()));
+
+    for line in lines.iter_mut() {
+        let tokens = line.get_tokens_mut();
+
+        *tokens = tokens
+            .iter()
+            .filter_map(|token_index| match marked_tokens.contains(token_index) {
+                false => Some(new_indices[*token_index]),
+                true => None,
+            })
+            .collect();
+
+        if tokens.is_empty() {
+            line.void_and_drain();
+        }
     }
 }
 
@@ -45,13 +91,15 @@ macro_rules! builder_state {
 }
 
 trait WithParserMarker {}
+trait WithTokenRemoverMarker {}
 trait WithFormattersMarker {}
 trait WithReconstructorMarker {}
 
 builder_state!(BeforeLexer);
 builder_state!(BeforeTokenConsolidators: [WithParserMarker]);
 builder_state!(BeforeParsers: [WithParserMarker]);
-builder_state!(BeforeLineConsolidators: [WithFormattersMarker, WithReconstructorMarker]);
+builder_state!(BeforeLineConsolidators: [WithFormattersMarker, WithReconstructorMarker, WithTokenRemoverMarker]);
+builder_state!(BeforeTokenRemovers: [WithFormattersMarker, WithReconstructorMarker, WithTokenRemoverMarker]);
 builder_state!(BeforeFormatters: [WithFormattersMarker, WithReconstructorMarker]);
 builder_state!(BeforeReconstructor: [WithReconstructorMarker]);
 builder_state!(BeforeBuild);
@@ -67,6 +115,7 @@ trait FormattingBuilderData: Sized {
         self,
         lines_consolidator: T,
     ) -> Self;
+    fn add_token_remover<T: TokenRemover + Sync + 'static>(self, token_remover: T) -> Self;
     fn add_formatter(self, logical_line_formatter: FormatterKind) -> Self;
     fn set_reconstructor<T: LogicalLinesReconstructor + Sync + 'static>(
         self,
@@ -100,6 +149,12 @@ pub trait WithLineConsolidator {
         lines_consolidator: T,
     ) -> FormatterBuilder<BeforeLineConsolidators>;
 }
+pub trait WithTokenRemover {
+    fn token_remover<T: TokenRemover + Sync + 'static>(
+        self,
+        token_remover: T,
+    ) -> FormatterBuilder<BeforeTokenRemovers>;
+}
 pub trait WithFormatter {
     fn line_formatter<T: LogicalLineFormatter + Sync + 'static>(
         self,
@@ -126,6 +181,7 @@ pub struct FormatterBuilder<T> {
     token_consolidators: Vec<Box<dyn TokenConsolidator + Sync + 'static>>,
     logical_line_parser: Option<Box<dyn LogicalLineParser + Sync + 'static>>,
     logical_line_consolidators: Vec<Box<dyn LogicalLinesConsolidator + Sync + 'static>>,
+    token_removers: Vec<Box<dyn TokenRemover + Sync + 'static>>,
     logical_line_formatters: Vec<FormatterKind>,
     reconstructor: Option<Box<dyn LogicalLinesReconstructor + Sync + 'static>>,
     builder_state: PhantomData<T>,
@@ -137,6 +193,7 @@ impl<T> FormatterBuilder<T> {
             token_consolidators: self.token_consolidators,
             logical_line_parser: self.logical_line_parser,
             logical_line_consolidators: self.logical_line_consolidators,
+            token_removers: self.token_removers,
             logical_line_formatters: self.logical_line_formatters,
             reconstructor: self.reconstructor,
             builder_state: PhantomData,
@@ -167,6 +224,10 @@ impl<T> FormattingBuilderData for FormatterBuilder<T> {
             .push(Box::new(lines_consolidator));
         self
     }
+    fn add_token_remover<R: TokenRemover + Sync + 'static>(mut self, token_remover: R) -> Self {
+        self.token_removers.push(Box::new(token_remover));
+        self
+    }
     fn add_formatter(mut self, logical_line_formatter: FormatterKind) -> Self {
         self.logical_line_formatters.push(logical_line_formatter);
         self
@@ -185,6 +246,7 @@ impl<T> FormattingBuilderData for FormatterBuilder<T> {
             token_consolidators: self.token_consolidators,
             logical_line_parser: self.logical_line_parser,
             logical_line_consolidators: self.logical_line_consolidators,
+            token_removers: self.token_removers,
             logical_line_formatters: self.logical_line_formatters,
             reconstructor: self.reconstructor,
             builder_state: PhantomData,
@@ -226,6 +288,14 @@ impl WithLineConsolidator for FormatterBuilder<BeforeLineConsolidators> {
             .convert_type()
     }
 }
+impl<U: WithTokenRemoverMarker> WithTokenRemover for FormatterBuilder<U> {
+    fn token_remover<T: TokenRemover + Sync + 'static>(
+        self,
+        token_remover: T,
+    ) -> FormatterBuilder<BeforeTokenRemovers> {
+        self.add_token_remover(token_remover).convert_type()
+    }
+}
 impl<U: WithFormattersMarker> WithFormatter for FormatterBuilder<U> {
     fn line_formatter<T: LogicalLineFormatter + Sync + 'static>(
         self,
@@ -258,6 +328,7 @@ impl BuildFormatter for FormatterBuilder<BeforeBuild> {
             token_consolidators: self.token_consolidators,
             logical_line_parser: self.logical_line_parser.unwrap(),
             logical_line_consolidators: self.logical_line_consolidators,
+            token_removers: self.token_removers,
             logical_line_formatters: self.logical_line_formatters,
             reconstructor: self.reconstructor.unwrap(),
         }
@@ -266,6 +337,7 @@ impl BuildFormatter for FormatterBuilder<BeforeBuild> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::prelude::*;
     use indoc::indoc;
     use itertools::Itertools;
@@ -274,6 +346,155 @@ mod tests {
     fn run_test(formatter: Formatter, input: &str, expected_output: &str) {
         let output = formatter.format(input);
         assert_that(&output).is_equal_to(expected_output.to_string());
+    }
+
+    fn create_token_with_index<'a>(index: usize) -> Token<'a> {
+        Token::OwningToken(OwningToken::new(
+            index,
+            "".to_owned(),
+            "".to_owned(),
+            TokenType::Unknown,
+        ))
+    }
+
+    fn run_token_deletion_test(
+        tokens: Vec<usize>,
+        marked_tokens: Vec<usize>,
+        lines: Vec<Vec<usize>>,
+        expected_lines: Vec<Vec<usize>>,
+    ) {
+        let mut tokens = tokens
+            .iter()
+            .map(|&index| create_token_with_index(index))
+            .collect_vec();
+        let marked_tokens: HashSet<usize> = marked_tokens.into_iter().collect();
+        let mut lines = lines
+            .into_iter()
+            .map(|line_indices| LogicalLine::new(None, 0, line_indices, LogicalLineType::Unknown))
+            .collect_vec();
+        let expected_lines = expected_lines
+            .into_iter()
+            .map(|line_indices| LogicalLine::new(None, 0, line_indices, LogicalLineType::Unknown))
+            .collect_vec();
+
+        delete_marked_tokens(marked_tokens, &mut tokens, &mut lines);
+        delete_voided_logical_lines(&mut lines);
+        assert_that(&lines).equals_iterator(&expected_lines.iter());
+    }
+
+    #[test]
+    fn delete_first_token() {
+        run_token_deletion_test(
+            vec![0, 1, 2],
+            vec![0],
+            vec![vec![0, 1, 2], vec![0, 2], vec![1, 2], vec![0, 1]],
+            vec![vec![0, 1], vec![1], vec![0, 1], vec![0]],
+        );
+    }
+
+    #[test]
+    fn delete_last_token() {
+        run_token_deletion_test(
+            vec![0, 1, 2],
+            vec![2],
+            vec![vec![0, 1, 2], vec![0, 2], vec![0, 1], vec![0, 2]],
+            vec![vec![0, 1], vec![0], vec![0, 1], vec![0]],
+        );
+    }
+
+    #[test]
+    fn delete_middle_token() {
+        run_token_deletion_test(
+            vec![0, 1, 2],
+            vec![1],
+            vec![vec![0, 1, 2], vec![0, 2], vec![0, 1], vec![0, 2]],
+            vec![vec![0, 1], vec![0, 1], vec![0], vec![0, 1]],
+        );
+    }
+
+    #[test]
+    fn delete_middle_tokens() {
+        run_token_deletion_test(
+            vec![0, 1, 2, 3],
+            vec![1, 2],
+            vec![
+                vec![0, 1, 2, 3],
+                vec![0, 3],
+                vec![1, 2],
+                vec![0, 1, 3],
+                vec![0, 2, 3],
+                vec![1, 3],
+                vec![2, 3],
+            ],
+            vec![
+                vec![0, 1],
+                vec![0, 1],
+                vec![0, 1],
+                vec![0, 1],
+                vec![1],
+                vec![1],
+            ],
+        );
+    }
+
+    struct RemoveAllParens;
+    impl TokenRemover for RemoveAllParens {
+        fn remove_tokens(
+            &self,
+            (tokens, _): (&[Token], &[LogicalLine]),
+            marked_tokens: &mut HashSet<usize>,
+        ) {
+            for token in tokens {
+                if matches!(
+                    token.get_token_type(),
+                    TokenType::Op(OperatorKind::LParen | OperatorKind::RParen)
+                ) {
+                    marked_tokens.insert(token.get_index());
+                }
+            }
+        }
+    }
+
+    struct RemoveAllAsteriscs;
+    impl TokenRemover for RemoveAllAsteriscs {
+        fn remove_tokens(
+            &self,
+            (tokens, _): (&[Token], &[LogicalLine]),
+            marked_tokens: &mut HashSet<usize>,
+        ) {
+            for token in tokens {
+                if token.get_content().eq_ignore_ascii_case("*") {
+                    marked_tokens.insert(token.get_index());
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn one_token_remover() {
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .token_remover(RemoveAllParens {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
+                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
+            ))
+            .build();
+        run_test(formatter, "(a)", "a");
+    }
+
+    #[test]
+    fn two_token_removers() {
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .token_remover(RemoveAllParens {})
+            .token_remover(RemoveAllAsteriscs {})
+            .reconstructor(DelphiLogicalLinesReconstructor::new(
+                ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()),
+            ))
+            .build();
+        run_test(formatter, "([*a*])", "[a]");
     }
 
     struct MakeMultiplySignIdentifier;
