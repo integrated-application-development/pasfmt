@@ -38,8 +38,9 @@ pub fn format_with_settings(formatting_settings: FormattingSettings, config: Pas
     let formatter = FileFormatter::new(
         Formatter::builder()
             .lexer(DelphiLexer {})
-            .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
             .parser(DelphiLogicalLineParser {})
+            .lines_consolidator(PropertyDeclarationConsolidator {})
+            .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
             .lines_consolidator(UsesClauseConsolidator {})
             .file_formatter(FormattingToggler {})
             .file_formatter(TokenSpacing {})
