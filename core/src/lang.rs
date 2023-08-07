@@ -409,8 +409,8 @@ impl<'a> RefToken<'a> {
 #[derive(Debug, PartialEq, Eq)]
 pub struct OwningToken {
     index: usize,
-    original_leading_whitespace: String,
-    content: String,
+    original_leading_whitespace: Box<str>,
+    content: Box<str>,
     token_type: TokenType,
 }
 impl OwningToken {
@@ -422,8 +422,8 @@ impl OwningToken {
     ) -> OwningToken {
         OwningToken {
             index,
-            original_leading_whitespace: leading_whitespace,
-            content,
+            original_leading_whitespace: leading_whitespace.into(),
+            content: content.into(),
             token_type,
         }
     }
@@ -444,7 +444,7 @@ impl<'a> Token<'a> {
     pub fn get_leading_whitespace(&self) -> &str {
         match &self {
             Token::RefToken(token) => token.original_leading_whitespace,
-            Token::OwningToken(token) => token.original_leading_whitespace.as_str(),
+            Token::OwningToken(token) => &token.original_leading_whitespace,
         }
     }
     pub fn get_content(&self) -> &str {
