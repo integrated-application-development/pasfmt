@@ -65,6 +65,10 @@ fn delete_marked_tokens(
     tokens: &mut Vec<Token>,
     lines: &mut [LogicalLine],
 ) {
+    if marked_tokens.is_empty() {
+        return;
+    }
+
     let mut new_indices: Vec<usize> = Vec::with_capacity(tokens.len());
     let mut current_index = 0;
 
