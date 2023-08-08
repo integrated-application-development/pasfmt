@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 pub mod defaults;
 pub mod formatter;
 pub mod formatter_selector;

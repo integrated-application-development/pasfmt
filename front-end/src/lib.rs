@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use pasfmt_core::prelude::*;
 use pasfmt_orchestrator::predule::*;
 use serde_derive::Deserialize;
