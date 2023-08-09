@@ -18,16 +18,20 @@ impl LogicalLineFileFormatter for TokenSpacing {
                     | TT::ConditionalDirective(_)
                     | TT::Keyword(_),
                 ) => one_space_either_side(token_index, formatted_tokens),
+                /*
+                    To ensure the next token remains separate, they mustn't be
+                    directly adjacent. There may not already be a space before
+                    the next token if it is on another line. This is an issue
+                    if these tokens get unwrapped.
+                */
+                Some(TT::Identifier) => (None, Some(1)),
                 _ => max_one_either_side(token_index, formatted_tokens),
             };
 
             if let Some(spaces_before) = spaces_before {
                 if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token_index)
                 {
-                    // TODO will not play nice with the optimising line formatter
-                    if formatting_data.newlines_before == 0 {
-                        formatting_data.spaces_before = spaces_before;
-                    }
+                    formatting_data.spaces_before = spaces_before;
                 }
             }
 
@@ -35,8 +39,7 @@ impl LogicalLineFileFormatter for TokenSpacing {
                 let next_idx = token_index + 1;
                 let next_token_type = formatted_tokens.get_token_type_for_index(next_idx);
                 if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(next_idx) {
-                    // TODO will not play nice with the optimising line formatter
-                    if formatting_data.newlines_before == 0 && next_token_type != Some(TT::Eof) {
+                    if next_token_type != Some(TT::Eof) {
                         formatting_data.spaces_before = spaces_after;
                     }
                 }
@@ -61,7 +64,8 @@ fn max_one_either_side(
 
 fn spaces_before(token_type: Option<TokenType>, spaces: u16) -> Option<u16> {
     match token_type {
-        None => None,
+        // There shouldn't be any whitespace before the first token in a file.
+        None => Some(0),
         Some(TT::Op(OK::LBrack | OK::LParen | OK::LessThan(ChevronKind::Generic))) => Some(0),
         _ => Some(spaces),
     }
@@ -69,7 +73,6 @@ fn spaces_before(token_type: Option<TokenType>, spaces: u16) -> Option<u16> {
 
 fn spaces_after(token_type: Option<TokenType>, spaces: u16) -> Option<u16> {
     match token_type {
-        None => None,
         Some(TT::Op(OK::RBrack | OK::RParen | OK::GreaterThan(ChevronKind::Generic))) => Some(0),
         _ => Some(spaces),
     }
@@ -388,7 +391,7 @@ mod tests {
         eol_line_comment_after_parens = {"foo(//\n)", "foo( //\n)"},
         eol_line_comment_inside_generics = {"Foo<//\nA>", "Foo< //\nA>"},
         eol_block_comment_after_parens = {"foo( {}\n)", "foo({}\n)"},
-        eol_block_comment_inside_generics = {"Foo< {}\nA>", "Foo<{}\nA>"},
+        eol_block_comment_inside_generics = {"Foo< {}\nA>", "Foo<{}\n A>"},
         block_comment_after_parens = {"foo( {})", "foo({})"},
         block_comment_before_parens = {"foo(\n{} )", "foo(\n{})"},
         block_comment_inside_generics = {"Foo< {}A, B{} >", "Foo<{} A, B {}>"},

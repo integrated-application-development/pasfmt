@@ -22,6 +22,7 @@ yare = { workspace = true }
 criterion = { workspace = true, features = ["html_reports"] }
 rand = { workspace = true }
 paste = { workspace = true }
+pretty_assertions = { workspace = true }
 
 [[bench]]
 name = "benchmark_lexer"

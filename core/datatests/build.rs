@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 
 mod generators;
 use generators::logical_line_parser;
+use generators::optimising_line_formatter;
 use walkdir::DirEntry;
 
 fn main() {
@@ -14,6 +15,9 @@ fn main() {
     remove_dir_if_present(&staging_test_root_dir);
 
     logical_line_parser::generate_test_files(&staging_test_root_dir.join("logical_line_test"));
+    optimising_line_formatter::generate_test_files(
+        &staging_test_root_dir.join("optimising_line_formatter"),
+    );
     if !test_root_dir.is_dir() {
         std::fs::create_dir(&test_root_dir).unwrap_or_else(|e| {
             panic!(

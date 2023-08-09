@@ -18,9 +18,11 @@ macro_rules! formatter_test_group {
 pub(crate) use formatter_test_group;
 
 pub fn default_test_reconstructor() -> DelphiLogicalLinesReconstructor {
-    DelphiLogicalLinesReconstructor::new(
-        ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()).unwrap(),
-    )
+    DelphiLogicalLinesReconstructor::new(default_test_reconstruction_settings())
+}
+
+pub fn default_test_reconstruction_settings() -> ReconstructionSettings {
+    ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()).unwrap()
 }
 
 fn ws_len(whitespace_and_content: &str) -> u32 {

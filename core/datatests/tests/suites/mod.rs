@@ -2,6 +2,7 @@ use core::fmt;
 use std::error::Error;
 
 pub mod logical_line_parser;
+pub mod optimising_line_formatter;
 
 struct ErrorString(String);
 impl fmt::Debug for ErrorString {

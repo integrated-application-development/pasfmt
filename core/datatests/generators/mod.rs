@@ -1,4 +1,5 @@
 pub mod logical_line_parser;
+pub mod optimising_line_formatter;
 
 #[macro_export]
 macro_rules! get_dir_from_module {

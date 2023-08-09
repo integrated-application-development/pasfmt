@@ -10,6 +10,7 @@ spectral = { workspace = true }
 indoc = { workspace = true }
 itertools = { workspace = true }
 fxhash = { workspace = true }
+pretty_assertions = { workspace = true }
 
 [build-dependencies]
 indoc = { workspace = true }

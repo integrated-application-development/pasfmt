@@ -597,6 +597,7 @@ impl InvalidReconstructionSettingsError {
     }
 }
 
+#[derive(Clone)]
 pub struct ReconstructionSettings {
     newline_str: String,
     indentation_str: String,
@@ -701,6 +702,10 @@ impl<'a> Token<'a> {
             ws_len,
             token_type,
         }
+    }
+
+    pub(crate) fn get_str(&self) -> &str {
+        &self.content
     }
 }
 

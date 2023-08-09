@@ -44,6 +44,8 @@ fn default_encoding() -> &'static Encoding {
 pub struct FormattingSettings {
     #[serde(default = "Reconstruction::default")]
     reconstruction: Reconstruction,
+    #[serde(default = "Olf::default")]
+    olf: Olf,
     #[serde(default = "default_encoding")]
     encoding: &'static Encoding,
 }
@@ -60,7 +62,7 @@ impl TryFrom<Reconstruction> for ReconstructionSettings {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 struct Reconstruction {
     #[serde(default = "default_eol")]
@@ -79,7 +81,7 @@ fn default_indentation() -> String {
     "  ".to_owned()
 }
 fn default_continuation() -> Option<String> {
-    None
+    Some("    ".to_owned())
 }
 
 impl Default for Reconstruction {
@@ -92,12 +94,37 @@ impl Default for Reconstruction {
     }
 }
 
+#[derive(Deserialize, Debug, Clone)]
+#[serde(deny_unknown_fields)]
+struct Olf {
+    #[serde(default = "default_max_line_length")]
+    max_line_length: u32,
+}
+fn default_max_line_length() -> u32 {
+    120
+}
+
+impl From<Olf> for OptimisingLineFormatterSettings {
+    fn from(value: Olf) -> Self {
+        Self {
+            max_line_length: value.max_line_length,
+            iteration_max: 20_000,
+        }
+    }
+}
+impl Default for Olf {
+    fn default() -> Self {
+        Olf {
+            max_line_length: default_max_line_length(),
+        }
+    }
+}
+
 pub fn format_with_settings(
     formatting_settings: FormattingSettings,
     config: PasFmtConfiguration,
     err_handler: impl ErrHandler,
 ) {
-    let uses_clause_formatter = &UsesClauseFormatter {};
     let eof_newline_formatter = &EofNewline {};
 
     let reconstruction_settings: ReconstructionSettings =
@@ -119,13 +146,15 @@ pub fn format_with_settings(
             .token_ignorer(IgnoreNonUnitImportClauses {})
             .token_ignorer(IgnoreAsmIstructions {})
             .file_formatter(TokenSpacing {})
-            .line_formatter(RemoveRepeatedNewlines {})
             .line_formatter(FormatterSelector::new(
                 |logical_line_type| match logical_line_type {
-                    LogicalLineType::ImportClause => Some(uses_clause_formatter),
                     LogicalLineType::Eof => Some(eof_newline_formatter),
                     _ => None,
                 },
+            ))
+            .file_formatter(OptimisingLineFormatter::new(
+                formatting_settings.olf.into(),
+                reconstruction_settings.clone(),
             ))
             .reconstructor(DelphiLogicalLinesReconstructor::new(
                 reconstruction_settings,
