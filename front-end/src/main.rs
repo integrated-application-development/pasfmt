@@ -2,8 +2,10 @@ use pasfmt::format_with_settings;
 use pasfmt::FormattingSettings;
 use pasfmt_orchestrator::predule::*;
 
+pasfmt_config!(Config);
+
 fn main() {
-    let config = PasFmtConfiguration::new();
+    let config = Config::create();
     stderrlog::new()
         .verbosity(config.log_level())
         .init()

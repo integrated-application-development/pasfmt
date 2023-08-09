@@ -5,8 +5,9 @@ use std::{
     str::FromStr,
 };
 
+pub use clap;
 pub use clap::Parser;
-use clap::{builder::PossibleValuesParser, builder::TypedValueParser};
+use clap::{builder::PossibleValuesParser, builder::TypedValueParser, Args};
 
 use log::LevelFilter;
 
@@ -14,8 +15,25 @@ use crate::formatting_orchestrator::FormatterConfiguration;
 
 const DEFAULT_CONFIG_FILE_NAME: &str = "pasfmt.toml";
 
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
+#[macro_export]
+macro_rules! pasfmt_config {
+    ($type_name: ident $(, name = $name: expr, version = $version: expr)?) => {
+        #[derive(clap::Parser, Debug)]
+        #[command($(name = $name,)? author, about, version $(= $version)?, long_about = None)]
+        struct $type_name {
+            #[command(flatten)]
+            config: PasFmtConfiguration,
+        }
+        impl $type_name {
+            pub fn create() -> PasFmtConfiguration {
+                Self::parse().config
+            }
+        }
+    };
+}
+pub use pasfmt_config;
+
+#[derive(Args, Debug)]
 pub struct PasFmtConfiguration {
     /// Paths that will be formatted. Can be a path/dir/glob. If no paths are
     /// specified, stdin is read.
@@ -89,10 +107,6 @@ impl Default for PasFmtConfiguration {
 }
 
 impl PasFmtConfiguration {
-    pub fn new() -> Self {
-        PasFmtConfiguration::parse()
-    }
-
     fn get_config_file(&self) -> Option<String> {
         if self.config_file.is_some() {
             return self.config_file.clone();

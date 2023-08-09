@@ -9,7 +9,9 @@ use std::{
 use criterion::{criterion_group, criterion_main, Criterion};
 
 use pasfmt::{format_with_settings, FormattingSettings};
-use pasfmt_orchestrator::command_line::PasFmtConfiguration;
+use pasfmt_orchestrator::predule::*;
+
+pasfmt_config!(Config);
 
 fn bench_format_submodules(submodules: &[(&str, &PathBuf)], c: &mut Criterion) {
     let mut group = c.benchmark_group("submodules");
@@ -20,7 +22,7 @@ fn bench_format_submodules(submodules: &[(&str, &PathBuf)], c: &mut Criterion) {
         group.bench_function(*name, |b| {
             b.iter(|| {
                 let config =
-                    PasFmtConfiguration::parse_from(["".into(), "--write".into(), (*path).clone()]);
+                    Config::parse_from(["".into(), "--write".into(), (*path).clone()]).config;
                 format_with_settings(FormattingSettings::default(), config);
             });
         });
