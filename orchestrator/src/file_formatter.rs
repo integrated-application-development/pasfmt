@@ -115,12 +115,12 @@ impl FileFormatter {
             OpenOptions::new().write(true).to_owned(),
             |file, file_path, _, formatted_output| {
                 let encoded_output = self.encoding.encode(&formatted_output).0;
-                file.set_len(0)
-                    .map_err(|e| format!("Failed to truncate file: {file_path}, {e}"))?;
-                file.seek(SeekFrom::End(0))
+                file.seek(SeekFrom::Start(0))
                     .map_err(|e| format!("Failed to seek to start of file: {file_path}, {e}"))?;
                 file.write_all(&encoded_output)
                     .map_err(|e| format!("Failed to write to '{file_path}', {e}"))?;
+                file.set_len(encoded_output.len() as u64)
+                    .map_err(|e| format!("Failed to set file length: {file_path}, {e}"))?;
                 Ok(())
             },
         )
