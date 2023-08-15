@@ -2,7 +2,7 @@ use log::*;
 use std::{
     fs::{File, OpenOptions},
     io::{Read, Seek, SeekFrom, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use glob::glob;
@@ -30,32 +30,31 @@ impl FileFormatter {
         warn!("'{}' is not a valid file path/glob", path);
     }
 
-    fn get_valid_files<S: AsRef<str>>(&self, paths: &[S]) -> Vec<String> {
+    fn get_valid_files<S: AsRef<str>>(&self, paths: &[S]) -> Vec<PathBuf> {
         let mut valid_paths = vec![];
         paths.iter().map(AsRef::as_ref).for_each(|path_str| {
             let path = Path::new(path_str);
-            if path.is_dir() {
-                valid_paths.extend(WalkDir::new(path_str).into_iter().filter_map(|entry| {
-                    let file = match entry {
-                        Ok(file) => file,
-                        Err(_) => return None,
-                    };
-                    let file_path = file.path().to_str().unwrap().to_string();
-                    match formattable_file_path(&file_path) {
-                        true => Some(file_path),
-                        false => None,
-                    }
-                }));
-            } else if path.is_file() {
-                valid_paths.push(path_str.to_string());
-            } else {
-                match glob(path_str) {
+            match path.metadata() {
+                Ok(metadata) if metadata.is_dir() => {
+                    valid_paths.extend(WalkDir::new(path_str).into_iter().filter_map(|entry| {
+                        let entry = entry.ok()?;
+                        let file_path = entry.path();
+                        match formattable_file_path(file_path) {
+                            true => Some(file_path.to_path_buf()),
+                            false => None,
+                        }
+                    }));
+                }
+                Ok(metadata) if metadata.is_file() => {
+                    valid_paths.push(path.to_path_buf());
+                }
+                _ => match glob(path_str) {
                     Err(_) => self.warn_invalid_glob(path_str),
                     Ok(glob) => glob.for_each(|entry| match entry {
                         Err(_) => self.warn_invalid_file(path_str),
-                        Ok(path) => valid_paths.push(path.into_os_string().into_string().unwrap()),
+                        Ok(path) => valid_paths.push(path),
                     }),
-                }
+                },
             }
         });
 
@@ -75,7 +74,7 @@ impl FileFormatter {
         mut open_options: OpenOptions,
         result_operation: T,
     ) where
-        T: Fn(&mut File, &str, &str, String) -> Result<(), String> + Sync,
+        T: Fn(&mut File, &Path, &str, String) -> Result<(), String> + Sync,
     {
         open_options.read(true);
 
@@ -84,14 +83,12 @@ impl FileFormatter {
         valid_paths.into_par_iter().for_each(|file_path| {
             let mut file = match open_options.open(&file_path) {
                 Ok(file) => file,
-                Err(e) => {
-                    panic!("Failed to open '{}', {}", &file_path, e);
-                }
+                Err(e) => panic!("Failed to open '{}', {}", &file_path.to_string_lossy(), e),
             };
 
             let file_contents = match self
                 .get_file_contents(&mut file)
-                .map_err(|e| format!("Failed to read '{}', {}", file_path, e))
+                .map_err(|e| format!("Failed to read '{}', {}", file_path.to_string_lossy(), e))
             {
                 Ok(contents) => contents,
                 Err(error) => {
@@ -112,13 +109,15 @@ impl FileFormatter {
             paths,
             OpenOptions::new().write(true).to_owned(),
             |file, file_path, _, formatted_output| {
+                let path_str = || file_path.to_string_lossy();
                 let encoded_output = self.encoding.encode(&formatted_output).0;
-                file.seek(SeekFrom::Start(0))
-                    .map_err(|e| format!("Failed to seek to start of file: {file_path}, {e}"))?;
+                file.seek(SeekFrom::Start(0)).map_err(|e| {
+                    format!("Failed to seek to start of file: {}, {}", path_str(), e)
+                })?;
                 file.write_all(&encoded_output)
-                    .map_err(|e| format!("Failed to write to '{file_path}', {e}"))?;
+                    .map_err(|e| format!("Failed to write to '{}', {}", path_str(), e))?;
                 file.set_len(encoded_output.len() as u64)
-                    .map_err(|e| format!("Failed to set file length: {file_path}, {e}"))?;
+                    .map_err(|e| format!("Failed to set file length: {}, {}", path_str(), e))?;
                 Ok(())
             },
         )
@@ -132,7 +131,7 @@ impl FileFormatter {
             paths,
             OpenOptions::new(),
             |_, file_path, _, formatted_output| {
-                println!("{}:\n{}", file_path, formatted_output);
+                println!("{}:\n{}", file_path.to_string_lossy(), formatted_output);
                 Ok(())
             },
         )
@@ -143,7 +142,10 @@ impl FileFormatter {
             OpenOptions::new(),
             |_, file_path, file_contents, formatted_output| {
                 if formatted_output != file_contents {
-                    println!("VERIFY: '{}' has different formatting", file_path);
+                    println!(
+                        "VERIFY: '{}' has different formatting",
+                        file_path.to_string_lossy()
+                    );
                 }
                 Ok(())
             },
@@ -151,14 +153,15 @@ impl FileFormatter {
     }
 }
 
-fn has_extension(path: &str, extension: &str) -> bool {
-    let rsplit = &mut path.rsplit('.');
-    rsplit.next().map(|ext| ext.eq_ignore_ascii_case(extension)) == Some(true)
-        && rsplit.next().is_some()
-}
-
-fn formattable_file_path(path: &str) -> bool {
-    has_extension(path, "pas") || has_extension(path, "dpr") || has_extension(path, "dpk")
+fn formattable_file_path(path: &Path) -> bool {
+    match path.extension() {
+        Some(ext) => {
+            ext.eq_ignore_ascii_case("pas")
+                || ext.eq_ignore_ascii_case("dpr")
+                || ext.eq_ignore_ascii_case("dpk")
+        }
+        None => false,
+    }
 }
 
 #[cfg(test)]
@@ -166,6 +169,7 @@ mod tests {
     use yare::parameterized;
 
     use crate::file_formatter::formattable_file_path;
+    use std::path::PathBuf;
 
     #[parameterized(
         pas_lower = {"a.pas"},
@@ -177,12 +181,9 @@ mod tests {
         dpk_lower = {"c.dpk"},
         dpk_upper = {"c.DPK"},
         dpk_mixed = {"c.Dpk"},
-        only_dot_pas = {".pas"},
-        only_dot_dpr = {".dpr"},
-        only_dot_dpk = {".dpk"},
     )]
     fn formattable_file_paths(path: &str) {
-        assert!(formattable_file_path(path));
+        assert!(formattable_file_path(&PathBuf::from(path)));
     }
 
     #[parameterized(
@@ -198,8 +199,11 @@ mod tests {
         starts_dpk = {"a.dpk1"},
         ends_dpk = {"a.undpk"},
         contains_dot_dpk = {"a.dpk.x"},
+        only_dot_pas = {".pas"},
+        only_dot_dpr = {".dpr"},
+        only_dot_dpk = {".dpk"},
     )]
     fn non_formattable_file_paths(path: &str) {
-        assert!(!formattable_file_path(path));
+        assert!(!formattable_file_path(&PathBuf::from(path)));
     }
 }
