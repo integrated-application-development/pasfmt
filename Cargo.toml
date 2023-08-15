@@ -5,3 +5,6 @@ members = [
     "orchestrator",
     "front-end",
 ]
+
+[profile.release]
+lto = true
