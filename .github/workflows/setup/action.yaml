@@ -1,0 +1,25 @@
+name: Rust Setup
+description: Install Rust toolchain and setup the runner cache
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install stable toolchain
+      id: toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+
+    - name: Cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: rust-toolchain-${{ steps.toolchain.outputs.cachekey }}-cargo-${{ hashFiles('**/Cargo.lock') }}-job-${{ github.job }}
+        restore-keys: |
+          rust-toolchain-${{ steps.toolchain.outputs.cachekey }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          rust-toolchain-${{ steps.toolchain.outputs.cachekey }}
+          rust-
+
