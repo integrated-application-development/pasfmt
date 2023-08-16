@@ -214,7 +214,7 @@ fn random_comment() -> String {
     let count = rng.gen_range(0..100);
     s.extend(ALPHABET.choose_multiple(rng, count).map(|s| s.to_owned()));
 
-    s.push_str(*end);
+    s.push_str(end);
 
     s
 }
@@ -229,7 +229,7 @@ fn random_text_literal() -> String {
     let mut s = String::from("'");
     let count = rng.gen_range(0..100);
     s.extend(STR_CHARS.choose_multiple(rng, count).map(|s| s.to_owned()));
-    s.push_str("'");
+    s.push('\'');
     s
 }
 
