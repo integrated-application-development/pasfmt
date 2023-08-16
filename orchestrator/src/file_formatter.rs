@@ -85,8 +85,7 @@ impl FileFormatter {
             let mut file = match open_options.open(&file_path) {
                 Ok(file) => file,
                 Err(e) => {
-                    error!("Failed to open '{}', {}", &file_path, e);
-                    return;
+                    panic!("Failed to open '{}', {}", &file_path, e);
                 }
             };
 
@@ -96,15 +95,14 @@ impl FileFormatter {
             {
                 Ok(contents) => contents,
                 Err(error) => {
-                    error!("{}", error);
-                    return;
+                    panic!("{}", error);
                 }
             };
 
             let formatted_file = self.formatter.format(&file_contents);
             if let Err(e) = result_operation(&mut file, &file_path, &file_contents, formatted_file)
             {
-                error!("{e}");
+                panic!("{e}");
             }
         });
     }
