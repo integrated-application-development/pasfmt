@@ -36,32 +36,29 @@ fn parse_pasfmt_directive_comment_contents(input: &str) -> IResult<&str, Formatt
 
 pub struct FormattingToggler {}
 impl LogicalLineFileFormatter for FormattingToggler {
-    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &[LogicalLine]) {
+    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, _input: &[LogicalLine]) {
         let mut ignored = false;
-        for line in input {
-            for &index in line.get_tokens() {
-                let mut on_toggle_comment = false;
-                if let Some((token, _)) = formatted_tokens.get_token(index) {
-                    if let TokenType::Comment(_) = token.get_token_type() {
-                        let parse_result: IResult<_, _> =
-                            delimited(
-                                alt((tag("{"), tag("(*"), tag("//"))),
-                                parse_pasfmt_directive_comment_contents,
-                                success(0),
-                            )(token.get_content());
-                        match parse_result {
-                            Ok((_, FormattingToggle::Off)) => ignored = true,
-                            Ok((_, FormattingToggle::On)) => ignored = false,
-                            _ => {}
-                        };
-                        on_toggle_comment = parse_result.is_ok();
-                    }
+        for index in 0..formatted_tokens.get_tokens().len() {
+            let mut on_toggle_comment = false;
+            if let Some((token, _)) = formatted_tokens.get_token(index) {
+                if let TokenType::Comment(_) = token.get_token_type() {
+                    let parse_result: IResult<_, _> = delimited(
+                        alt((tag("{"), tag("(*"), tag("//"))),
+                        parse_pasfmt_directive_comment_contents,
+                        success(0),
+                    )(token.get_content());
+                    match parse_result {
+                        Ok((_, FormattingToggle::Off)) => ignored = true,
+                        Ok((_, FormattingToggle::On)) => ignored = false,
+                        _ => {}
+                    };
+                    on_toggle_comment = parse_result.is_ok();
                 }
+            }
 
-                if ignored | on_toggle_comment {
-                    if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(index) {
-                        formatting_data.ignored = true;
-                    }
+            if ignored | on_toggle_comment {
+                if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(index) {
+                    formatting_data.ignored = true;
                 }
             }
         }
@@ -75,12 +72,11 @@ mod tests {
 
     use crate::prelude::*;
     use crate::test_utils::formatter_test_group;
-    use crate::traits::LogicalLineFormatter;
 
     struct AddSpaceBeforeEverything {}
-    impl LogicalLineFormatter for AddSpaceBeforeEverything {
-        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
-            for &token_index in input.get_tokens() {
+    impl LogicalLineFileFormatter for AddSpaceBeforeEverything {
+        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, _input: &[LogicalLine]) {
+            for token_index in 0..formatted_tokens.get_tokens().len() {
                 if let Some(formatting_data) = formatted_tokens
                     .get_token_type_for_index(token_index)
                     .filter(|token_type| token_type != &TokenType::Eof)
@@ -96,7 +92,7 @@ mod tests {
         Formatter::builder()
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
-            .line_formatter(AddSpaceBeforeEverything {})
+            .file_formatter(AddSpaceBeforeEverything {})
             .file_formatter(FormattingToggler {})
             .reconstructor(default_test_reconstructor())
             .build()
@@ -270,6 +266,36 @@ mod tests {
               Foo(Bar);
               // pasfmt on)
                Foo ( Bar ) ;
+              "
+            },
+        },
+        ignore_through_conditional_directives = {
+            indoc! {
+              "
+              Foo(
+                a,
+                {$ifdef A}
+                // pasfmt off
+                b+b1,
+                {$endif}
+                // pasfmt on
+                c
+              )
+              // pasfmt off
+              "
+            },
+            indoc! {
+              "
+               Foo (
+                 a ,
+                 {$ifdef A}
+                // pasfmt off
+                b+b1,
+                {$endif}
+                // pasfmt on
+                 c
+               )
+              // pasfmt off
               "
             },
         }
