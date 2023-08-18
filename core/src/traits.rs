@@ -1,5 +1,4 @@
-use std::collections::HashSet;
-
+use crate::formatter::TokenMarker;
 use crate::lang::*;
 
 pub trait Lexer {
@@ -18,8 +17,12 @@ pub trait LogicalLinesConsolidator {
     fn consolidate(&self, input: (&mut [Token], &mut [LogicalLine]));
 }
 
+pub trait TokenIgnorer {
+    fn ignore_tokens(&self, input: (&[Token], &[LogicalLine]), token_marker: &mut TokenMarker);
+}
+
 pub trait TokenRemover {
-    fn remove_tokens(&self, input: (&[Token], &[LogicalLine]), marked_tokens: &mut HashSet<usize>);
+    fn remove_tokens(&self, input: (&[Token], &[LogicalLine]), token_marker: &mut TokenMarker);
 }
 
 pub trait LogicalLineFormatter {

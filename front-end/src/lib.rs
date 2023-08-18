@@ -44,7 +44,7 @@ pub fn format_with_settings(formatting_settings: FormattingSettings, config: Pas
             .lines_consolidator(PropertyDeclarationConsolidator {})
             .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
             .lines_consolidator(UsesClauseConsolidator {})
-            .file_formatter(FormattingToggler {})
+            .token_ignorer(FormattingToggler {})
             .file_formatter(TokenSpacing {})
             .line_formatter(RemoveRepeatedNewlines {})
             .line_formatter(FormatterSelector::new(

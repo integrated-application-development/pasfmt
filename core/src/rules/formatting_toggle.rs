@@ -1,5 +1,5 @@
 use crate::lang::*;
-use crate::traits::LogicalLineFileFormatter;
+use crate::prelude::*;
 
 use log::warn;
 use nom::branch::*;
@@ -35,31 +35,27 @@ fn parse_pasfmt_directive_comment_contents(input: &str) -> IResult<&str, Formatt
 }
 
 pub struct FormattingToggler {}
-impl LogicalLineFileFormatter for FormattingToggler {
-    fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, _input: &[LogicalLine]) {
+impl TokenIgnorer for FormattingToggler {
+    fn ignore_tokens(&self, input: (&[Token], &[LogicalLine]), token_marker: &mut TokenMarker) {
         let mut ignored = false;
-        for index in 0..formatted_tokens.get_tokens().len() {
+        for (i, token) in input.0.iter().enumerate() {
             let mut on_toggle_comment = false;
-            if let Some((token, _)) = formatted_tokens.get_token(index) {
-                if let TokenType::Comment(_) = token.get_token_type() {
-                    let parse_result: IResult<_, _> = delimited(
-                        alt((tag("{"), tag("(*"), tag("//"))),
-                        parse_pasfmt_directive_comment_contents,
-                        success(0),
-                    )(token.get_content());
-                    match parse_result {
-                        Ok((_, FormattingToggle::Off)) => ignored = true,
-                        Ok((_, FormattingToggle::On)) => ignored = false,
-                        _ => {}
-                    };
-                    on_toggle_comment = parse_result.is_ok();
-                }
+            if let TokenType::Comment(_) = token.get_token_type() {
+                let parse_result: IResult<_, _> = delimited(
+                    alt((tag("{"), tag("(*"), tag("//"))),
+                    parse_pasfmt_directive_comment_contents,
+                    success(0),
+                )(token.get_content());
+                match parse_result {
+                    Ok((_, FormattingToggle::Off)) => ignored = true,
+                    Ok((_, FormattingToggle::On)) => ignored = false,
+                    _ => {}
+                };
+                on_toggle_comment = parse_result.is_ok();
             }
 
             if ignored | on_toggle_comment {
-                if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(index) {
-                    formatting_data.ignored = true;
-                }
+                token_marker.mark(i);
             }
         }
     }
@@ -92,8 +88,8 @@ mod tests {
         Formatter::builder()
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
+            .token_ignorer(FormattingToggler {})
             .file_formatter(AddSpaceBeforeEverything {})
-            .file_formatter(FormattingToggler {})
             .reconstructor(default_test_reconstructor())
             .build()
     }

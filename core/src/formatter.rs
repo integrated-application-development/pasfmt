@@ -19,12 +19,39 @@ impl LogicalLinesConsolidator for PostParseConsolidatorKind {
     }
 }
 
+#[derive(Default)]
+pub struct TokenMarker {
+    set: HashSet<usize>,
+}
+
+impl TokenMarker {
+    #[inline]
+    pub fn mark(&mut self, element: usize) -> bool {
+        self.set.insert(element)
+    }
+
+    #[inline]
+    pub fn unmark(&mut self, element: &usize) -> bool {
+        self.set.remove(element)
+    }
+
+    #[inline]
+    pub fn is_marked(&self, element: &usize) -> bool {
+        self.set.contains(element)
+    }
+
+    pub fn any_marked(&self) -> bool {
+        !self.set.is_empty()
+    }
+}
+
 pub struct Formatter {
     lexer: Box<dyn Lexer + Sync>,
     token_consolidators: Vec<Box<dyn TokenConsolidator + Sync>>,
     logical_line_parser: Box<dyn LogicalLineParser + Sync>,
     post_parse_consolidators: Vec<PostParseConsolidatorKind>,
     token_removers: Vec<Box<dyn TokenRemover + Sync>>,
+    token_ignorers: Vec<Box<dyn TokenIgnorer + Sync>>,
     logical_line_formatters: Vec<FormatterKind>,
     reconstructor: Box<dyn LogicalLinesReconstructor + Sync>,
 }
@@ -41,14 +68,23 @@ impl Formatter {
         for line_consolidator in self.post_parse_consolidators.iter() {
             line_consolidator.consolidate((&mut tokens, &mut lines));
         }
-        let mut tokens_marked_for_deletion: HashSet<usize> = HashSet::new();
+        let mut ignored_tokens = TokenMarker::default();
+        for token_ignorer in &self.token_ignorers {
+            token_ignorer.ignore_tokens((&tokens, &lines), &mut ignored_tokens)
+        }
+        let mut tokens_marked_for_deletion = TokenMarker::default();
         for token_remover in self.token_removers.iter() {
             token_remover.remove_tokens((&tokens, &lines), &mut tokens_marked_for_deletion);
+        }
+        if ignored_tokens.any_marked() {
+            tokens_marked_for_deletion
+                .set
+                .retain(|idx| !ignored_tokens.is_marked(idx));
         }
         delete_marked_tokens(tokens_marked_for_deletion, &mut tokens, &mut lines);
         delete_voided_logical_lines(&mut lines);
 
-        let mut formatted_tokens = FormattedTokens::new_from_tokens(&tokens);
+        let mut formatted_tokens = FormattedTokens::new_from_tokens(&tokens, &ignored_tokens);
         for formatter in self.logical_line_formatters.iter() {
             formatter.format(&mut formatted_tokens, &lines);
         }
@@ -61,11 +97,11 @@ fn delete_voided_logical_lines(lines: &mut Vec<LogicalLine>) {
 }
 
 fn delete_marked_tokens(
-    marked_tokens: HashSet<usize>,
+    token_marker: TokenMarker,
     tokens: &mut Vec<Token>,
     lines: &mut [LogicalLine],
 ) {
-    if marked_tokens.is_empty() {
+    if !token_marker.any_marked() {
         return;
     }
 
@@ -74,18 +110,18 @@ fn delete_marked_tokens(
 
     for token in tokens.iter() {
         new_indices.push(current_index);
-        if !marked_tokens.contains(&token.get_index()) {
+        if !token_marker.is_marked(&token.get_index()) {
             current_index += 1;
         }
     }
-    tokens.retain(|token| !marked_tokens.contains(&token.get_index()));
+    tokens.retain(|token| !token_marker.is_marked(&token.get_index()));
 
     for line in lines.iter_mut() {
         let tokens = line.get_tokens_mut();
 
         *tokens = tokens
             .iter()
-            .filter_map(|token_index| match marked_tokens.contains(token_index) {
+            .filter_map(|token_index| match token_marker.is_marked(token_index) {
                 false => Some(new_indices[*token_index]),
                 true => None,
             })
@@ -113,6 +149,7 @@ trait CanAddLexer {}
 trait CanAddTokenConsolidator {}
 trait CanAddParser {}
 trait CanAddPostParseConsolidator {}
+trait CanAddTokenIgnorer {}
 trait CanAddTokenRemover {}
 trait CanAddFormatter {}
 trait CanAddReconstructor {}
@@ -121,8 +158,9 @@ trait CanBuild {}
 builder_state!(WithNothing: [CanAddLexer]);
 builder_state!(WithLexer: [CanAddTokenConsolidator, CanAddParser]);
 builder_state!(WithTokenConsolidator: [CanAddTokenConsolidator, CanAddParser]);
-builder_state!(WithParser: [CanAddPostParseConsolidator, CanAddTokenRemover, CanAddFormatter, CanAddReconstructor]);
-builder_state!(WithLinesConsolidator: [CanAddPostParseConsolidator, CanAddTokenRemover, CanAddFormatter, CanAddReconstructor]);
+builder_state!(WithParser: [CanAddPostParseConsolidator, CanAddTokenIgnorer, CanAddTokenRemover, CanAddFormatter, CanAddReconstructor]);
+builder_state!(WithLinesConsolidator: [CanAddPostParseConsolidator, CanAddTokenIgnorer, CanAddTokenRemover, CanAddFormatter, CanAddReconstructor]);
+builder_state!(WithTokenIgnorer: [CanAddTokenIgnorer, CanAddTokenRemover, CanAddFormatter, CanAddReconstructor]);
 builder_state!(WithTokenRemover: [CanAddTokenRemover, CanAddFormatter, CanAddReconstructor]);
 builder_state!(WithFormatter: [CanAddFormatter, CanAddReconstructor]);
 builder_state!(WithReconstructor: [CanBuild]);
@@ -135,6 +173,7 @@ trait FormattingBuilderData: Sized {
     ) -> Self;
     fn set_line_parser<T: LogicalLineParser + Sync + 'static>(self, line_parser: T) -> Self;
     fn add_post_parse_consolidator(self, lines_consolidator: PostParseConsolidatorKind) -> Self;
+    fn add_token_ignorer<T: TokenIgnorer + Sync + 'static>(self, token_ignorer: T) -> Self;
     fn add_token_remover<T: TokenRemover + Sync + 'static>(self, token_remover: T) -> Self;
     fn add_formatter(self, logical_line_formatter: FormatterKind) -> Self;
     fn set_reconstructor<T: LogicalLinesReconstructor + Sync + 'static>(
@@ -170,6 +209,12 @@ pub trait AddPostParseConsolidator {
         lines_consolidator: T,
     ) -> FormatterBuilder<WithLinesConsolidator>;
 }
+pub trait AddTokenIgnorer {
+    fn token_ignorer<T: TokenIgnorer + Sync + 'static>(
+        self,
+        token_ignorer: T,
+    ) -> FormatterBuilder<WithTokenIgnorer>;
+}
 pub trait AddTokenRemover {
     fn token_remover<T: TokenRemover + Sync + 'static>(
         self,
@@ -202,6 +247,7 @@ pub struct FormatterBuilder<T> {
     token_consolidators: Vec<Box<dyn TokenConsolidator + Sync + 'static>>,
     logical_line_parser: Option<Box<dyn LogicalLineParser + Sync + 'static>>,
     post_parse_consolidators: Vec<PostParseConsolidatorKind>,
+    token_ignorers: Vec<Box<dyn TokenIgnorer + Sync + 'static>>,
     token_removers: Vec<Box<dyn TokenRemover + Sync + 'static>>,
     logical_line_formatters: Vec<FormatterKind>,
     reconstructor: Option<Box<dyn LogicalLinesReconstructor + Sync + 'static>>,
@@ -214,6 +260,7 @@ impl<T> FormatterBuilder<T> {
             token_consolidators: self.token_consolidators,
             logical_line_parser: self.logical_line_parser,
             post_parse_consolidators: self.post_parse_consolidators,
+            token_ignorers: self.token_ignorers,
             token_removers: self.token_removers,
             logical_line_formatters: self.logical_line_formatters,
             reconstructor: self.reconstructor,
@@ -244,6 +291,10 @@ impl<T> FormattingBuilderData for FormatterBuilder<T> {
         self.post_parse_consolidators.push(post_parse_consolidator);
         self
     }
+    fn add_token_ignorer<R: TokenIgnorer + Sync + 'static>(mut self, token_ignorer: R) -> Self {
+        self.token_ignorers.push(Box::new(token_ignorer));
+        self
+    }
     fn add_token_remover<R: TokenRemover + Sync + 'static>(mut self, token_remover: R) -> Self {
         self.token_removers.push(Box::new(token_remover));
         self
@@ -266,6 +317,7 @@ impl<T> FormattingBuilderData for FormatterBuilder<T> {
             token_consolidators: self.token_consolidators,
             logical_line_parser: self.logical_line_parser,
             post_parse_consolidators: self.post_parse_consolidators,
+            token_ignorers: self.token_ignorers,
             token_removers: self.token_removers,
             logical_line_formatters: self.logical_line_formatters,
             reconstructor: self.reconstructor,
@@ -316,6 +368,14 @@ impl<U: CanAddPostParseConsolidator> AddPostParseConsolidator for FormatterBuild
         .convert_type()
     }
 }
+impl<U: CanAddTokenIgnorer> AddTokenIgnorer for FormatterBuilder<U> {
+    fn token_ignorer<T: TokenIgnorer + Sync + 'static>(
+        self,
+        token_ignorer: T,
+    ) -> FormatterBuilder<WithTokenIgnorer> {
+        self.add_token_ignorer(token_ignorer).convert_type()
+    }
+}
 impl<U: CanAddTokenRemover> AddTokenRemover for FormatterBuilder<U> {
     fn token_remover<T: TokenRemover + Sync + 'static>(
         self,
@@ -356,6 +416,7 @@ impl<U: CanBuild> BuildFormatter for FormatterBuilder<U> {
             token_consolidators: self.token_consolidators,
             logical_line_parser: self.logical_line_parser.unwrap(),
             post_parse_consolidators: self.post_parse_consolidators,
+            token_ignorers: self.token_ignorers,
             token_removers: self.token_removers,
             logical_line_formatters: self.logical_line_formatters,
             reconstructor: self.reconstructor.unwrap(),
@@ -405,7 +466,7 @@ mod tests {
             .map(|line_indices| LogicalLine::new(None, 0, line_indices, LogicalLineType::Unknown))
             .collect_vec();
 
-        delete_marked_tokens(marked_tokens, &mut tokens, &mut lines);
+        delete_marked_tokens(TokenMarker { set: marked_tokens }, &mut tokens, &mut lines);
         delete_voided_logical_lines(&mut lines);
         assert_that(&lines).equals_iterator(&expected_lines.iter());
     }
@@ -465,36 +526,70 @@ mod tests {
         );
     }
 
-    struct RemoveAllParens;
-    impl TokenRemover for RemoveAllParens {
-        fn remove_tokens(
-            &self,
-            (tokens, _): (&[Token], &[LogicalLine]),
-            marked_tokens: &mut HashSet<usize>,
-        ) {
-            for token in tokens {
-                if matches!(
-                    token.get_token_type(),
-                    TokenType::Op(OperatorKind::LParen | OperatorKind::RParen)
-                ) {
-                    marked_tokens.insert(token.get_index());
-                }
+    fn mark_all<F: Fn(TokenType) -> bool>(
+        tokens: &[Token<'_>],
+        token_marker: &mut TokenMarker,
+        filter: F,
+    ) {
+        for token in tokens {
+            if filter(token.get_token_type()) {
+                token_marker.mark(token.get_index());
             }
         }
     }
 
     struct RemoveAllAsteriscs;
+    struct RemoveAllParens;
+    impl TokenRemover for RemoveAllParens {
+        fn remove_tokens(
+            &self,
+            (tokens, _): (&[Token], &[LogicalLine]),
+            token_marker: &mut TokenMarker,
+        ) {
+            mark_all(tokens, token_marker, |typ| {
+                matches!(
+                    typ,
+                    TokenType::Op(OperatorKind::LParen | OperatorKind::RParen)
+                )
+            });
+        }
+    }
+
     impl TokenRemover for RemoveAllAsteriscs {
         fn remove_tokens(
             &self,
             (tokens, _): (&[Token], &[LogicalLine]),
-            marked_tokens: &mut HashSet<usize>,
+            token_marker: &mut TokenMarker,
         ) {
-            for token in tokens {
-                if token.get_content().eq_ignore_ascii_case("*") {
-                    marked_tokens.insert(token.get_index());
-                }
-            }
+            mark_all(tokens, token_marker, |typ| {
+                typ == TokenType::Op(OperatorKind::Star)
+            });
+        }
+    }
+
+    struct IgnoreAllAsteriscs;
+    impl TokenIgnorer for IgnoreAllAsteriscs {
+        fn ignore_tokens(
+            &self,
+            (tokens, _): (&[Token], &[LogicalLine]),
+            token_marker: &mut TokenMarker,
+        ) {
+            mark_all(tokens, token_marker, |typ| {
+                typ == TokenType::Op(OperatorKind::Star)
+            });
+        }
+    }
+
+    struct IgnoreAllLeftParens;
+    impl TokenIgnorer for IgnoreAllLeftParens {
+        fn ignore_tokens(
+            &self,
+            (tokens, _): (&[Token], &[LogicalLine]),
+            token_marker: &mut TokenMarker,
+        ) {
+            mark_all(tokens, token_marker, |typ| {
+                matches!(typ, TokenType::Op(OperatorKind::LParen))
+            });
         }
     }
 
@@ -519,6 +614,56 @@ mod tests {
             .reconstructor(default_test_reconstructor())
             .build();
         run_test(formatter, "([*a*])", "[a]");
+    }
+
+    #[test]
+    fn one_token_remover_on_ignored_tokens() {
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .token_ignorer(IgnoreAllLeftParens {})
+            .token_remover(RemoveAllParens {})
+            .reconstructor(default_test_reconstructor())
+            .build();
+        run_test(formatter, "(a)", "(a");
+    }
+
+    #[test]
+    fn two_token_removers_on_ignored_tokens() {
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .token_ignorer(IgnoreAllLeftParens {})
+            .token_ignorer(IgnoreAllAsteriscs {})
+            .token_remover(RemoveAllParens {})
+            .token_remover(RemoveAllAsteriscs {})
+            .reconstructor(default_test_reconstructor())
+            .build();
+        run_test(formatter, "([*a*])", "([*a*]");
+    }
+
+    struct AddSpaceBeforeEverything;
+    impl LogicalLineFileFormatter for AddSpaceBeforeEverything {
+        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, _: &[LogicalLine]) {
+            for i in 0..formatted_tokens.get_tokens().len() {
+                formatted_tokens
+                    .get_formatting_data_mut(i)
+                    .unwrap()
+                    .spaces_before = 1;
+            }
+        }
+    }
+
+    #[test]
+    fn one_ignorer() {
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .token_ignorer(IgnoreAllLeftParens {})
+            .file_formatter(AddSpaceBeforeEverything {})
+            .reconstructor(default_test_reconstructor())
+            .build();
+        run_test(formatter, "()()", "( )( ) ");
     }
 
     struct MakeMultiplySignIdentifier;

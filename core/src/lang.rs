@@ -1,6 +1,6 @@
 use std::vec::Drain;
 
-use crate::traits::{LogicalLineFileFormatter, LogicalLineFormatter};
+use crate::prelude::*;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum KeywordKind {
@@ -259,14 +259,21 @@ impl LogicalLine {
 
 #[derive(Default)]
 pub struct FormattingData {
-    pub ignored: bool,
+    ignored: bool,
     pub newlines_before: usize,
     pub indentations_before: usize,
     pub continuations_before: usize,
     pub spaces_before: usize,
 }
-impl FormattingData {
-    pub fn from(leading_whitespace: &str) -> Self {
+
+impl From<&str> for FormattingData {
+    fn from(leading_whitespace: &str) -> Self {
+        (leading_whitespace, false).into()
+    }
+}
+
+impl From<(&str, bool)> for FormattingData {
+    fn from((leading_whitespace, ignored): (&str, bool)) -> Self {
         let newlines_before = leading_whitespace
             .chars()
             .filter(|char| char.eq(&'\n'))
@@ -281,7 +288,7 @@ impl FormattingData {
             .unwrap_or_default();
 
         FormattingData {
-            ignored: false,
+            ignored,
             newlines_before,
             indentations_before: 0,
             continuations_before: 0,
@@ -290,16 +297,26 @@ impl FormattingData {
     }
 }
 
+impl FormattingData {
+    pub fn is_ignored(&self) -> bool {
+        self.ignored
+    }
+}
+
 pub struct FormattedTokens<'a> {
     tokens: Vec<(&'a Token<'a>, FormattingData)>,
 }
 impl<'a> FormattedTokens<'a> {
-    pub fn new_from_tokens(tokens: &'a [Token<'a>]) -> Self {
+    pub fn new_from_tokens(tokens: &'a [Token<'a>], ignored_tokens: &TokenMarker) -> Self {
         FormattedTokens {
             tokens: tokens
                 .iter()
-                .map(|token| {
-                    let formatting_data = FormattingData::from(token.get_leading_whitespace());
+                .enumerate()
+                .map(|(i, token)| {
+                    let formatting_data = FormattingData::from((
+                        token.get_leading_whitespace(),
+                        ignored_tokens.is_marked(&i),
+                    ));
                     (token, formatting_data)
                 })
                 .collect(),
