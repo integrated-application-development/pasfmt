@@ -140,6 +140,11 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                 Keyword(Property) => {
                     self.parse_property_declaration();
                 }
+                IdentifierOrKeyword(Private | Protected | Public | Published) => {
+                    self.add_logical_line();
+                    self.next_token();
+                    self.add_logical_line();
+                }
                 Op(Semicolon) => {
                     self.next_token();
                     self.add_logical_line();
@@ -239,6 +244,11 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                     self.next_token();
                     self.add_logical_line();
                     return;
+                }
+                IdentifierOrKeyword(Private | Protected | Public | Published) => {
+                    self.add_logical_line();
+                    self.next_token();
+                    self.add_logical_line();
                 }
                 Keyword(Uses) => {
                     self.add_logical_line();
@@ -1016,6 +1026,13 @@ mod tests {
 
     #[test]
     fn class_property_declaration() {
+        run_test(
+            "published property Foo",
+            vec![
+                LogicalLine::new(None, 0, vec![0], LogicalLineType::Unknown),
+                LogicalLine::new(None, 0, vec![1, 2], LogicalLineType::PropertyDeclaration),
+            ],
+        );
         run_test(
             "class property Foo;",
             vec![LogicalLine::new(
