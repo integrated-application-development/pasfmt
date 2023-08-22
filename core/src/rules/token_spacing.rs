@@ -124,9 +124,12 @@ fn space_operator(
         Plus | Minus => {
             let prev = token_type_by_idx(token_index.wrapping_sub(1));
             match prev {
-                // binary after closing bracket or closing generics
-                Some(TokenType::Op(RBrack | RParen | RGeneric)) => binary_op_spacing,
-                // unary after keyword, start of line, or any other operator
+                // binary after closing bracket or closing generics or special keywords
+                Some(
+                    TokenType::Op(RBrack | RParen | RGeneric)
+                    | TokenType::Keyword(KeywordKind::Inherited | KeywordKind::Nil),
+                ) => binary_op_spacing,
+                // unary after other keywords, start of line, or any other operator
                 None | Some(TokenType::Op(_) | TokenType::Keyword(_)) => (None, Some(0)),
                 // default to binary
                 _ => binary_op_spacing,
@@ -414,5 +417,23 @@ mod tests {
     formatter_test_group!(
         ambiguous_keyword,
         max_one_space_around_ambiguous_keywords = {"public  private   ReadOnly Message", "public private ReadOnly Message"},
+    );
+
+    formatter_test_group!(
+        binary_operations_with_keyword,
+        binary_plus_with_inherited_left = {"inherited +1", "inherited + 1"},
+        binary_plus_with_inherited_right = {"1 +inherited", "1 + inherited"},
+        binary_plus_with_inherited_twice = {"inherited +inherited", "inherited + inherited"},
+        binary_plus_with_inherited_named = {"inherited Foo +1", "inherited Foo + 1"},
+        binary_plus_with_inherited_args = {"inherited Foo(0) +1", "inherited Foo(0) + 1"},
+        binary_plus_with_nil_left = {"nil +''", "nil + ''"},
+        binary_plus_with_nil_right = {"'' +nil", "'' + nil"},
+        binary_plus_with_nil_twice = {"'' +nil", "'' + nil"},
+    );
+
+    formatter_test_group!(
+        unary_operations_after_keyword,
+        unary_plus_with_while = {"while + 1", "while +1"},
+        unary_plus_with_if = {"if + 1", "if +1"},
     );
 }
