@@ -428,7 +428,7 @@ mod tests {
         binary_plus_with_inherited_args = {"inherited Foo(0) +1", "inherited Foo(0) + 1"},
         binary_plus_with_nil_left = {"nil +''", "nil + ''"},
         binary_plus_with_nil_right = {"'' +nil", "'' + nil"},
-        binary_plus_with_nil_twice = {"'' +nil", "'' + nil"},
+        binary_plus_with_nil_twice = {"nil +nil", "nil + nil"},
     );
 
     formatter_test_group!(
