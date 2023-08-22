@@ -50,7 +50,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
 
             if matches!(
                 formatted_tokens.get_token_type_for_index(token_index),
-                Some(TokenType::ConditionalDirective(_))
+                Some(TokenType::ConditionalDirective(_) | TokenType::CompilerDirective)
             ) {
                 conditional_depth += match formatted_tokens.get_token_type_for_index(token_index) {
                     Some(TokenType::ConditionalDirective(
@@ -128,6 +128,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
                     Some(
                         TokenType::Keyword(KeywordKind::Uses)
                             | TokenType::ConditionalDirective(_)
+                            | TokenType::CompilerDirective
                             | TokenType::Comment(
                                 CommentKind::IndividualLine | CommentKind::InlineLine
                             )
@@ -384,6 +385,70 @@ mod tests {
               , Unit2
               , Unit3
               ;"
+        });
+    }
+
+    #[test]
+    fn region_in_uses() {
+        run_match_test(indoc! {"
+            uses
+            {$REGION 'a'}
+                Unit1
+              , Unit2
+              , Unit3
+            {$ENDREGION}
+              ;"
+        });
+        run_match_test(indoc! {"
+            uses
+                Unit1
+            {$REGION 'a'}
+              , Unit2
+            {$ENDREGION}
+              , Unit3
+              ;"
+        });
+    }
+    #[test]
+    fn region_partially_in_uses() {
+        run_match_test(indoc! {"
+            {$REGION 'a'}
+            uses
+                Unit1
+              , Unit2
+              , Unit3
+            {$ENDREGION}
+              ;"
+        });
+        run_match_test(indoc! {"
+            uses
+            {$REGION 'a'}
+                Unit1
+              , Unit2
+              , Unit3
+              ;
+            {$ENDREGION}"
+        });
+        run_match_test(indoc! {"
+            uses
+                Unit1
+            {$REGION 'a'}
+              , Unit2
+              , Unit3
+              ;
+            {$ENDREGION}"
+        });
+    }
+    #[test]
+    fn region_outside() {
+        run_match_test(indoc! {"
+            {$REGION 'a'}
+            uses
+                Unit1
+              , Unit2
+              , Unit3
+              ;
+            {$ENDREGION}"
         });
     }
 }
