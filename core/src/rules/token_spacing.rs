@@ -112,6 +112,19 @@ fn space_operator(
     formatted_tokens: &mut FormattedTokens<'_>,
 ) -> (Option<usize>, Option<usize>) {
     let token_type_by_idx = |token_idx: usize| formatted_tokens.get_token_type_for_index(token_idx);
+    let prev_real_token_type = |token_idx: usize| {
+        formatted_tokens
+            .get_tokens()
+            .iter()
+            .rev()
+            .skip(formatted_tokens.get_tokens().len() - token_idx)
+            .find_map(|token| match token.0.get_token_type() {
+                TokenType::Comment(_)
+                | TokenType::CompilerDirective
+                | TokenType::ConditionalDirective(_) => None,
+                token_type => Some(token_type),
+            })
+    };
 
     let binary_op_spacing = (Some(1), Some(1));
 
@@ -122,15 +135,28 @@ fn space_operator(
 
         // maybe unary operators
         Plus | Minus => {
-            let prev = token_type_by_idx(token_index.wrapping_sub(1));
+            let prev = prev_real_token_type(token_index);
             match prev {
                 // binary after closing bracket or closing generics or special keywords
                 Some(
                     TokenType::Op(RBrack | RParen | RGeneric)
                     | TokenType::Keyword(KeywordKind::Inherited | KeywordKind::Nil),
                 ) => binary_op_spacing,
-                // unary after other keywords, start of line, or any other operator
-                None | Some(TokenType::Op(_) | TokenType::Keyword(_)) => (None, Some(0)),
+                /*
+                    unary after:
+                    - other keywords
+                    - start of line
+                    - any other operator
+                    - comments/directives
+                */
+                None
+                | Some(
+                    TokenType::Op(_)
+                    | TokenType::Keyword(_)
+                    | TokenType::Comment(_)
+                    | TokenType::CompilerDirective
+                    | TokenType::ConditionalDirective(_),
+                ) => (None, Some(0)),
                 // default to binary
                 _ => binary_op_spacing,
             }
@@ -435,5 +461,16 @@ mod tests {
         unary_operations_after_keyword,
         unary_plus_with_while = {"while + 1", "while +1"},
         unary_plus_with_if = {"if + 1", "if +1"},
+    );
+
+    formatter_test_group!(
+        comment_and_directives,
+        bof_then_comment_before_unary_op = {"{}+2", "{} +2"},
+        keyword_then_comment_before_unary_op = {"if {}+2", "if {} +2"},
+        literal_then_comment_before_binary_op = {"1{}+2", "1 {} + 2"},
+        directive_before_unary_op = {"{$R}+2", "{$R} +2"},
+        literal_then_directive_before_binary_op = {"1{$R}+2", "1 {$R} + 2"},
+        several_directives_and_comments_before_unary_op = {"{}{$R}{}+2", "{} {$R} {} +2"},
+        several_directives_and_comments_before_binary_op = {"1{}{$R}{}+2", "1 {} {$R} {} + 2"},
     );
 }
