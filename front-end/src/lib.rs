@@ -43,13 +43,14 @@ pub fn format_with_settings(formatting_settings: FormattingSettings, config: Pas
             .parser(DelphiLogicalLineParser {})
             .lines_consolidator(PropertyDeclarationConsolidator {})
             .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
-            .lines_consolidator(UsesClauseConsolidator {})
+            .lines_consolidator(ImportClauseConsolidator {})
             .token_ignorer(FormattingToggler {})
+            .token_ignorer(IgnoreNonUnitImportClauses {})
             .file_formatter(TokenSpacing {})
             .line_formatter(RemoveRepeatedNewlines {})
             .line_formatter(FormatterSelector::new(
                 |logical_line_type| match logical_line_type {
-                    LogicalLineType::UsesClause => Some(uses_clause_formatter),
+                    LogicalLineType::ImportClause => Some(uses_clause_formatter),
                     LogicalLineType::Eof => Some(eof_newline_formatter),
                     _ => None,
                 },

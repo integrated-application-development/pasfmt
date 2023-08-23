@@ -209,7 +209,7 @@ pub enum TokenType {
 pub enum LogicalLineType {
     ConditionalDirective,
     Eof,
-    UsesClause,
+    ImportClause,
     AsmInstruction,
     PropertyDeclaration,
     Unknown,

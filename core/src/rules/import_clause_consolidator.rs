@@ -1,7 +1,7 @@
 use crate::{lang::*, traits::LogicalLinesConsolidator};
 
-pub struct UsesClauseConsolidator {}
-impl LogicalLinesConsolidator for UsesClauseConsolidator {
+pub struct ImportClauseConsolidator {}
+impl LogicalLinesConsolidator for ImportClauseConsolidator {
     fn consolidate(&self, (tokens, lines): (&mut [Token<'_>], &mut [LogicalLine])) {
         let uses_token_indices: Vec<usize> = tokens
             .iter()
@@ -113,7 +113,7 @@ mod tests {
 
         let lexer = DelphiLexer {};
         let parser = DelphiLogicalLineParser {};
-        let consolidator = UsesClauseConsolidator {};
+        let consolidator = ImportClauseConsolidator {};
 
         let mut tokens = lexer.lex(input);
         let mut lines = parser.parse(&tokens);
@@ -152,7 +152,7 @@ mod tests {
                     None,
                     0,
                     vec![0, 1, 2, 3, 4, 5, 6],
-                    LogicalLineType::UsesClause,
+                    LogicalLineType::ImportClause,
                 ),
                 LogicalLine::new(None, 0, vec![7], LogicalLineType::ConditionalDirective),
                 LogicalLine::new(None, 0, vec![8], LogicalLineType::ConditionalDirective),
@@ -178,7 +178,7 @@ mod tests {
                 None,
                 0,
                 vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                LogicalLineType::UsesClause,
+                LogicalLineType::ImportClause,
             )],
         );
     }
@@ -201,7 +201,7 @@ mod tests {
                 None,
                 0,
                 vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-                LogicalLineType::UsesClause,
+                LogicalLineType::ImportClause,
             )],
         );
     }
@@ -222,7 +222,7 @@ mod tests {
                 None,
                 0,
                 vec![0, 1, 2, 3, 4, 5, 6, 7, 8],
-                LogicalLineType::UsesClause,
+                LogicalLineType::ImportClause,
             )],
         );
     }
@@ -243,7 +243,7 @@ mod tests {
                 None,
                 0,
                 vec![0, 1, 2, 3, 4, 5, 6, 7, 8],
-                LogicalLineType::UsesClause,
+                LogicalLineType::ImportClause,
             )],
         );
     }
@@ -266,7 +266,7 @@ mod tests {
                     None,
                     0,
                     vec![1, 2, 3, 4, 5, 6, 7],
-                    LogicalLineType::UsesClause,
+                    LogicalLineType::ImportClause,
                 ),
                 LogicalLine::new(None, 0, vec![8], LogicalLineType::ConditionalDirective),
             ],

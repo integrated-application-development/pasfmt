@@ -261,7 +261,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                 }
                 Keyword(Uses) => {
                     self.add_logical_line();
-                    self.set_logical_line_type(LogicalLineType::UsesClause);
+                    self.set_logical_line_type(LogicalLineType::ImportClause);
                     self.parse_to_after_next_semicolon();
                     self.add_logical_line();
                 }
@@ -929,7 +929,7 @@ mod tests {
             },
             vec![
                 LogicalLine::new(None, 0, vec![0, 1, 2], LogicalLineType::Unknown),
-                LogicalLine::new(None, 0, vec![3, 4, 5, 6, 7], LogicalLineType::UsesClause),
+                LogicalLine::new(None, 0, vec![3, 4, 5, 6, 7], LogicalLineType::ImportClause),
             ],
         );
     }
@@ -945,7 +945,12 @@ mod tests {
             vec![
                 LogicalLine::new(None, 0, vec![0, 1, 2], LogicalLineType::Unknown),
                 LogicalLine::new(None, 0, vec![3], LogicalLineType::Unknown),
-                LogicalLine::new(None, 0, vec![4, 5, 6, 7, 8, 9], LogicalLineType::UsesClause),
+                LogicalLine::new(
+                    None,
+                    0,
+                    vec![4, 5, 6, 7, 8, 9],
+                    LogicalLineType::ImportClause,
+                ),
             ],
         );
     }
@@ -961,7 +966,7 @@ mod tests {
             vec![
                 LogicalLine::new(None, 0, vec![0, 1, 2], LogicalLineType::Unknown),
                 LogicalLine::new(None, 0, vec![3], LogicalLineType::Unknown),
-                LogicalLine::new(None, 0, vec![4, 5, 6, 7, 8], LogicalLineType::UsesClause),
+                LogicalLine::new(None, 0, vec![4, 5, 6, 7, 8], LogicalLineType::ImportClause),
             ],
         );
     }

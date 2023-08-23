@@ -153,14 +153,14 @@ mod tests {
     use spectral::prelude::*;
 
     fn run_test(input: &'static str, expected_output: &'static str) {
-        let uses_line_consolidator = UsesClauseConsolidator {};
+        let uses_line_consolidator = ImportClauseConsolidator {};
         let uses_formatter = &UsesClauseFormatter {};
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
             .lines_consolidator(uses_line_consolidator)
             .line_formatter(FormatterSelector::new(|line_type| match line_type {
-                LogicalLineType::UsesClause => Some(uses_formatter),
+                LogicalLineType::ImportClause => Some(uses_formatter),
                 _ => None,
             }))
             .reconstructor(default_test_reconstructor())
