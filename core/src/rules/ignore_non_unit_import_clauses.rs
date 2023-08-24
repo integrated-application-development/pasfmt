@@ -24,14 +24,14 @@ impl TokenIgnorer for IgnoreNonUnitImportClauses {
             })
             .map(Token::get_token_type)
         {
-            if let Some(line) = lines
+            lines
                 .iter()
-                .find(|line| line.get_line_type() == LogicalLineType::ImportClause)
-            {
-                line.get_tokens().iter().for_each(|token| {
-                    token_marker.mark(*token);
+                .filter(|line| line.get_line_type() == LogicalLineType::ImportClause)
+                .for_each(|line| {
+                    line.get_tokens().iter().for_each(|token| {
+                        token_marker.mark(*token);
+                    })
                 });
-            }
         };
     }
 }
@@ -122,6 +122,26 @@ mod tests {
                             (a, b, c);
                             "
                         ),
+                    },
+                    two_imports = {
+                        indoc::concatdoc!(
+                            stringify!($typ),
+                            "
+                             foo;
+                            uses a,b,c;
+                            (a,b,c);
+                            uses a,b,c;
+                            "
+                        ),
+                        indoc::concatdoc!(
+                            stringify!($typ),
+                            "
+                             foo;
+                            uses a,b,c;
+                            (a, b, c);
+                            uses a,b,c;
+                            "
+                        )
                     }
                 );
             }
@@ -168,6 +188,20 @@ mod tests {
                 unit foo;
                 uses a, b, c;
                 (a, b, c);
+            "}
+        },
+        two_imports = {
+            indoc::indoc! {"
+                unit foo;
+                uses a,b,c;
+                (a,b,c);
+                uses a,b,c;
+            "},
+            indoc::indoc! {"
+                unit foo;
+                uses a, b, c;
+                (a, b, c);
+                uses a, b, c;
             "}
         }
     );
