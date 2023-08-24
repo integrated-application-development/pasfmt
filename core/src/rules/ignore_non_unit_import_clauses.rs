@@ -152,7 +152,7 @@ mod tests {
 
     /*
         Libraries and packages don't technically have 'uses' clauses, but they do have other kinds
-        of import clauses that we intent on parsing properly at a later date. For now, we can pretend
+        of import clauses that we intend on parsing properly at a later date. For now, we can pretend
         that they can contain uses clauses.
     */
     ignored_file_type_tests!(library);
