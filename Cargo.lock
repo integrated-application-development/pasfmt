@@ -633,7 +633,7 @@ checksum = "0ab1bc2a289d34bd04a330323ac98a1b4bc82c9d9fcb1e66b63caa84da26b575"
 
 [[package]]
 name = "pasfmt"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "criterion",
  "encoding_rs",
@@ -646,7 +646,7 @@ dependencies = [
 
 [[package]]
 name = "pasfmt-core"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "criterion",
  "indoc",
@@ -661,7 +661,7 @@ dependencies = [
 
 [[package]]
 name = "pasfmt-orchestrator"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "clap",
  "encoding_rs",
