@@ -15,19 +15,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `TokenConsolidator`
   - `LogicalLineParser`
   - `LogicalLineConsolidator`
+  - `TokenIgnorer`
+  - `TokenRemover`
   - `LogicalLineFormatter`
   - `LogicalLineFileFormatter`
   - `Reconstructor`
-- Delphi Lexer.
-- Basic Delphi logical line parsing.
-- Token reconstructor.
-- Formatter selector.
+- Default implementations of the fundamental traits.
 - Ability to recognise and format uses clauses.
-- Ability to parse and recognise asm blocks.
+  - Package and library imports are not yet parsed.
+  - Program uses clauses are ignored.
 - Formatter to remove repeated empty new lines.
 - Formatter to normalise to a single new line at eof.
 - Trailing whitespace removal. This is a built-in feature.
-- FileFormatter to handle reading and writing to files.
+- Orchestrator to handle parallelising the reading, formatting, and writing of files.
 - Configuration and command-line frameworks.
 - Default command-line interface.
 - Formatting toggle comments.
