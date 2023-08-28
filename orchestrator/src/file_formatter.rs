@@ -6,9 +6,10 @@ use serde_derive::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
     fmt::Display,
-    fs::{File, OpenOptions},
+    fs::{self, File, OpenOptions},
     io::{self, IsTerminal, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
+    time::SystemTime,
 };
 
 use glob::glob;
@@ -18,7 +19,7 @@ use walkdir::WalkDir;
 
 #[derive(Deserialize, Serialize)]
 pub struct Cache {
-    hash_by_path: FxHashMap<String, u64>,
+    hash_by_path: FxHashMap<String, SystemTime>,
 }
 
 use crate::ErrHandler;
@@ -128,16 +129,30 @@ impl FileFormatter {
 
         open_options.read(true);
 
-        let cache_results: Vec<Option<(PathBuf, u64)>> = self
+        let cache_results: Vec<Option<(PathBuf, SystemTime)>> = self
             .expand_paths(paths)
             .into_par_iter()
             .map_init(
                 || (Vec::<u8>::new(), String::new()),
-                |(input_buf, output_buf), file_path| -> anyhow::Result<Option<(PathBuf, u64)>> {
+                |(input_buf, output_buf),
+                 file_path|
+                 -> anyhow::Result<Option<(PathBuf, SystemTime)>> {
                     input_buf.clear();
                     output_buf.clear();
 
                     let file_path = file_path?;
+
+                    let new_hash = file_path.metadata()?.modified().unwrap();
+                    if let Some(old_hash) = cache
+                        .hash_by_path
+                        .get(file_path.as_os_str().to_str().unwrap())
+                    {
+                        if *old_hash == new_hash {
+                            info!("cache hit!");
+                            return Ok(None);
+                        }
+                        info!("cache miss!");
+                    }
                     let mut file = open_options
                         .open(&file_path)
                         .with_context(|| format!("failed to open '{}'", file_path.display()))?;
@@ -146,22 +161,12 @@ impl FileFormatter {
                         .decode_file(&mut file, file_path.display(), input_buf)
                         .with_context(|| format!("failed to read '{}'", file_path.display()))?;
 
-                    let new_hash = seahash::hash(decoded_file.contents.as_bytes());
-                    if let Some(old_hash) = cache
-                        .hash_by_path
-                        .get(file_path.as_os_str().to_str().unwrap())
-                    {
-                        if *old_hash == new_hash {
-                            log::debug!("cache hit on {}", file_path.display());
-                            return Ok(None);
-                        }
-                        log::debug!("cache miss on {}", file_path.display());
-                    }
-
                     self.formatter
                         .format_into_buf(&decoded_file.contents, output_buf);
-                    result_operation(&mut file, &file_path, &decoded_file, output_buf)
-                        .map(|_| Some((file_path, new_hash)))
+                    result_operation(&mut file, &file_path, &decoded_file, output_buf).map(|_| {
+                        let system_time = fs::metadata(&file_path).unwrap().modified().unwrap();
+                        Some((file_path, system_time))
+                    })
                 },
             )
             .flat_map(|res| match res {
