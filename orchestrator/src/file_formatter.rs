@@ -1,6 +1,8 @@
 use anyhow::{bail, Context};
 use encoding_rs::Encoding;
 use log::*;
+use rustc_hash::FxHashMap;
+use serde_derive::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
     fmt::Display,
@@ -13,6 +15,11 @@ use glob::glob;
 use pasfmt_core::formatter::Formatter;
 use rayon::prelude::*;
 use walkdir::WalkDir;
+
+#[derive(Deserialize, Serialize)]
+pub struct Cache {
+    hash_by_path: FxHashMap<String, u64>,
+}
 
 use crate::ErrHandler;
 
@@ -117,13 +124,16 @@ impl FileFormatter {
         E: ErrHandler,
         T: Fn(&mut File, &Path, &DecodedFile, &str) -> anyhow::Result<()> + Sync,
     {
+        let mut cache = get_cache();
+
         open_options.read(true);
 
-        self.expand_paths(paths)
+        let cache_results: Vec<Option<(PathBuf, u64)>> = self
+            .expand_paths(paths)
             .into_par_iter()
             .map_init(
                 || (Vec::<u8>::new(), String::new()),
-                |(input_buf, output_buf), file_path| {
+                |(input_buf, output_buf), file_path| -> anyhow::Result<Option<(PathBuf, u64)>> {
                     input_buf.clear();
                     output_buf.clear();
 
@@ -136,16 +146,43 @@ impl FileFormatter {
                         .decode_file(&mut file, file_path.display(), input_buf)
                         .with_context(|| format!("failed to read '{}'", file_path.display()))?;
 
+                    let new_hash = seahash::hash(decoded_file.contents.as_bytes());
+                    if let Some(old_hash) = cache
+                        .hash_by_path
+                        .get(file_path.as_os_str().to_str().unwrap())
+                    {
+                        if *old_hash == new_hash {
+                            log::debug!("cache hit on {}", file_path.display());
+                            return Ok(None);
+                        }
+                        log::debug!("cache miss on {}", file_path.display());
+                    }
+
                     self.formatter
                         .format_into_buf(&decoded_file.contents, output_buf);
                     result_operation(&mut file, &file_path, &decoded_file, output_buf)
+                        .map(|_| Some((file_path, new_hash)))
                 },
             )
-            .for_each(|res| {
-                if let Err(e) = res {
+            .flat_map(|res| match res {
+                Err(e) => {
                     error_handler(e);
-                };
+                    None
+                }
+                Ok(x) => Some(x),
+            })
+            .collect();
+
+        cache_results
+            .into_iter()
+            .flatten()
+            .for_each(|(file_path, new_hash)| {
+                cache
+                    .hash_by_path
+                    .insert(file_path.to_string_lossy().to_string(), new_hash);
             });
+
+        set_cache(cache);
     }
 
     pub(crate) fn format_files<S: AsRef<str>>(&self, paths: &[S], error_handler: impl ErrHandler) {
@@ -342,6 +379,22 @@ impl FileFormatter {
             error_handler(e);
         }
     }
+}
+
+fn get_cache() -> Cache {
+    std::fs::read_to_string("C:/Users/zad/Documents/Code/pasfmt/cache.json")
+        .map(|s| serde_json::from_str(&s).unwrap())
+        .unwrap_or_else(|_| Cache {
+            hash_by_path: FxHashMap::default(),
+        })
+}
+
+fn set_cache(cache: Cache) {
+    std::fs::write(
+        "C:/Users/zad/Documents/Code/pasfmt/cache.json",
+        serde_json::to_string(&cache).unwrap(),
+    )
+    .unwrap();
 }
 
 fn formattable_file_path(path: &Path) -> bool {
