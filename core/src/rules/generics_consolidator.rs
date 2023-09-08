@@ -119,7 +119,6 @@ mod tests {
     const RP: TokenType = Op(OperatorKind::RParen);
     const LB: TokenType = Op(OperatorKind::LBrack);
     const RB: TokenType = Op(OperatorKind::RBrack);
-    const SEMI: TokenType = Op(OperatorKind::Semicolon);
     const COL: TokenType = Op(OperatorKind::Colon);
     const COM: TokenType = Op(OperatorKind::Comma);
     const LT: TokenType = Op(OperatorKind::LessThan);
@@ -141,7 +140,8 @@ mod tests {
         run_test_unchanged(&[ID, AND, CompilerDirective]);
         run_test_unchanged(&[ID, GT, ID]);
         run_test_unchanged(&[ID, LT, LP, ID, GT, ID, RP]);
-        run_test_unchanged(&[ID, LT, SEMI, ID, GT, ID]);
+        // A < B, C > D
+        run_test_unchanged(&[ID, LT, ID, COM, ID, GT, ID]);
     }
 
     #[test]
