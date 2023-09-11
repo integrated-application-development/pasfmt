@@ -124,13 +124,15 @@ impl FileFormatter {
     }
     pub fn format_stdin_to_stdout(&self, input: &str) {
         let formatted_input = self.formatter.format(input);
-        println!("{}", formatted_input);
+        print!("{}", formatted_input);
     }
     pub fn format_files_to_stdout<S: AsRef<str>>(&self, paths: &[S]) {
         self.exec_format(
             paths,
             OpenOptions::new(),
             |_, file_path, _, formatted_output| {
+                // Append a newline to the formatted output deliberately because makes it more
+                // human-readable and no less machine-readable.
                 println!("{}:\n{}", file_path.to_string_lossy(), formatted_output);
                 Ok(())
             },

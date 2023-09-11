@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Incorrect parsing for generic type param lists containing semicolons.
+- Extra trailing newline when formatting stdin to stdout.
 
 ## [0.1.0] - 2023-08-28
 
