@@ -108,7 +108,11 @@ impl FileFormatter {
         self.exec_format(
             paths,
             OpenOptions::new().write(true).to_owned(),
-            |file, file_path, _, formatted_output| {
+            |file, file_path, file_contents, formatted_output| {
+                if file_contents.eq(&formatted_output) {
+                    debug!("Skipping writing to '{file_path:?}' because it is already formatted.");
+                    return Ok(());
+                }
                 let path_str = || file_path.to_string_lossy();
                 let encoded_output = self.encoding.encode(&formatted_output).0;
                 file.seek(SeekFrom::Start(0)).map_err(|e| {
