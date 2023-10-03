@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Incorrect parsing for generic type param lists containing semicolons.
 - Extra trailing newline when formatting stdin to stdout.
+- Lexical edge cases:
+  - Incorrect lexing of codepoints in the interval [U+00, U+20) as `Unkown`, now lexed as whitespace.
+  - Incorrect lexing of codepoint U+3000 as `Unkown`, now lexed as whitespace.
+  - Incorrect lexing of non-ascii codepoints as `Unkown`, now lexed as identifiers (excluding U+3000).
+  - Incorrect lexing of hex and binary integer literals:
+    - Previously not accepted with no digits (`$` and `%`)
+    - Previously the classification was reversed (unobservable with the current rules).
+    - Previously not accepted with underscore as the first digit (`$_1`)
+  - Incorrect lexing of asm blocks
+    - Asm labels can now start with just one '@' character instead of two, and they can contain '@' characters.
+    - Asm integer literals now supported (e.g. octal `076O`, hex `0FFH`/`$FF`, binary `010B`)
 
 ## [0.1.0] - 2023-08-28
 

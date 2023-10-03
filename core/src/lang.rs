@@ -163,17 +163,16 @@ pub enum OperatorKind {
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum NumberLiteralKind {
     Decimal,
+    Octal,
     Hex,
     Binary,
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum CommentKind {
-    Block,
     InlineBlock,
     IndividualBlock,
     MultilineBlock,
-    Line,
     InlineLine,
     IndividualLine,
 }
@@ -402,19 +401,15 @@ impl ReconstructionSettings {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct RefToken<'a> {
-    original_leading_whitespace: &'a str,
     content: &'a str,
+    ws_len: u32,
     token_type: TokenType,
 }
 impl<'a> RefToken<'a> {
-    pub fn new(
-        leading_whitespace: &'a str,
-        content: &'a str,
-        token_type: TokenType,
-    ) -> RefToken<'a> {
+    pub fn new(content: &'a str, ws_len: u32, token_type: TokenType) -> RefToken<'a> {
         RefToken {
-            original_leading_whitespace: leading_whitespace,
             content,
+            ws_len,
             token_type,
         }
     }
@@ -422,15 +417,15 @@ impl<'a> RefToken<'a> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct OwningToken {
-    original_leading_whitespace: Box<str>,
     content: Box<str>,
+    ws_len: u32,
     token_type: TokenType,
 }
 impl OwningToken {
-    pub fn new(leading_whitespace: String, content: String, token_type: TokenType) -> OwningToken {
+    pub fn new(content: String, ws_len: u32, token_type: TokenType) -> OwningToken {
         OwningToken {
-            original_leading_whitespace: leading_whitespace.into(),
             content: content.into(),
+            ws_len,
             token_type,
         }
     }
@@ -444,14 +439,14 @@ pub enum Token<'a> {
 impl<'a> Token<'a> {
     pub fn get_leading_whitespace(&self) -> &str {
         match &self {
-            Token::RefToken(token) => token.original_leading_whitespace,
-            Token::OwningToken(token) => &token.original_leading_whitespace,
+            Token::RefToken(token) => &token.content[..token.ws_len as usize],
+            Token::OwningToken(token) => &token.content[..token.ws_len as usize],
         }
     }
     pub fn get_content(&self) -> &str {
         match &self {
-            Token::RefToken(token) => token.content,
-            Token::OwningToken(token) => &token.content,
+            Token::RefToken(token) => &token.content[token.ws_len as usize..],
+            Token::OwningToken(token) => &token.content[token.ws_len as usize..],
         }
     }
     pub fn get_token_type(&self) -> TokenType {

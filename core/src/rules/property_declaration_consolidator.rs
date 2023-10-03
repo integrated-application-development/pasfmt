@@ -51,7 +51,7 @@ mod tests {
     use crate::prelude::*;
 
     fn to_tokens(types: &[TokenType]) -> Vec<Token> {
-        types.iter().map(|&t| new_token("", "", t)).collect()
+        types.iter().map(|&t| new_token("", t)).collect()
     }
 
     fn to_logical_lines(tokens: &[Token]) -> Vec<LogicalLine> {

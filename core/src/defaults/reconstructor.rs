@@ -63,11 +63,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    &new_token("\n\n  ", "token1", TokenType::Unknown),
+                    &new_token("\n\n  token1", TokenType::Unknown),
                     FormattingData::from("\n\n  "),
                 ),
                 (
-                    &new_token(" ", "token2", TokenType::Unknown),
+                    &new_token(" token2", TokenType::Unknown),
                     FormattingData::from(" "),
                 ),
             ]),
@@ -83,14 +83,8 @@ mod tests {
         formatting_data2.spaces_before = 1;
         run_test(
             FormattedTokens::new(vec![
-                (
-                    &new_token("", "token1", TokenType::Unknown),
-                    formatting_data1,
-                ),
-                (
-                    &new_token("", "token2", TokenType::Unknown),
-                    formatting_data2,
-                ),
+                (&new_token("token1", TokenType::Unknown), formatting_data1),
+                (&new_token("token2", TokenType::Unknown), formatting_data2),
             ]),
             "   token1 token2",
         );
@@ -104,14 +98,8 @@ mod tests {
         formatting_data2.indentations_before = 1;
         run_test(
             FormattedTokens::new(vec![
-                (
-                    &new_token("", "token1", TokenType::Unknown),
-                    formatting_data1,
-                ),
-                (
-                    &new_token("", "token2", TokenType::Unknown),
-                    formatting_data2,
-                ),
+                (&new_token("token1", TokenType::Unknown), formatting_data1),
+                (&new_token("token2", TokenType::Unknown), formatting_data2),
             ]),
             "      token1  token2",
         );
@@ -125,14 +113,8 @@ mod tests {
         formatting_data2.continuations_before = 1;
         run_test(
             FormattedTokens::new(vec![
-                (
-                    &new_token("", "token1", TokenType::Unknown),
-                    formatting_data1,
-                ),
-                (
-                    &new_token("", "token2", TokenType::Unknown),
-                    formatting_data2,
-                ),
+                (&new_token("token1", TokenType::Unknown), formatting_data1),
+                (&new_token("token2", TokenType::Unknown), formatting_data2),
             ]),
             "      token1  token2",
         );
@@ -144,12 +126,9 @@ mod tests {
         formatting_data1.newlines_before = 3;
         run_test(
             FormattedTokens::new(vec![
+                (&new_token(" token1", TokenType::Unknown), formatting_data1),
                 (
-                    &new_token(" ", "token1", TokenType::Unknown),
-                    formatting_data1,
-                ),
-                (
-                    &new_token("\n   ", "token2", TokenType::Unknown),
+                    &new_token("\n   token2", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
             ]),
@@ -160,11 +139,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    &new_token(" ", "token1", TokenType::Unknown),
+                    &new_token(" token1", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
                 (
-                    &new_token("\n   ", "token2", TokenType::Unknown),
+                    &new_token("\n   token2", TokenType::Unknown),
                     formatting_data2,
                 ),
             ]),
@@ -177,11 +156,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    &new_token(" ", "token1", TokenType::Unknown),
+                    &new_token(" token1", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
                 (
-                    &new_token("\n   ", "token2", TokenType::Unknown),
+                    &new_token("\n   token2", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
             ]),
@@ -194,13 +173,10 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    &new_token("", "token1", TokenType::Unknown),
+                    &new_token("token1", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
-                (
-                    &new_token("\n", "", TokenType::Eof),
-                    ignored_formatting_data(),
-                ),
+                (&new_token("\n", TokenType::Eof), ignored_formatting_data()),
             ]),
             "token1\n",
         );
@@ -210,7 +186,7 @@ mod tests {
     fn unrepresentable_leading_whitespace() {
         run_test(
             FormattedTokens::new(vec![(
-                &new_token("\n \n", "\ttoken1", TokenType::Unknown),
+                &new_token("\n \n\ttoken1", TokenType::Unknown),
                 ignored_formatting_data(),
             )]),
             "\n \n\ttoken1",

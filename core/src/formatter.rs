@@ -444,17 +444,16 @@ mod tests {
         assert_that(&output).is_equal_to(expected_output.to_string());
     }
 
-    fn create_token<'a>() -> Token<'a> {
-        new_token("", "", TokenType::Unknown)
-    }
-
     fn run_token_deletion_test(
         tokens: Vec<usize>,
         marked_tokens: Vec<usize>,
         lines: Vec<Vec<usize>>,
         expected_lines: Vec<Vec<usize>>,
     ) {
-        let mut tokens = tokens.iter().map(|_| create_token()).collect_vec();
+        let mut tokens = tokens
+            .iter()
+            .map(|_| new_token("", TokenType::Unknown))
+            .collect_vec();
         let marked_tokens: HashSet<usize> = marked_tokens.into_iter().collect();
         let mut lines = lines
             .into_iter()
@@ -697,8 +696,7 @@ mod tests {
                         return;
                     }
                     *token = new_owning_token(
-                        token.get_leading_whitespace().to_owned(),
-                        token.get_content().to_owned() + "1",
+                        token.get_leading_whitespace().to_owned() + token.get_content() + "1",
                         token.get_token_type(),
                     );
                 }
