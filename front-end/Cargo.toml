@@ -13,6 +13,7 @@ stderrlog = "0.5.4"
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }
+walkdir = "2.3.3"
 
 [[bench]]
 name = "benchmark_submodules"
