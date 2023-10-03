@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 use crate::{lang::*, traits::LogicalLinesReconstructor};
 
 pub struct DelphiLogicalLinesReconstructor {
@@ -18,7 +16,6 @@ impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
         formatted_tokens
             .get_tokens()
             .iter()
-            .sorted_by_key(|(token, _)| token.get_index())
             .for_each(|(token, formatting_data)| {
                 if formatting_data.is_ignored() {
                     out.push_str(token.get_leading_whitespace());
@@ -66,11 +63,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    &Token::RefToken(RefToken::new(0, "\n\n  ", "token1", TokenType::Unknown)),
+                    &new_token("\n\n  ", "token1", TokenType::Unknown),
                     FormattingData::from("\n\n  "),
                 ),
                 (
-                    &Token::RefToken(RefToken::new(1, " ", "token2", TokenType::Unknown)),
+                    &new_token(" ", "token2", TokenType::Unknown),
                     FormattingData::from(" "),
                 ),
             ]),
@@ -87,11 +84,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    &Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    &new_token("", "token1", TokenType::Unknown),
                     formatting_data1,
                 ),
                 (
-                    &Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
+                    &new_token("", "token2", TokenType::Unknown),
                     formatting_data2,
                 ),
             ]),
@@ -108,11 +105,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    &Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    &new_token("", "token1", TokenType::Unknown),
                     formatting_data1,
                 ),
                 (
-                    &Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
+                    &new_token("", "token2", TokenType::Unknown),
                     formatting_data2,
                 ),
             ]),
@@ -129,11 +126,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    &Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    &new_token("", "token1", TokenType::Unknown),
                     formatting_data1,
                 ),
                 (
-                    &Token::RefToken(RefToken::new(1, "", "token2", TokenType::Unknown)),
+                    &new_token("", "token2", TokenType::Unknown),
                     formatting_data2,
                 ),
             ]),
@@ -148,11 +145,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    &Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
+                    &new_token(" ", "token1", TokenType::Unknown),
                     formatting_data1,
                 ),
                 (
-                    &Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
+                    &new_token("\n   ", "token2", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
             ]),
@@ -163,11 +160,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    &Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
+                    &new_token(" ", "token1", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
                 (
-                    &Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
+                    &new_token("\n   ", "token2", TokenType::Unknown),
                     formatting_data2,
                 ),
             ]),
@@ -180,11 +177,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    &Token::RefToken(RefToken::new(0, " ", "token1", TokenType::Unknown)),
+                    &new_token(" ", "token1", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
                 (
-                    &Token::RefToken(RefToken::new(1, "\n   ", "token2", TokenType::Unknown)),
+                    &new_token("\n   ", "token2", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
             ]),
@@ -197,11 +194,11 @@ mod tests {
         run_test(
             FormattedTokens::new(vec![
                 (
-                    &Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
+                    &new_token("", "token1", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
                 (
-                    &Token::RefToken(RefToken::new(1, "\n", "", TokenType::Eof)),
+                    &new_token("\n", "", TokenType::Eof),
                     ignored_formatting_data(),
                 ),
             ]),
@@ -213,27 +210,10 @@ mod tests {
     fn unrepresentable_leading_whitespace() {
         run_test(
             FormattedTokens::new(vec![(
-                &Token::RefToken(RefToken::new(0, "\n \n\t", "token1", TokenType::Unknown)),
+                &new_token("\n \n", "\ttoken1", TokenType::Unknown),
                 ignored_formatting_data(),
             )]),
             "\n \n\ttoken1",
-        );
-    }
-
-    #[test]
-    fn tokens_out_of_order() {
-        run_test(
-            FormattedTokens::new(vec![
-                (
-                    &Token::RefToken(RefToken::new(1, " ", "token2", TokenType::Unknown)),
-                    ignored_formatting_data(),
-                ),
-                (
-                    &Token::RefToken(RefToken::new(0, "", "token1", TokenType::Unknown)),
-                    ignored_formatting_data(),
-                ),
-            ]),
-            "token1 token2",
         );
     }
 }

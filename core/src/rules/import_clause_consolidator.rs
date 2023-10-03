@@ -5,8 +5,9 @@ impl LogicalLinesConsolidator for ImportClauseConsolidator {
     fn consolidate(&self, (tokens, lines): (&mut [Token<'_>], &mut [LogicalLine])) {
         let uses_token_indices: Vec<usize> = tokens
             .iter()
-            .filter_map(|token| match token.get_token_type() {
-                TokenType::Keyword(KeywordKind::Uses) => Some(token.get_index()),
+            .enumerate()
+            .filter_map(|(i, token)| match token.get_token_type() {
+                TokenType::Keyword(KeywordKind::Uses) => Some(i),
                 _ => None,
             })
             .collect();

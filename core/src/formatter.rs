@@ -108,13 +108,20 @@ fn delete_marked_tokens(
     let mut new_indices: Vec<usize> = Vec::with_capacity(tokens.len());
     let mut current_index = 0;
 
-    for token in tokens.iter() {
+    for i in 0..tokens.len() {
         new_indices.push(current_index);
-        if !token_marker.is_marked(&token.get_index()) {
+        if !token_marker.is_marked(&i) {
             current_index += 1;
         }
     }
-    tokens.retain(|token| !token_marker.is_marked(&token.get_index()));
+    // This is correct because the docs for Vec::retain promise to visit each item exactly once
+    // in the original order.
+    let mut i = 0;
+    tokens.retain(|_| {
+        let keep = !token_marker.is_marked(&i);
+        i += 1;
+        keep
+    });
 
     for line in lines.iter_mut() {
         let tokens = line.get_tokens_mut();
@@ -437,13 +444,8 @@ mod tests {
         assert_that(&output).is_equal_to(expected_output.to_string());
     }
 
-    fn create_token_with_index<'a>(index: usize) -> Token<'a> {
-        Token::OwningToken(OwningToken::new(
-            index,
-            "".to_owned(),
-            "".to_owned(),
-            TokenType::Unknown,
-        ))
+    fn create_token<'a>() -> Token<'a> {
+        new_token("", "", TokenType::Unknown)
     }
 
     fn run_token_deletion_test(
@@ -452,10 +454,7 @@ mod tests {
         lines: Vec<Vec<usize>>,
         expected_lines: Vec<Vec<usize>>,
     ) {
-        let mut tokens = tokens
-            .iter()
-            .map(|&index| create_token_with_index(index))
-            .collect_vec();
+        let mut tokens = tokens.iter().map(|_| create_token()).collect_vec();
         let marked_tokens: HashSet<usize> = marked_tokens.into_iter().collect();
         let mut lines = lines
             .into_iter()
@@ -531,9 +530,9 @@ mod tests {
         token_marker: &mut TokenMarker,
         filter: F,
     ) {
-        for token in tokens {
+        for (i, token) in tokens.iter().enumerate() {
             if filter(token.get_token_type()) {
-                token_marker.mark(token.get_index());
+                token_marker.mark(i);
             }
         }
     }
@@ -697,12 +696,11 @@ mod tests {
                     if token.get_token_type() != TokenType::Identifier {
                         return;
                     }
-                    *token = Token::OwningToken(OwningToken::new(
-                        token.get_index(),
+                    *token = new_owning_token(
                         token.get_leading_whitespace().to_owned(),
                         token.get_content().to_owned() + "1",
                         token.get_token_type(),
-                    ));
+                    );
                 }
             });
         }

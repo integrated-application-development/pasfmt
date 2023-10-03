@@ -402,20 +402,17 @@ impl ReconstructionSettings {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct RefToken<'a> {
-    index: usize,
     original_leading_whitespace: &'a str,
     content: &'a str,
     token_type: TokenType,
 }
 impl<'a> RefToken<'a> {
     pub fn new(
-        index: usize,
         leading_whitespace: &'a str,
         content: &'a str,
         token_type: TokenType,
     ) -> RefToken<'a> {
         RefToken {
-            index,
             original_leading_whitespace: leading_whitespace,
             content,
             token_type,
@@ -425,20 +422,13 @@ impl<'a> RefToken<'a> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct OwningToken {
-    index: usize,
     original_leading_whitespace: Box<str>,
     content: Box<str>,
     token_type: TokenType,
 }
 impl OwningToken {
-    pub fn new(
-        index: usize,
-        leading_whitespace: String,
-        content: String,
-        token_type: TokenType,
-    ) -> OwningToken {
+    pub fn new(leading_whitespace: String, content: String, token_type: TokenType) -> OwningToken {
         OwningToken {
-            index,
             original_leading_whitespace: leading_whitespace.into(),
             content: content.into(),
             token_type,
@@ -452,12 +442,6 @@ pub enum Token<'a> {
     OwningToken(OwningToken),
 }
 impl<'a> Token<'a> {
-    pub fn get_index(&self) -> usize {
-        match &self {
-            Token::RefToken(token) => token.index,
-            Token::OwningToken(token) => token.index,
-        }
-    }
     pub fn get_leading_whitespace(&self) -> &str {
         match &self {
             Token::RefToken(token) => token.original_leading_whitespace,

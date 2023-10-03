@@ -346,7 +346,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         self.flush_comments_before_next_token();
         let mut comments_before_next_token: Vec<usize> = vec![];
 
-        let owned_token = self.get_current_token().unwrap().get_index();
+        let owned_token = self.current_token_index;
         self.get_current_logical_line_mut()
             .token_indices
             .push(owned_token);

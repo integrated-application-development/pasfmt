@@ -92,11 +92,7 @@ mod tests {
     use crate::prelude::*;
 
     fn to_tokens(types: &[TokenType]) -> Vec<Token> {
-        types
-            .iter()
-            .enumerate()
-            .map(|(i, &t)| Token::RefToken(RefToken::new(i, "", "", t)))
-            .collect()
+        types.iter().map(|&t| new_token("", "", t)).collect()
     }
 
     fn run_test(tokens: &[TokenType], expected_tokens: &[TokenType]) {

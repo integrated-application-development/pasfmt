@@ -625,7 +625,6 @@ fn parse_file(input: &str) -> Vec<Token> {
         .enumerate()
         .map(|(index, (leading_whitespace, (content, token_type)))| {
             Token::RefToken(RefToken::new(
-                index,
                 leading_whitespace,
                 content,
                 get_final_token_type(index, token_type, leading_whitespace),

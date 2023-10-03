@@ -51,18 +51,14 @@ mod tests {
     use crate::prelude::*;
 
     fn to_tokens(types: &[TokenType]) -> Vec<Token> {
-        types
-            .iter()
-            .enumerate()
-            .map(|(i, &t)| Token::RefToken(RefToken::new(i, "", "", t)))
-            .collect()
+        types.iter().map(|&t| new_token("", "", t)).collect()
     }
 
     fn to_logical_lines(tokens: &[Token]) -> Vec<LogicalLine> {
         vec![LogicalLine::new(
             None,
             0,
-            tokens.iter().map(|token| token.get_index()).collect(),
+            (0..tokens.len()).collect(),
             LogicalLineType::PropertyDeclaration,
         )]
     }
