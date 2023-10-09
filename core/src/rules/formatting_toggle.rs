@@ -2,36 +2,61 @@ use crate::lang::*;
 use crate::prelude::*;
 
 use log::warn;
-use nom::branch::*;
-use nom::bytes::complete::*;
-use nom::character::complete::*;
-use nom::combinator::*;
-use nom::sequence::*;
-use nom::*;
 
 enum FormattingToggle {
     On,
     Off,
 }
 
-fn parse_pasfmt_toggle(input: &str) -> IResult<&str, FormattingToggle> {
-    let (input, word) = alphanumeric1(input)?;
-    if word.eq_ignore_ascii_case("on") {
-        Ok((input, FormattingToggle::On))
-    } else if word.eq_ignore_ascii_case("off") {
-        Ok((input, FormattingToggle::Off))
-    } else {
-        warn!("pasfmt directive comment found but '{word}' is neither 'on' nor 'off'.");
-        fail(input)
+fn count_prefix_bytes(input: &str, f: impl Fn(&u8) -> bool) -> usize {
+    input.bytes().take_while(f).count()
+}
+
+fn strip_prefix_bytes(input: &str, f: impl Fn(&u8) -> bool) -> &str {
+    &input[count_prefix_bytes(input, f)..]
+}
+
+fn strip_prefix_bytes1(input: &str, f: impl Fn(&u8) -> bool) -> Option<&str> {
+    match count_prefix_bytes(input, f) {
+        0 => None,
+        count => Some(&input[count..]),
     }
 }
 
-fn parse_pasfmt_directive_comment_contents(input: &str) -> IResult<&str, FormattingToggle> {
-    delimited(
-        tuple((multispace0, tag_no_case("pasfmt"), multispace1)),
-        parse_pasfmt_toggle,
-        success(0),
-    )(input)
+// `core::str::strip_prefix` has no case-insensitive equivalent in core, unfortunately
+fn strip_prefix_icase<'a>(input: &'a str, prefix: &str) -> Option<&'a str> {
+    if input.len() < prefix.len() || !input[..prefix.len()].eq_ignore_ascii_case(prefix) {
+        return None;
+    }
+    Some(&input[prefix.len()..])
+}
+
+fn parse_pasfmt_toggle(input: &str) -> Option<FormattingToggle> {
+    let word = &input[..count_prefix_bytes(input, u8::is_ascii_alphanumeric)];
+    if word.eq_ignore_ascii_case("on") {
+        Some(FormattingToggle::On)
+    } else if word.eq_ignore_ascii_case("off") {
+        Some(FormattingToggle::Off)
+    } else {
+        warn!("pasfmt directive comment found but '{word}' is neither 'on' nor 'off'.");
+        None
+    }
+}
+
+fn parse_pasfmt_directive_comment_contents(input: &str) -> Option<FormattingToggle> {
+    let input = strip_prefix_bytes(input, u8::is_ascii_whitespace);
+    let input = strip_prefix_icase(input, "pasfmt")?;
+    let input = strip_prefix_bytes1(input, u8::is_ascii_whitespace)?;
+    parse_pasfmt_toggle(input)
+}
+
+fn parse_toggle(content: &str) -> Option<FormattingToggle> {
+    let content = content
+        .strip_prefix("//")
+        .or_else(|| content.strip_prefix("(*"))
+        .or_else(|| content.strip_prefix('{'))?;
+
+    parse_pasfmt_directive_comment_contents(content)
 }
 
 pub struct FormattingToggler {}
@@ -41,17 +66,12 @@ impl TokenIgnorer for FormattingToggler {
         for (i, token) in input.0.iter().enumerate() {
             let mut on_toggle_comment = false;
             if let TokenType::Comment(_) = token.get_token_type() {
-                let parse_result: IResult<_, _> = delimited(
-                    alt((tag("{"), tag("(*"), tag("//"))),
-                    parse_pasfmt_directive_comment_contents,
-                    success(0),
-                )(token.get_content());
-                match parse_result {
-                    Ok((_, FormattingToggle::Off)) => ignored = true,
-                    Ok((_, FormattingToggle::On)) => ignored = false,
-                    _ => {}
+                on_toggle_comment = true;
+                match parse_toggle(token.get_content()) {
+                    Some(FormattingToggle::Off) => ignored = true,
+                    Some(FormattingToggle::On) => ignored = false,
+                    None => on_toggle_comment = false,
                 };
-                on_toggle_comment = parse_result.is_ok();
             }
 
             if ignored | on_toggle_comment {
@@ -110,6 +130,26 @@ mod tests {
                Foo ( Bar ) ;
               // pasfmt off
               Foo(Bar);
+              "
+            },
+        },
+        case_insensitive = {
+            indoc! {
+              "
+              Foo(Bar);
+              // PASFMT off
+              Foo(Bar);
+              // PaSFmt on
+              Foo(Bar);
+              "
+            },
+            indoc! {
+              "
+               Foo ( Bar ) ;
+              // PASFMT off
+              Foo(Bar);
+              // PaSFmt on
+               Foo ( Bar ) ;
               "
             },
         },
