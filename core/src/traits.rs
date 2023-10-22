@@ -2,15 +2,18 @@ use crate::formatter::TokenMarker;
 use crate::lang::*;
 
 pub trait Lexer {
-    fn lex<'a>(&self, input: &'a str) -> Vec<Token<'a>>;
+    fn lex<'a>(&self, input: &'a str) -> Vec<RawToken<'a>>;
 }
 
+pub trait RawTokenConsolidator {
+    fn consolidate(&self, tokens: &mut [RawToken]);
+}
 pub trait TokenConsolidator {
     fn consolidate(&self, tokens: &mut [Token]);
 }
 
 pub trait LogicalLineParser {
-    fn parse<'a>(&self, input: &'a [Token<'a>]) -> Vec<LogicalLine>;
+    fn parse<'a>(&self, input: Vec<RawToken<'a>>) -> (Vec<LogicalLine>, Vec<Token<'a>>);
 }
 
 pub trait LogicalLinesConsolidator {

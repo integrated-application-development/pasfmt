@@ -197,10 +197,33 @@ pub enum TextLiteralKind {
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub enum TokenType {
+pub enum RawTokenType {
     Op(OperatorKind),
     Identifier,
     IdentifierOrKeyword(KeywordKind),
+    Keyword(KeywordKind),
+    TextLiteral(TextLiteralKind),
+    NumberLiteral(NumberLiteralKind),
+    ConditionalDirective(ConditionalDirectiveKind),
+    CompilerDirective,
+    Comment(CommentKind),
+    Eof,
+    Unknown,
+}
+
+impl RawTokenType {
+    pub(crate) fn is_comment_or_directive(&self) -> bool {
+        matches!(
+            self,
+            Self::Comment(_) | Self::CompilerDirective | Self::ConditionalDirective(_)
+        )
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+pub enum TokenType {
+    Op(OperatorKind),
+    Identifier,
     Keyword(KeywordKind),
     TextLiteral(TextLiteralKind),
     NumberLiteral(NumberLiteralKind),
@@ -447,6 +470,45 @@ impl ReconstructionSettings {
     }
 }
 
+pub trait TokenData {
+    type TokenType;
+    fn get_leading_whitespace(&self) -> &str;
+    fn get_content(&self) -> &str;
+    fn get_token_type(&self) -> Self::TokenType;
+    fn set_token_type(&mut self, typ: Self::TokenType);
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct RawToken<'a> {
+    content: &'a str,
+    ws_len: u32,
+    token_type: RawTokenType,
+}
+impl<'a> RawToken<'a> {
+    pub fn new(content: &'a str, ws_len: u32, token_type: RawTokenType) -> RawToken<'a> {
+        RawToken {
+            content,
+            ws_len,
+            token_type,
+        }
+    }
+}
+impl<'a> TokenData for RawToken<'a> {
+    type TokenType = RawTokenType;
+    fn get_leading_whitespace(&self) -> &str {
+        &self.content[..self.ws_len as usize]
+    }
+    fn get_content(&self) -> &str {
+        &self.content[self.ws_len as usize..]
+    }
+    fn get_token_type(&self) -> RawTokenType {
+        self.token_type
+    }
+    fn set_token_type(&mut self, typ: RawTokenType) {
+        self.token_type = typ;
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct RefToken<'a> {
     content: &'a str,
@@ -484,31 +546,55 @@ pub enum Token<'a> {
     RefToken(RefToken<'a>),
     OwningToken(OwningToken),
 }
-impl<'a> Token<'a> {
-    pub fn get_leading_whitespace(&self) -> &str {
+impl<'a> TokenData for Token<'a> {
+    type TokenType = TokenType;
+    fn get_leading_whitespace(&self) -> &str {
         match &self {
             Token::RefToken(token) => &token.content[..token.ws_len as usize],
             Token::OwningToken(token) => &token.content[..token.ws_len as usize],
         }
     }
-    pub fn get_content(&self) -> &str {
+    fn get_content(&self) -> &str {
         match &self {
             Token::RefToken(token) => &token.content[token.ws_len as usize..],
             Token::OwningToken(token) => &token.content[token.ws_len as usize..],
         }
     }
-    pub fn get_token_type(&self) -> TokenType {
+    fn get_token_type(&self) -> TokenType {
         match &self {
             Token::RefToken(token) => token.token_type,
             Token::OwningToken(token) => token.token_type,
         }
     }
 
-    pub fn set_token_type(&mut self, typ: TokenType) {
+    fn set_token_type(&mut self, typ: TokenType) {
         match self {
             Token::RefToken(token) => token.token_type = typ,
             Token::OwningToken(token) => token.token_type = typ,
         }
+    }
+}
+impl<'a> From<RawToken<'a>> for Token<'a> {
+    fn from(val: RawToken<'a>) -> Self {
+        use RawTokenType as RTT;
+        use TokenType as TT;
+        Token::RefToken(RefToken::new(
+            val.content,
+            val.ws_len,
+            match val.token_type {
+                RTT::IdentifierOrKeyword(_) => TT::Identifier,
+                RTT::Op(op_kind) => TT::Op(op_kind),
+                RTT::Identifier => TT::Identifier,
+                RTT::Keyword(kind) => TT::Keyword(kind),
+                RTT::TextLiteral(kind) => TT::TextLiteral(kind),
+                RTT::NumberLiteral(kind) => TT::NumberLiteral(kind),
+                RTT::ConditionalDirective(kind) => TT::ConditionalDirective(kind),
+                RTT::CompilerDirective => TT::CompilerDirective,
+                RTT::Comment(kind) => TT::Comment(kind),
+                RTT::Eof => TT::Eof,
+                RTT::Unknown => TT::Unknown,
+            },
+        ))
     }
 }
 

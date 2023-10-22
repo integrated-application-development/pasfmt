@@ -84,7 +84,6 @@ pub fn format_with_settings(
         Formatter::builder()
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
-            .lines_consolidator(PropertyDeclarationConsolidator {})
             .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
             .lines_consolidator(ImportClauseConsolidator {})
             .token_ignorer(FormattingToggler {})

@@ -4,8 +4,8 @@ use crate::lang::ConditionalDirectiveKind as CDK;
 use crate::lang::KeywordKind as KK;
 use crate::lang::NumberLiteralKind as NLK;
 use crate::lang::OperatorKind as OK;
+use crate::lang::RawTokenType as TT;
 use crate::lang::TextLiteralKind as TLK;
-use crate::lang::TokenType as TT;
 use crate::lang::*;
 use crate::traits::Lexer;
 
@@ -14,7 +14,7 @@ use log::*;
 
 pub struct DelphiLexer {}
 impl Lexer for DelphiLexer {
-    fn lex<'a>(&self, input: &'a str) -> Vec<Token<'a>> {
+    fn lex<'a>(&self, input: &'a str) -> Vec<RawToken<'a>> {
         lex_complete(input)
     }
 }
@@ -22,16 +22,16 @@ impl Lexer for DelphiLexer {
 struct LexState {
     is_first: bool,
     in_asm: bool,
-    prev_real_token: Option<TokenType>,
+    prev_real_token: Option<RawTokenType>,
 }
 
 struct LexedToken<'a> {
     whitespace_count: usize,
     token_content: &'a str,
-    token_type: TokenType,
+    token_type: RawTokenType,
 }
 
-fn lex_complete(input: &str) -> Vec<Token> {
+fn lex_complete(input: &str) -> Vec<RawToken> {
     let (remaining, tokens) = lex(input);
 
     // Remaining input is always a programming error; invalid input should turn into 'Unknown' tokens.
@@ -43,7 +43,7 @@ fn lex_complete(input: &str) -> Vec<Token> {
     tokens
 }
 
-fn lex(mut input: &str) -> (&str, Vec<Token>) {
+fn lex(mut input: &str) -> (&str, Vec<RawToken>) {
     // Experimentally it was determined that this linear regression on input length is best on average.
     // The performance difference from the default capacity is minor, but measurable.
     let mut tokens = Vec::with_capacity(input.len() / 8);
@@ -70,11 +70,11 @@ fn to_final_token(
         mut token_content,
         token_type,
     }: LexedToken,
-) -> Token<'_> {
+) -> RawToken<'_> {
     let whitespace_count: u32 = whitespace_count
         .try_into()
         .unwrap_or_else(|_| truncate_whitespace(&mut token_content, whitespace_count));
-    Token::RefToken(RefToken::new(token_content, whitespace_count, token_type))
+    RawToken::new(token_content, whitespace_count, token_type)
 }
 
 fn whitespace_and_token<'a>(
@@ -154,7 +154,7 @@ fn count_unicode_whitespace(input: impl Iterator<Item = char>) -> usize {
         .sum()
 }
 
-type OffsetAndTokenType = (usize, TokenType);
+type OffsetAndTokenType = (usize, RawTokenType);
 
 struct LexArgs<'a, 'b> {
     input: &'a str,
@@ -258,7 +258,7 @@ fn lex_asm_token(args: LexArgs) -> Option<OffsetAndTokenType> {
 
     This approach also lends itself well to efficient inheritance of the different sub-lexers.
 */
-fn lex_token_with_map(map: [LexerFn; 256], args: LexArgs) -> Option<(usize, TokenType)> {
+fn lex_token_with_map(map: [LexerFn; 256], args: LexArgs) -> Option<(usize, RawTokenType)> {
     args.input
         .as_bytes()
         .get(args.offset)
@@ -321,7 +321,7 @@ const fn make_byte_map<T: Copy>(map: &[(ByteSet<'_>, T)], default: T) -> [T; 256
 // endregion: byte-set
 
 // region: keywords
-const KEYWORDS: [(&str, TokenType); 121] = [
+const KEYWORDS: [(&str, RawTokenType); 121] = [
     ("absolute", TT::IdentifierOrKeyword(KK::Absolute)),
     ("abstract", TT::IdentifierOrKeyword(KK::Abstract)),
     ("align", TT::IdentifierOrKeyword(KK::Align)),
@@ -445,10 +445,10 @@ const KEYWORDS: [(&str, TokenType); 121] = [
     ("xor", TT::Keyword(KK::Xor)),
 ];
 
-fn get_word_token_type(input: &str) -> TokenType {
+fn get_word_token_type(input: &str) -> RawTokenType {
     const fn make_keyword_lookup_table<'a, const N: usize>(
-        keywords: &[(&'a str, TokenType)],
-    ) -> [Option<(&'a str, TokenType)>; N] {
+        keywords: &[(&'a str, RawTokenType)],
+    ) -> [Option<(&'a str, RawTokenType)>; N] {
         let mut out = [None; N];
         let mut i = 0;
         while i < keywords.len() {
@@ -513,7 +513,7 @@ fn get_word_token_type(input: &str) -> TokenType {
         sum
     }
 
-    const KEYWORD_LOOKUP_TABLE: [Option<(&'static str, TokenType)>;
+    const KEYWORD_LOOKUP_TABLE: [Option<(&'static str, RawTokenType)>;
         KEYWORD_ASSO_VALUES[0] as usize] = make_keyword_lookup_table(&KEYWORDS);
 
     const MAX_WORD_LENGTH: usize = {
@@ -968,14 +968,14 @@ fn warn_unterminated(description: &str, input: &str, start_offset: usize) {
 }
 
 #[cold]
-fn consume_to_eof(input: &str, token_type: TokenType) -> (usize, TokenType) {
+fn consume_to_eof(input: &str, token_type: RawTokenType) -> (usize, RawTokenType) {
     let trim_count = count_unicode_whitespace(input.chars().rev());
     (input.len() - trim_count, token_type)
 }
 
 // region: directives/comments
 
-fn compiler_directive_type(input: &str, offset: usize) -> TokenType {
+fn compiler_directive_type(input: &str, offset: usize) -> RawTokenType {
     let count = count_matching(input, offset, |b| b.is_ascii_alphabetic());
     // `to_lowercase` here is slow, but this code isn't hit very often.
     match input[offset..(offset + count)].to_lowercase().as_str() {
@@ -1113,7 +1113,7 @@ fn ampersand(mut args: LexArgs) -> OffsetAndTokenType {
 macro_rules! basic_op {
     ($name: ident, $typ: path) => {
         fn $name(args: LexArgs) -> OffsetAndTokenType {
-            (args.offset, TokenType::Op($typ))
+            (args.offset, RawTokenType::Op($typ))
         }
     };
 }
@@ -1215,7 +1215,7 @@ mod tests {
     use indoc::indoc;
     use spectral::prelude::*;
 
-    type ContentAndTokenType<'a> = (&'a str, TokenType);
+    type ContentAndTokenType<'a> = (&'a str, RawTokenType);
 
     fn run_test(input: &str, expected_token_types: &[ContentAndTokenType]) {
         let lexer = DelphiLexer {};

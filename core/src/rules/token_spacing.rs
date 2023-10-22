@@ -165,17 +165,16 @@ fn space_operator(
         }
         OK::Comma | OK::Colon => (Some(0), Some(1)),
         OK::RBrack | OK::RParen => match token_type_by_idx(token_index + 1) {
-            Some(TT::Identifier | TT::IdentifierOrKeyword(_) | TT::Keyword(_)) => {
-                (Some(0), Some(1))
-            }
+            Some(TT::Identifier | TT::Keyword(_)) => (Some(0), Some(1)),
             _ => (Some(0), Some(0)),
         },
         OK::LBrack | OK::LParen => match token_type_by_idx(token_index.wrapping_sub(1)) {
             Some(
                 TT::Identifier
-                | TT::IdentifierOrKeyword(_)
                 | TT::Keyword(
                     KeywordKind::Class
+                    | KeywordKind::Abstract
+                    | KeywordKind::Sealed
                     | KeywordKind::Interface
                     | KeywordKind::Function
                     | KeywordKind::Procedure
@@ -201,25 +200,17 @@ fn space_operator(
                     foo[0] ^
                 */
                 (
-                    Some(
-                        TT::Identifier
-                        | TT::IdentifierOrKeyword(_)
-                        | TT::Op(OK::RBrack | OK::RParen | OK::Pointer),
-                    ),
+                    Some(TT::Identifier | TT::Op(OK::RBrack | OK::RParen | OK::Pointer)),
                     token_after,
                 ) => (
                     Some(0),
                     match token_after {
-                        Some(
-                            TT::Identifier
-                            | TT::IdentifierOrKeyword(_)
-                            | TT::Op(OK::LBrack | OK::LParen),
-                        ) => Some(0),
+                        Some(TT::Identifier | TT::Op(OK::LBrack | OK::LParen)) => Some(0),
                         _ => Some(1),
                     },
                 ),
                 // just ^foo
-                (_, Some(TT::Identifier | TT::IdentifierOrKeyword(_))) => (None, Some(0)),
+                (_, Some(TT::Identifier)) => (None, Some(0)),
                 _ => (None, None),
             }
         }
@@ -246,7 +237,6 @@ mod tests {
         Formatter::builder()
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
-            .lines_consolidator(PropertyDeclarationConsolidator {})
             .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
             .file_formatter(TokenSpacing {})
             .reconstructor(default_test_reconstructor())
@@ -256,6 +246,8 @@ mod tests {
     formatter_test_group!(
         parens_after_special_pure_keywords,
         class_before_parens = {"class ( TObject);", "class(TObject);"},
+        abstract_class_before_parens = {"class abstract ( TObject);", "class abstract(TObject);"},
+        sealed_class_before_parens = {"class sealed ( TObject);", "class sealed(TObject);"},
         interface_before_parens = {"interface ( IInterface);", "interface(IInterface);"},
         procedure_before_parens = {"procedure ();", "procedure();"},
         function_before_parens = {"function  ();", "function();"},

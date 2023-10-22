@@ -9,10 +9,7 @@ impl TokenIgnorer for IgnoreNonUnitImportClauses {
         (tokens, lines): (&[Token], &[LogicalLine]),
         token_marker: &mut TokenMarker,
     ) {
-        if let Some(
-            TokenType::Keyword(Program | Library | Package)
-            | TokenType::IdentifierOrKeyword(Package),
-        ) = tokens
+        if let Some(TokenType::Keyword(Program | Library | Package)) = tokens
             .iter()
             .find(|token| {
                 !matches!(

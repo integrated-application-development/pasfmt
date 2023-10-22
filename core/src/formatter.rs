@@ -47,7 +47,7 @@ impl TokenMarker {
 
 pub struct Formatter {
     lexer: Box<dyn Lexer + Sync>,
-    token_consolidators: Vec<Box<dyn TokenConsolidator + Sync>>,
+    token_consolidators: Vec<Box<dyn RawTokenConsolidator + Sync>>,
     logical_line_parser: Box<dyn LogicalLineParser + Sync>,
     post_parse_consolidators: Vec<PostParseConsolidatorKind>,
     token_removers: Vec<Box<dyn TokenRemover + Sync>>,
@@ -69,7 +69,7 @@ impl Formatter {
         for token_consolidator in self.token_consolidators.iter() {
             token_consolidator.consolidate(&mut tokens);
         }
-        let mut lines = self.logical_line_parser.parse(&tokens);
+        let (mut lines, mut tokens) = self.logical_line_parser.parse(tokens);
         for line_consolidator in self.post_parse_consolidators.iter() {
             line_consolidator.consolidate((&mut tokens, &mut lines));
         }
@@ -159,7 +159,7 @@ macro_rules! builder_state {
 }
 
 trait CanAddLexer {}
-trait CanAddTokenConsolidator {}
+trait CanAddRawTokenConsolidator {}
 trait CanAddParser {}
 trait CanAddPostParseConsolidator {}
 trait CanAddTokenIgnorer {}
@@ -169,8 +169,8 @@ trait CanAddReconstructor {}
 trait CanBuild {}
 
 builder_state!(WithNothing: [CanAddLexer]);
-builder_state!(WithLexer: [CanAddTokenConsolidator, CanAddParser]);
-builder_state!(WithTokenConsolidator: [CanAddTokenConsolidator, CanAddParser]);
+builder_state!(WithLexer: [CanAddRawTokenConsolidator, CanAddParser]);
+builder_state!(WithRawTokenConsolidator: [CanAddRawTokenConsolidator, CanAddParser]);
 builder_state!(WithParser: [CanAddPostParseConsolidator, CanAddTokenIgnorer, CanAddTokenRemover, CanAddFormatter, CanAddReconstructor]);
 builder_state!(WithLinesConsolidator: [CanAddPostParseConsolidator, CanAddTokenIgnorer, CanAddTokenRemover, CanAddFormatter, CanAddReconstructor]);
 builder_state!(WithTokenIgnorer: [CanAddTokenIgnorer, CanAddTokenRemover, CanAddFormatter, CanAddReconstructor]);
@@ -180,7 +180,7 @@ builder_state!(WithReconstructor: [CanBuild]);
 
 trait FormattingBuilderData: Sized {
     fn set_lexer<L: Lexer + Sync + 'static>(self, lexer: L) -> Self;
-    fn add_token_consolidator<T: TokenConsolidator + Sync + 'static>(
+    fn add_raw_token_consolidator<T: RawTokenConsolidator + Sync + 'static>(
         self,
         token_consolidator: T,
     ) -> Self;
@@ -200,11 +200,11 @@ trait FormattingBuilderData: Sized {
 pub trait AddLexer {
     fn lexer<T: Lexer + Sync + 'static>(self, lexer: T) -> FormatterBuilder<WithLexer>;
 }
-pub trait AddTokenConsolidator {
-    fn token_consolidator<T: TokenConsolidator + Sync + 'static>(
+pub trait AddRawTokenConsolidator {
+    fn raw_token_consolidator<T: RawTokenConsolidator + Sync + 'static>(
         self,
         token_consolidator: T,
-    ) -> FormatterBuilder<WithTokenConsolidator>;
+    ) -> FormatterBuilder<WithRawTokenConsolidator>;
 }
 pub trait AddParser {
     fn parser<T: LogicalLineParser + Sync + 'static>(
@@ -257,7 +257,7 @@ pub trait BuildFormatter {
 #[derive(Default)]
 pub struct FormatterBuilder<T> {
     lexer: Option<Box<dyn Lexer + Sync>>,
-    token_consolidators: Vec<Box<dyn TokenConsolidator + Sync + 'static>>,
+    token_consolidators: Vec<Box<dyn RawTokenConsolidator + Sync + 'static>>,
     logical_line_parser: Option<Box<dyn LogicalLineParser + Sync + 'static>>,
     post_parse_consolidators: Vec<PostParseConsolidatorKind>,
     token_ignorers: Vec<Box<dyn TokenIgnorer + Sync + 'static>>,
@@ -286,7 +286,7 @@ impl<T> FormattingBuilderData for FormatterBuilder<T> {
         self.lexer = Some(Box::new(lexer));
         self
     }
-    fn add_token_consolidator<C: TokenConsolidator + Sync + 'static>(
+    fn add_raw_token_consolidator<C: RawTokenConsolidator + Sync + 'static>(
         mut self,
         token_consolidator: C,
     ) -> Self {
@@ -344,12 +344,12 @@ impl<U: CanAddLexer> AddLexer for FormatterBuilder<U> {
         self.set_lexer(lexer).convert_type()
     }
 }
-impl<U: CanAddTokenConsolidator> AddTokenConsolidator for FormatterBuilder<U> {
-    fn token_consolidator<T: TokenConsolidator + Sync + 'static>(
+impl<U: CanAddRawTokenConsolidator> AddRawTokenConsolidator for FormatterBuilder<U> {
+    fn raw_token_consolidator<T: RawTokenConsolidator + Sync + 'static>(
         self,
         token_consolidator: T,
-    ) -> FormatterBuilder<WithTokenConsolidator> {
-        self.add_token_consolidator(token_consolidator)
+    ) -> FormatterBuilder<WithRawTokenConsolidator> {
+        self.add_raw_token_consolidator(token_consolidator)
             .convert_type()
     }
 }
@@ -671,6 +671,15 @@ mod tests {
     }
 
     struct MakeMultiplySignIdentifier;
+    impl RawTokenConsolidator for MakeMultiplySignIdentifier {
+        fn consolidate(&self, tokens: &mut [RawToken]) {
+            for token in tokens.iter_mut() {
+                if token.get_token_type() == RawTokenType::Op(OperatorKind::Star) {
+                    token.set_token_type(RawTokenType::Identifier);
+                }
+            }
+        }
+    }
     impl TokenConsolidator for MakeMultiplySignIdentifier {
         fn consolidate(&self, tokens: &mut [Token]) {
             for token in tokens.iter_mut() {
@@ -693,18 +702,27 @@ mod tests {
         }
     }
 
-    struct Append1ToAllIdentifiers;
-    impl TokenConsolidator for Append1ToAllIdentifiers {
+    struct TurnAllIdentifiersTo1;
+    impl RawTokenConsolidator for TurnAllIdentifiersTo1 {
+        fn consolidate(&self, tokens: &mut [RawToken]) {
+            (0..tokens.len() - 1).for_each(|token_index| {
+                if let Some(token) = tokens.get_mut(token_index) {
+                    if token.get_token_type() != RawTokenType::Identifier {
+                        return;
+                    }
+                    *token = RawToken::new("1", 0, token.get_token_type());
+                }
+            });
+        }
+    }
+    impl TokenConsolidator for TurnAllIdentifiersTo1 {
         fn consolidate(&self, tokens: &mut [Token]) {
             (0..tokens.len() - 1).for_each(|token_index| {
                 if let Some(token) = tokens.get_mut(token_index) {
                     if token.get_token_type() != TokenType::Identifier {
                         return;
                     }
-                    *token = new_owning_token(
-                        token.get_leading_whitespace().to_owned() + token.get_content() + "1",
-                        token.get_token_type(),
-                    );
+                    *token = Token::RefToken(RefToken::new("1", 0, token.get_token_type()));
                 }
             });
         }
@@ -737,7 +755,7 @@ mod tests {
     fn single_token_consolidator_before_parsing() {
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
-            .token_consolidator(MakeMultiplySignIdentifier {})
+            .raw_token_consolidator(MakeMultiplySignIdentifier {})
             .parser(DelphiLogicalLineParser {})
             .line_formatter(AddSpaceBeforeIdentifier {})
             .reconstructor(default_test_reconstructor())
@@ -749,13 +767,13 @@ mod tests {
     fn multiple_token_consolidators_before_parsing() {
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
-            .token_consolidator(MakeMultiplySignIdentifier {})
-            .token_consolidator(Append1ToAllIdentifiers {})
+            .raw_token_consolidator(MakeMultiplySignIdentifier {})
+            .raw_token_consolidator(TurnAllIdentifiersTo1 {})
             .parser(DelphiLogicalLineParser {})
             .line_formatter(AddSpaceBeforeIdentifier {})
             .reconstructor(default_test_reconstructor())
             .build();
-        run_test(formatter, "1*1*1", "1 *11 *11");
+        run_test(formatter, "1*1*1", "1 11 11");
     }
 
     #[test]
@@ -776,11 +794,11 @@ mod tests {
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
             .token_consolidator(MakeMultiplySignIdentifier {})
-            .token_consolidator(Append1ToAllIdentifiers {})
+            .token_consolidator(TurnAllIdentifiersTo1 {})
             .line_formatter(AddSpaceBeforeIdentifier {})
             .reconstructor(default_test_reconstructor())
             .build();
-        run_test(formatter, "1*1*1", "1 *11 *11");
+        run_test(formatter, "1*1*1", "1 11 11");
     }
 
     #[test]
@@ -789,10 +807,10 @@ mod tests {
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
             .lines_consolidator(MakeFirstMultiplySignIdentifierInFirstLine {})
-            .token_consolidator(Append1ToAllIdentifiers {})
+            .token_consolidator(TurnAllIdentifiersTo1 {})
             .reconstructor(default_test_reconstructor())
             .build();
-        run_test(formatter, "A*B*C;D*E", "A1*1B1*C1;D1*E1");
+        run_test(formatter, "A*B*C;D*E", "111*1;1*1");
     }
 
     #[test]
@@ -800,11 +818,11 @@ mod tests {
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
-            .token_consolidator(Append1ToAllIdentifiers {})
+            .token_consolidator(TurnAllIdentifiersTo1 {})
             .lines_consolidator(MakeFirstMultiplySignIdentifierInFirstLine {})
             .reconstructor(default_test_reconstructor())
             .build();
-        run_test(formatter, "A*B*C;D*E", "A1*B1*C1;D1*E1");
+        run_test(formatter, "A*B*C;D*E", "1*1*1;1*1");
     }
 
     struct CombineFirst2Lines;
@@ -854,7 +872,7 @@ mod tests {
     fn single_line_consolidator() {
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
-            .token_consolidator(MakeMultiplySignIdentifier {})
+            .raw_token_consolidator(MakeMultiplySignIdentifier {})
             .parser(DelphiLogicalLineParser {})
             .lines_consolidator(CombineFirst2Lines {})
             .line_formatter(LogicalLinesOnNewLines {})
@@ -936,7 +954,7 @@ mod tests {
     fn multiple_line_formatters() {
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
-            .token_consolidator(MakeMultiplySignIdentifier {})
+            .raw_token_consolidator(MakeMultiplySignIdentifier {})
             .parser(DelphiLogicalLineParser {})
             .line_formatter(LogicalLinesOnNewLines {})
             .line_formatter(SpaceBeforeSemiColon {})
@@ -1010,7 +1028,7 @@ mod tests {
     fn multiple_file_formatter() {
         let formatter = Formatter::builder()
             .lexer(DelphiLexer {})
-            .token_consolidator(MakeMultiplySignIdentifier {})
+            .raw_token_consolidator(MakeMultiplySignIdentifier {})
             .parser(DelphiLogicalLineParser {})
             .file_formatter(IndentBasedOnLineNumber {})
             .file_formatter(IndentSecondLine3SpacesIfNoNewLine {})

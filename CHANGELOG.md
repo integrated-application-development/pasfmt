@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are all non-empty and only consist of whitespace. Without this validation, the format may not be
   idempotent.
 - Colour styling in CLI help.
+- `RawTokenType` as a copy of `TokenType` with `IdentifierOrKeyword`
 
 ### Removed
 
@@ -34,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - short version of `--config-file` CLI option
 - `--write`/`-w` CLI option (now accessible via `--mode=files`).
 - `--verify` CLI option (replaced by `--mode=check` with some differences).
+- `IdentifierOrKeyword` variant of `TokenType` enum
 
 ### Changed
 
@@ -44,6 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Now errors are logged when they occur and cause the program to exit non-zero after
   all other files have been formatted successfully.
 - Default continutation to be the same as the configured indentation.
+- The intermediate type of tokens between lexing and line parsing from `Token` to `RawToken`.
+  This is to allow the logical line parser to consolidate the token types while processing.
+  Additionally, formatters and consolidators operating after parsing do not need to worry about
+  any identifier/keyword ambiguities.
 
 ### Fixed
 

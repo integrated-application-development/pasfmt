@@ -116,8 +116,8 @@ mod tests {
         let parser = DelphiLogicalLineParser {};
         let consolidator = ImportClauseConsolidator {};
 
-        let mut tokens = lexer.lex(input);
-        let mut lines = parser.parse(&tokens);
+        let tokens = lexer.lex(input);
+        let (mut lines, mut tokens) = parser.parse(tokens);
         consolidator.consolidate((&mut tokens, &mut lines));
 
         let lines = lines

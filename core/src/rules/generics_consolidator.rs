@@ -1,5 +1,5 @@
 use crate::{
-    lang::{KeywordKind, OperatorKind, Token, TokenType},
+    lang::{KeywordKind, OperatorKind, Token, TokenData, TokenType},
     traits::TokenConsolidator,
 };
 
@@ -10,7 +10,7 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
         let mut opening_idxs = vec![];
         while token_idx < tokens.len() {
             if !matches!(
-                tokens.get(token_idx).map(Token::get_token_type),
+                tokens.get(token_idx).map(TokenData::get_token_type),
                 Some(TokenType::Op(OperatorKind::LessThan))
             ) {
                 token_idx += 1;
@@ -22,7 +22,7 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
             opening_idxs.clear();
             opening_idxs.push(token_idx);
             while !opening_idxs.is_empty() {
-                match tokens.get(next_idx).map(Token::get_token_type) {
+                match tokens.get(next_idx).map(TokenData::get_token_type) {
                     Some(TokenType::Op(OperatorKind::LessThan)) => {
                         opening_idxs.push(next_idx);
                     }
@@ -32,7 +32,6 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                     // all the other tokens you can include in a generic type parameter list
                     Some(
                         TokenType::Identifier
-                        | TokenType::IdentifierOrKeyword(_)
                         | TokenType::Op(
                             OperatorKind::Dot | OperatorKind::Colon | OperatorKind::Semicolon,
                         )
@@ -50,10 +49,9 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                         if comma_found {
                             if let Some(
                                 TokenType::Identifier
-                                | TokenType::IdentifierOrKeyword(_)
                                 | TokenType::Op(OperatorKind::AddressOf)
                                 | TokenType::Keyword(KeywordKind::Not),
-                            ) = tokens.get(next_idx + 1).map(Token::get_token_type)
+                            ) = tokens.get(next_idx + 1).map(TokenData::get_token_type)
                             {
                                 // cases where it cannot be generics
                                 //   Foo(X < Y, U > V)
@@ -210,15 +208,11 @@ mod tests {
 
     #[test]
     fn followed_by_ident() {
-        const IDKW: TokenType = TokenType::IdentifierOrKeyword(KeywordKind::SafeCall);
-
         // A<B> C
         run_test(&[ID, LT, ID, GT, ID], &[ID, LG, ID, RG, ID]);
-        run_test(&[ID, LT, ID, GT, IDKW], &[ID, LG, ID, RG, IDKW]);
 
         // A<B, B2> C
         run_test_unchanged(&[ID, LT, ID, COM, ID, GT, ID]);
-        run_test_unchanged(&[ID, LT, ID, COM, ID, GT, IDKW]);
 
         // A(B < C, D > E)
         run_test_unchanged(&[ID, LP, ID, LT, ID, COM, ID, GT, ID, RP]);

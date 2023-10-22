@@ -6,7 +6,7 @@ use crate::lang::ConditionalDirectiveKind as CDK;
 
 use crate::lang::KeywordKind as KK;
 use crate::lang::OperatorKind as OK;
-use crate::lang::TokenType as TT;
+use crate::lang::RawTokenType as TT;
 use crate::lang::*;
 use crate::traits::LogicalLineParser;
 
@@ -28,8 +28,8 @@ struct LocalLogicalLineRef {
     local_logical_line_index: usize,
 }
 
-struct InternalDelphiLogicalLineParser<'a> {
-    tokens: &'a [Token<'a>],
+struct InternalDelphiLogicalLineParser<'a, 'b> {
+    tokens: &'a mut [RawToken<'b>],
     current_token_index: usize,
     result_hash: HashSet<LocalLogicalLine>,
     result_lines: Vec<LocalLogicalLine>,
@@ -43,8 +43,8 @@ struct InternalDelphiLogicalLineParser<'a> {
     directive_chain_branch_index: VecDeque<usize>,
     parsing_pass: usize,
 }
-impl<'a> InternalDelphiLogicalLineParser<'a> {
-    fn new(tokens: &'a [Token<'a>]) -> Self {
+impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
+    fn new(tokens: &'a mut [RawToken<'b>]) -> Self {
         InternalDelphiLogicalLineParser {
             tokens,
             current_token_index: 0,
@@ -294,7 +294,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
     fn parse_to_after_next_semicolon(&mut self) {
         while !matches!(
             self.get_current_token_type_no_eof(),
-            Some(TokenType::Op(OperatorKind::Semicolon)) | None
+            Some(RawTokenType::Op(OperatorKind::Semicolon)) | None
         ) {
             self.next_token();
         }
@@ -479,7 +479,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
             };
             if self.is_in_compiler_directive()
                 || matches!(
-                    self.tokens.get(comment_token).map(Token::get_token_type),
+                    self.tokens.get(comment_token).map(RawToken::get_token_type),
                     Some(TT::Comment(CommentKind::IndividualLine))
                 )
             {
@@ -678,31 +678,34 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         self.get_logical_line_from_ref(&line_ref).unwrap()
     }
 
-    fn get_current_token(&self) -> Option<&Token> {
+    fn get_current_token(&self) -> Option<&RawToken> {
         self.tokens.get(self.current_token_index)
     }
-    fn get_prev_token_type(&self) -> Option<TokenType> {
+    fn get_prev_token_type(&self) -> Option<RawTokenType> {
         let prev_index = self.current_token_index.checked_sub(1)?;
-        self.tokens.get(prev_index).map(Token::get_token_type)
+        self.tokens.get(prev_index).map(RawToken::get_token_type)
     }
-    fn get_current_token_type(&self) -> Option<TokenType> {
+    fn get_current_token_type(&self) -> Option<RawTokenType> {
         self.tokens
             .get(self.current_token_index)
-            .map(Token::get_token_type)
+            .map(RawToken::get_token_type)
     }
-    fn get_current_token_type_no_eof(&self) -> Option<TokenType> {
+    fn get_current_token_type_no_eof(&self) -> Option<RawTokenType> {
         self.get_current_token_type()
             .filter(|&token_type| token_type != TT::Eof)
     }
     fn is_eof(&self) -> bool {
-        matches!(self.get_current_token_type(), Some(TokenType::Eof) | None)
+        matches!(
+            self.get_current_token_type(),
+            Some(RawTokenType::Eof) | None
+        )
     }
 }
 pub struct DelphiLogicalLineParser {}
 impl LogicalLineParser for DelphiLogicalLineParser {
-    fn parse<'a>(&self, input: &'a [Token<'a>]) -> Vec<LogicalLine> {
+    fn parse<'a>(&self, mut input: Vec<RawToken<'a>>) -> (Vec<LogicalLine>, Vec<Token<'a>>) {
         let mut lines: Vec<LogicalLine> = {
-            let mut parser = InternalDelphiLogicalLineParser::new(input);
+            let mut parser = InternalDelphiLogicalLineParser::new(&mut input);
             parser.parse();
             parser
                 .result_hash
@@ -719,7 +722,7 @@ impl LogicalLineParser for DelphiLogicalLineParser {
                 .collect()
         };
         lines.sort_by(|a, b| a.get_tokens().first().cmp(&b.get_tokens().first()));
-        lines
+        (lines, input.into_iter().map(RawToken::into).collect())
     }
 }
 
@@ -735,7 +738,7 @@ mod tests {
         let lexer = DelphiLexer {};
         let parser = DelphiLogicalLineParser {};
         let tokens = lexer.lex(input);
-        let mut lines = parser.parse(&tokens);
+        let (mut lines, tokens) = parser.parse(tokens);
 
         lines.retain(|line| line.get_line_type() != LogicalLineType::Eof);
         lines.iter().for_each(|line| {
@@ -909,7 +912,7 @@ mod tests {
         let lexer = DelphiLexer {};
         let parser = DelphiLogicalLineParser {};
         let tokens = lexer.lex("");
-        let lines = parser.parse(&tokens);
+        let (lines, _tokens) = parser.parse(tokens);
 
         assert_that(&lines).is_equal_to(&vec![LogicalLine::new(
             None,
@@ -924,7 +927,7 @@ mod tests {
         let lexer = DelphiLexer {};
         let parser = DelphiLogicalLineParser {};
         let tokens = lexer.lex("Foo;");
-        let lines = parser.parse(&tokens);
+        let (lines, _tokens) = parser.parse(tokens);
 
         assert_that(&lines).is_equal_to(&vec![
             LogicalLine::new(None, 0, vec![0, 1], LogicalLineType::Unknown),
