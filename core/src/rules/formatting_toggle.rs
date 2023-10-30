@@ -23,9 +23,13 @@ fn strip_prefix_bytes1(input: &str, f: impl Fn(&u8) -> bool) -> Option<&str> {
     }
 }
 
+fn starts_with_icase(input: &str, prefix: &str) -> bool {
+    input.is_char_boundary(prefix.len()) && input[..prefix.len()].eq_ignore_ascii_case(prefix)
+}
+
 // `core::str::strip_prefix` has no case-insensitive equivalent in core, unfortunately
 fn strip_prefix_icase<'a>(input: &'a str, prefix: &str) -> Option<&'a str> {
-    if input.len() < prefix.len() || !input[..prefix.len()].eq_ignore_ascii_case(prefix) {
+    if input.len() < prefix.len() || !starts_with_icase(input, prefix) {
         return None;
     }
     Some(&input[prefix.len()..])
@@ -334,6 +338,38 @@ mod tests {
               // pasfmt off
               "
             },
+        },
+        non_ascii = {
+            indoc! {
+              "
+              Foo(Bar);
+              // pasfmx off
+              Foo(Bar);
+              // pasfm£ off
+              Foo(Bar);
+              // pasfm† off
+              Foo(Bar);
+              // pasfm🚀 off
+              Foo(Bar);
+              // pasfmt off
+              Foo(Bar);
+              "
+            },
+            indoc! {
+              "
+               Foo ( Bar ) ;
+               // pasfmx off
+               Foo ( Bar ) ;
+               // pasfm£ off
+               Foo ( Bar ) ;
+               // pasfm† off
+               Foo ( Bar ) ;
+               // pasfm🚀 off
+               Foo ( Bar ) ;
+              // pasfmt off
+              Foo(Bar);
+              "
+            }
         }
     );
 }
