@@ -88,7 +88,7 @@ mod tests {
     use itertools::Itertools;
     use spectral::prelude::*;
 
-    use crate::lang::TokenType::*;
+    use crate::lang::TokenType as TT;
     use crate::prelude::*;
 
     fn to_tokens(types: &[TokenType]) -> Vec<Token> {
@@ -112,30 +112,30 @@ mod tests {
     }
 
     const ID: TokenType = TokenType::Identifier;
-    const LP: TokenType = Op(OperatorKind::LParen);
-    const RP: TokenType = Op(OperatorKind::RParen);
-    const LB: TokenType = Op(OperatorKind::LBrack);
-    const RB: TokenType = Op(OperatorKind::RBrack);
-    const SEMI: TokenType = Op(OperatorKind::Semicolon);
-    const COL: TokenType = Op(OperatorKind::Colon);
-    const COM: TokenType = Op(OperatorKind::Comma);
-    const LT: TokenType = Op(OperatorKind::LessThan);
-    const GT: TokenType = Op(OperatorKind::GreaterThan);
-    const GE: TokenType = Op(OperatorKind::GreaterEqual);
-    const LG: TokenType = Op(OperatorKind::LGeneric);
-    const RG: TokenType = Op(OperatorKind::RGeneric);
-    const AND: TokenType = Keyword(KeywordKind::And);
-    const DOT: TokenType = Op(OperatorKind::Dot);
-    const ADDR: TokenType = Op(OperatorKind::AddressOf);
-    const NOT: TokenType = Keyword(KeywordKind::Not);
-    const PLUS: TokenType = Op(OperatorKind::Plus);
+    const LP: TokenType = TT::Op(OperatorKind::LParen);
+    const RP: TokenType = TT::Op(OperatorKind::RParen);
+    const LB: TokenType = TT::Op(OperatorKind::LBrack);
+    const RB: TokenType = TT::Op(OperatorKind::RBrack);
+    const SEMI: TokenType = TT::Op(OperatorKind::Semicolon);
+    const COL: TokenType = TT::Op(OperatorKind::Colon);
+    const COM: TokenType = TT::Op(OperatorKind::Comma);
+    const LT: TokenType = TT::Op(OperatorKind::LessThan);
+    const GT: TokenType = TT::Op(OperatorKind::GreaterThan);
+    const GE: TokenType = TT::Op(OperatorKind::GreaterEqual);
+    const LG: TokenType = TT::Op(OperatorKind::LGeneric);
+    const RG: TokenType = TT::Op(OperatorKind::RGeneric);
+    const AND: TokenType = TT::Keyword(KeywordKind::And);
+    const DOT: TokenType = TT::Op(OperatorKind::Dot);
+    const ADDR: TokenType = TT::Op(OperatorKind::AddressOf);
+    const NOT: TokenType = TT::Keyword(KeywordKind::Not);
+    const PLUS: TokenType = TT::Op(OperatorKind::Plus);
 
     const CLASS: TokenType = TokenType::Keyword(KeywordKind::Class);
 
     #[test]
     fn non_generics_are_unchanged() {
         run_test_unchanged(&[ID]);
-        run_test_unchanged(&[ID, AND, CompilerDirective]);
+        run_test_unchanged(&[ID, AND, TT::CompilerDirective]);
         run_test_unchanged(&[ID, GT, ID]);
         run_test_unchanged(&[ID, LT, LP, ID, GT, ID, RP]);
         // A < B, C > D

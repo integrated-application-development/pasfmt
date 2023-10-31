@@ -1,4 +1,5 @@
 #![deny(unsafe_op_in_unsafe_fn)]
+#![deny(clippy::enum_glob_use)]
 
 pub mod defaults;
 pub mod formatter;

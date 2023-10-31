@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+#![deny(clippy::enum_glob_use)]
 
 use pasfmt_core::prelude::*;
 use pasfmt_orchestrator::predule::*;

@@ -1,4 +1,5 @@
-use crate::lang::OperatorKind::*;
+use crate::lang::OperatorKind as OK;
+use crate::lang::TokenType as TT;
 use crate::lang::*;
 use crate::prelude::*;
 
@@ -6,20 +7,19 @@ pub struct TokenSpacing {}
 impl LogicalLineFileFormatter for TokenSpacing {
     fn format(&self, formatted_tokens: &mut FormattedTokens, _input: &[LogicalLine]) {
         for token_index in 0..formatted_tokens.get_tokens().len() {
-            let (spaces_before, spaces_after) =
-                match formatted_tokens.get_token_type_for_index(token_index) {
-                    Some(TokenType::Op(operator)) => {
-                        space_operator(operator, token_index, formatted_tokens)
-                    }
-                    Some(TokenType::Comment(CommentKind::InlineLine)) => (Some(1), None),
-                    Some(
-                        TokenType::Comment(_)
-                        | TokenType::CompilerDirective
-                        | TokenType::ConditionalDirective(_)
-                        | TokenType::Keyword(_),
-                    ) => one_space_either_side(token_index, formatted_tokens),
-                    _ => max_one_either_side(token_index, formatted_tokens),
-                };
+            let (spaces_before, spaces_after) = match formatted_tokens
+                .get_token_type_for_index(token_index)
+            {
+                Some(TT::Op(operator)) => space_operator(operator, token_index, formatted_tokens),
+                Some(TT::Comment(CommentKind::InlineLine)) => (Some(1), None),
+                Some(
+                    TT::Comment(_)
+                    | TT::CompilerDirective
+                    | TT::ConditionalDirective(_)
+                    | TT::Keyword(_),
+                ) => one_space_either_side(token_index, formatted_tokens),
+                _ => max_one_either_side(token_index, formatted_tokens),
+            };
 
             if let Some(spaces_before) = spaces_before {
                 if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token_index)
@@ -36,9 +36,7 @@ impl LogicalLineFileFormatter for TokenSpacing {
                 let next_token_type = formatted_tokens.get_token_type_for_index(next_idx);
                 if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(next_idx) {
                     // TODO will not play nice with the optimising line formatter
-                    if formatting_data.newlines_before == 0
-                        && next_token_type != Some(TokenType::Eof)
-                    {
+                    if formatting_data.newlines_before == 0 && next_token_type != Some(TT::Eof) {
                         formatting_data.spaces_before = spaces_after;
                     }
                 }
@@ -64,7 +62,7 @@ fn max_one_either_side(
 fn spaces_before(token_type: Option<TokenType>, spaces: usize) -> Option<usize> {
     match token_type {
         None => None,
-        Some(TokenType::Op(LBrack | LParen | LGeneric)) => Some(0),
+        Some(TT::Op(OK::LBrack | OK::LParen | OK::LGeneric)) => Some(0),
         _ => Some(spaces),
     }
 }
@@ -72,7 +70,7 @@ fn spaces_before(token_type: Option<TokenType>, spaces: usize) -> Option<usize> 
 fn spaces_after(token_type: Option<TokenType>, spaces: usize) -> Option<usize> {
     match token_type {
         None => None,
-        Some(TokenType::Op(RBrack | RParen | RGeneric)) => Some(0),
+        Some(TT::Op(OK::RBrack | OK::RParen | OK::RGeneric)) => Some(0),
         _ => Some(spaces),
     }
 }
@@ -119,9 +117,7 @@ fn space_operator(
             .rev()
             .skip(formatted_tokens.get_tokens().len() - token_idx)
             .find_map(|token| match token.0.get_token_type() {
-                TokenType::Comment(_)
-                | TokenType::CompilerDirective
-                | TokenType::ConditionalDirective(_) => None,
+                TT::Comment(_) | TT::CompilerDirective | TT::ConditionalDirective(_) => None,
                 token_type => Some(token_type),
             })
     };
@@ -130,17 +126,24 @@ fn space_operator(
 
     match operator {
         // always binary operators
-        Star | Slash | Assign | Equal | NotEqual | LessEqual | GreaterEqual | LessThan
-        | GreaterThan => binary_op_spacing,
+        OK::Star
+        | OK::Slash
+        | OK::Assign
+        | OK::Equal
+        | OK::NotEqual
+        | OK::LessEqual
+        | OK::GreaterEqual
+        | OK::LessThan
+        | OK::GreaterThan => binary_op_spacing,
 
         // maybe unary operators
-        Plus | Minus => {
+        OK::Plus | OK::Minus => {
             let prev = prev_real_token_type(token_index);
             match prev {
                 // binary after closing bracket or closing generics or special keywords
                 Some(
-                    TokenType::Op(RBrack | RParen | RGeneric)
-                    | TokenType::Keyword(KeywordKind::Inherited | KeywordKind::Nil),
+                    TT::Op(OK::RBrack | OK::RParen | OK::RGeneric)
+                    | TT::Keyword(KeywordKind::Inherited | KeywordKind::Nil),
                 ) => binary_op_spacing,
                 /*
                     unary after:
@@ -151,28 +154,28 @@ fn space_operator(
                 */
                 None
                 | Some(
-                    TokenType::Op(_)
-                    | TokenType::Keyword(_)
-                    | TokenType::Comment(_)
-                    | TokenType::CompilerDirective
-                    | TokenType::ConditionalDirective(_),
+                    TT::Op(_)
+                    | TT::Keyword(_)
+                    | TT::Comment(_)
+                    | TT::CompilerDirective
+                    | TT::ConditionalDirective(_),
                 ) => (None, Some(0)),
                 // default to binary
                 _ => binary_op_spacing,
             }
         }
-        Comma | Colon => (Some(0), Some(1)),
-        RBrack | RParen => match token_type_by_idx(token_index + 1) {
-            Some(
-                TokenType::Identifier | TokenType::IdentifierOrKeyword(_) | TokenType::Keyword(_),
-            ) => (Some(0), Some(1)),
+        OK::Comma | OK::Colon => (Some(0), Some(1)),
+        OK::RBrack | OK::RParen => match token_type_by_idx(token_index + 1) {
+            Some(TT::Identifier | TT::IdentifierOrKeyword(_) | TT::Keyword(_)) => {
+                (Some(0), Some(1))
+            }
             _ => (Some(0), Some(0)),
         },
-        LBrack | LParen => match token_type_by_idx(token_index.wrapping_sub(1)) {
+        OK::LBrack | OK::LParen => match token_type_by_idx(token_index.wrapping_sub(1)) {
             Some(
-                TokenType::Identifier
-                | TokenType::IdentifierOrKeyword(_)
-                | TokenType::Keyword(
+                TT::Identifier
+                | TT::IdentifierOrKeyword(_)
+                | TT::Keyword(
                     KeywordKind::Class
                     | KeywordKind::Interface
                     | KeywordKind::Function
@@ -180,10 +183,10 @@ fn space_operator(
                     | KeywordKind::Array,
                 ),
             ) => (Some(0), Some(0)),
-            Some(TokenType::Keyword(_)) => (Some(1), Some(0)),
+            Some(TT::Keyword(_)) => (Some(1), Some(0)),
             _ => (None, Some(0)),
         },
-        Pointer => {
+        OK::Pointer => {
             match (
                 token_type_by_idx(token_index.wrapping_sub(1)),
                 token_type_by_idx(token_index + 1),
@@ -199,40 +202,38 @@ fn space_operator(
                 */
                 (
                     Some(
-                        TokenType::Identifier
-                        | TokenType::IdentifierOrKeyword(_)
-                        | TokenType::Op(RBrack | RParen | Pointer),
+                        TT::Identifier
+                        | TT::IdentifierOrKeyword(_)
+                        | TT::Op(OK::RBrack | OK::RParen | OK::Pointer),
                     ),
                     token_after,
                 ) => (
                     Some(0),
                     match token_after {
                         Some(
-                            TokenType::Identifier
-                            | TokenType::IdentifierOrKeyword(_)
-                            | TokenType::Op(LBrack | LParen),
+                            TT::Identifier
+                            | TT::IdentifierOrKeyword(_)
+                            | TT::Op(OK::LBrack | OK::LParen),
                         ) => Some(0),
                         _ => Some(1),
                     },
                 ),
                 // just ^foo
-                (_, Some(TokenType::Identifier | TokenType::IdentifierOrKeyword(_))) => {
-                    (None, Some(0))
-                }
+                (_, Some(TT::Identifier | TT::IdentifierOrKeyword(_))) => (None, Some(0)),
                 _ => (None, None),
             }
         }
-        Dot | DotDot => (Some(0), Some(0)),
-        LGeneric => (Some(0), Some(0)),
-        RGeneric => (
+        OK::Dot | OK::DotDot => (Some(0), Some(0)),
+        OK::LGeneric => (Some(0), Some(0)),
+        OK::RGeneric => (
             Some(0),
             match token_type_by_idx(token_index + 1) {
-                Some(TokenType::Op(_)) => Some(0),
+                Some(TT::Op(_)) => Some(0),
                 _ => Some(1),
             },
         ),
-        AddressOf => one_space_before(token_index, formatted_tokens),
-        Semicolon => (Some(0), Some(1)),
+        OK::AddressOf => one_space_before(token_index, formatted_tokens),
+        OK::Semicolon => (Some(0), Some(1)),
     }
 }
 

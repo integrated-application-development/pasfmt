@@ -1,10 +1,10 @@
 use std::ops::RangeInclusive;
 
-use crate::lang::ConditionalDirectiveKind::*;
-use crate::lang::KeywordKind::*;
-use crate::lang::NumberLiteralKind::*;
-use crate::lang::OperatorKind::*;
-use crate::lang::TokenType::*;
+use crate::lang::ConditionalDirectiveKind as CDK;
+use crate::lang::KeywordKind as KK;
+use crate::lang::NumberLiteralKind as NLK;
+use crate::lang::OperatorKind as OK;
+use crate::lang::TokenType as TT;
 use crate::lang::*;
 use crate::traits::Lexer;
 
@@ -315,129 +315,129 @@ const fn make_byte_map<T: Copy>(map: &[(ByteSet<'_>, T)], default: T) -> [T; 256
 
 // region: keywords
 const KEYWORDS: [(&str, TokenType); 123] = [
-    ("absolute", IdentifierOrKeyword(Absolute)),
-    ("abstract", IdentifierOrKeyword(Abstract)),
-    ("add", IdentifierOrKeyword(Add)),
-    ("align", IdentifierOrKeyword(Align)),
-    ("and", Keyword(And)),
-    ("array", Keyword(Array)),
-    ("as", Keyword(As)),
-    ("asm", Keyword(Asm)),
-    ("assembler", IdentifierOrKeyword(Assembler)),
-    ("at", IdentifierOrKeyword(At)),
-    ("automated", IdentifierOrKeyword(Automated)),
-    ("begin", Keyword(Begin)),
-    ("case", Keyword(Case)),
-    ("cdecl", IdentifierOrKeyword(Cdecl)),
-    ("class", Keyword(Class)),
-    ("const", Keyword(Const)),
-    ("constructor", Keyword(Constructor)),
-    ("contains", IdentifierOrKeyword(Contains)),
-    ("default", IdentifierOrKeyword(Default)),
-    ("delayed", IdentifierOrKeyword(Delayed)),
-    ("deprecated", IdentifierOrKeyword(Deprecated)),
-    ("destructor", Keyword(Destructor)),
-    ("dispid", IdentifierOrKeyword(DispId)),
-    ("dispinterface", Keyword(DispInterface)),
-    ("div", Keyword(Div)),
-    ("do", Keyword(Do)),
-    ("downto", Keyword(Downto)),
-    ("dynamic", IdentifierOrKeyword(Dynamic)),
-    ("else", Keyword(KeywordKind::Else)),
-    ("end", Keyword(End)),
-    ("except", Keyword(Except)),
-    ("experimental", IdentifierOrKeyword(Experimental)),
-    ("export", IdentifierOrKeyword(Export)),
-    ("exports", Keyword(Exports)),
-    ("external", IdentifierOrKeyword(External)),
-    ("far", IdentifierOrKeyword(Far)),
-    ("file", Keyword(File)),
-    ("final", IdentifierOrKeyword(Final)),
-    ("finalization", Keyword(Finalization)),
-    ("finally", Keyword(Finally)),
-    ("for", Keyword(For)),
-    ("forward", IdentifierOrKeyword(Forward)),
-    ("function", Keyword(Function)),
-    ("goto", Keyword(Goto)),
-    ("helper", IdentifierOrKeyword(Helper)),
-    ("if", Keyword(KeywordKind::If)),
-    ("implementation", Keyword(Implementation)),
-    ("implements", IdentifierOrKeyword(Implements)),
-    ("in", Keyword(In)),
-    ("index", IdentifierOrKeyword(Index)),
-    ("inherited", Keyword(Inherited)),
-    ("initialization", Keyword(Initialization)),
-    ("inline", Keyword(Inline)),
-    ("interface", Keyword(Interface)),
-    ("is", Keyword(Is)),
-    ("label", Keyword(Label)),
-    ("library", Keyword(Library)),
-    ("local", IdentifierOrKeyword(Local)),
-    ("message", IdentifierOrKeyword(Message)),
-    ("mod", Keyword(Mod)),
-    ("name", IdentifierOrKeyword(Name)),
-    ("near", IdentifierOrKeyword(Near)),
-    ("nil", Keyword(Nil)),
-    ("nodefault", IdentifierOrKeyword(NoDefault)),
-    ("not", Keyword(Not)),
-    ("object", Keyword(Object)),
-    ("of", Keyword(Of)),
-    ("on", IdentifierOrKeyword(On)),
-    ("operator", IdentifierOrKeyword(Operator)),
-    ("or", Keyword(Or)),
-    ("out", IdentifierOrKeyword(Out)),
-    ("overload", IdentifierOrKeyword(Overload)),
-    ("override", IdentifierOrKeyword(Override)),
-    ("package", IdentifierOrKeyword(Package)),
-    ("packed", Keyword(Packed)),
-    ("pascal", IdentifierOrKeyword(Pascal)),
-    ("platform", IdentifierOrKeyword(Platform)),
-    ("private", IdentifierOrKeyword(Private)),
-    ("procedure", Keyword(Procedure)),
-    ("program", Keyword(Program)),
-    ("property", Keyword(Property)),
-    ("protected", IdentifierOrKeyword(Protected)),
-    ("public", IdentifierOrKeyword(Public)),
-    ("published", IdentifierOrKeyword(Published)),
-    ("raise", Keyword(Raise)),
-    ("read", IdentifierOrKeyword(Read)),
-    ("readonly", IdentifierOrKeyword(ReadOnly)),
-    ("record", Keyword(Record)),
-    ("reference", IdentifierOrKeyword(Reference)),
-    ("register", IdentifierOrKeyword(Register)),
-    ("reintroduce", IdentifierOrKeyword(Reintroduce)),
-    ("remove", IdentifierOrKeyword(Remove)),
-    ("repeat", Keyword(Repeat)),
-    ("requires", IdentifierOrKeyword(Requires)),
-    ("resident", IdentifierOrKeyword(Resident)),
-    ("resourcestring", Keyword(ResourceString)),
-    ("safecall", IdentifierOrKeyword(SafeCall)),
-    ("sealed", IdentifierOrKeyword(Sealed)),
-    ("set", Keyword(Set)),
-    ("shl", Keyword(Shl)),
-    ("shr", Keyword(Shr)),
-    ("static", IdentifierOrKeyword(Static)),
-    ("stdcall", IdentifierOrKeyword(StdCall)),
-    ("stored", IdentifierOrKeyword(Stored)),
-    ("strict", IdentifierOrKeyword(Strict)),
-    ("then", Keyword(Then)),
-    ("threadvar", Keyword(ThreadVar)),
-    ("to", Keyword(To)),
-    ("try", Keyword(Try)),
-    ("type", Keyword(Type)),
-    ("unit", Keyword(Unit)),
-    ("unsafe", IdentifierOrKeyword(Unsafe)),
-    ("until", Keyword(Until)),
-    ("uses", Keyword(Uses)),
-    ("var", Keyword(Var)),
-    ("varargs", IdentifierOrKeyword(VarArgs)),
-    ("variant", IdentifierOrKeyword(Variant)),
-    ("virtual", IdentifierOrKeyword(Virtual)),
-    ("while", Keyword(While)),
-    ("with", Keyword(With)),
-    ("write", IdentifierOrKeyword(Write)),
-    ("writeonly", IdentifierOrKeyword(WriteOnly)),
-    ("xor", Keyword(Xor)),
+    ("absolute", TT::IdentifierOrKeyword(KK::Absolute)),
+    ("abstract", TT::IdentifierOrKeyword(KK::Abstract)),
+    ("add", TT::IdentifierOrKeyword(KK::Add)),
+    ("align", TT::IdentifierOrKeyword(KK::Align)),
+    ("and", TT::Keyword(KK::And)),
+    ("array", TT::Keyword(KK::Array)),
+    ("as", TT::Keyword(KK::As)),
+    ("asm", TT::Keyword(KK::Asm)),
+    ("assembler", TT::IdentifierOrKeyword(KK::Assembler)),
+    ("at", TT::IdentifierOrKeyword(KK::At)),
+    ("automated", TT::IdentifierOrKeyword(KK::Automated)),
+    ("begin", TT::Keyword(KK::Begin)),
+    ("case", TT::Keyword(KK::Case)),
+    ("cdecl", TT::IdentifierOrKeyword(KK::Cdecl)),
+    ("class", TT::Keyword(KK::Class)),
+    ("const", TT::Keyword(KK::Const)),
+    ("constructor", TT::Keyword(KK::Constructor)),
+    ("contains", TT::IdentifierOrKeyword(KK::Contains)),
+    ("default", TT::IdentifierOrKeyword(KK::Default)),
+    ("delayed", TT::IdentifierOrKeyword(KK::Delayed)),
+    ("deprecated", TT::IdentifierOrKeyword(KK::Deprecated)),
+    ("destructor", TT::Keyword(KK::Destructor)),
+    ("dispid", TT::IdentifierOrKeyword(KK::DispId)),
+    ("dispinterface", TT::Keyword(KK::DispInterface)),
+    ("div", TT::Keyword(KK::Div)),
+    ("do", TT::Keyword(KK::Do)),
+    ("downto", TT::Keyword(KK::Downto)),
+    ("dynamic", TT::IdentifierOrKeyword(KK::Dynamic)),
+    ("else", TT::Keyword(KK::Else)),
+    ("end", TT::Keyword(KK::End)),
+    ("except", TT::Keyword(KK::Except)),
+    ("experimental", TT::IdentifierOrKeyword(KK::Experimental)),
+    ("export", TT::IdentifierOrKeyword(KK::Export)),
+    ("exports", TT::Keyword(KK::Exports)),
+    ("external", TT::IdentifierOrKeyword(KK::External)),
+    ("far", TT::IdentifierOrKeyword(KK::Far)),
+    ("file", TT::Keyword(KK::File)),
+    ("final", TT::IdentifierOrKeyword(KK::Final)),
+    ("finalization", TT::Keyword(KK::Finalization)),
+    ("finally", TT::Keyword(KK::Finally)),
+    ("for", TT::Keyword(KK::For)),
+    ("forward", TT::IdentifierOrKeyword(KK::Forward)),
+    ("function", TT::Keyword(KK::Function)),
+    ("goto", TT::Keyword(KK::Goto)),
+    ("helper", TT::IdentifierOrKeyword(KK::Helper)),
+    ("if", TT::Keyword(KK::If)),
+    ("implementation", TT::Keyword(KK::Implementation)),
+    ("implements", TT::IdentifierOrKeyword(KK::Implements)),
+    ("in", TT::Keyword(KK::In)),
+    ("index", TT::IdentifierOrKeyword(KK::Index)),
+    ("inherited", TT::Keyword(KK::Inherited)),
+    ("initialization", TT::Keyword(KK::Initialization)),
+    ("inline", TT::Keyword(KK::Inline)),
+    ("interface", TT::Keyword(KK::Interface)),
+    ("is", TT::Keyword(KK::Is)),
+    ("label", TT::Keyword(KK::Label)),
+    ("library", TT::Keyword(KK::Library)),
+    ("local", TT::IdentifierOrKeyword(KK::Local)),
+    ("message", TT::IdentifierOrKeyword(KK::Message)),
+    ("mod", TT::Keyword(KK::Mod)),
+    ("name", TT::IdentifierOrKeyword(KK::Name)),
+    ("near", TT::IdentifierOrKeyword(KK::Near)),
+    ("nil", TT::Keyword(KK::Nil)),
+    ("nodefault", TT::IdentifierOrKeyword(KK::NoDefault)),
+    ("not", TT::Keyword(KK::Not)),
+    ("object", TT::Keyword(KK::Object)),
+    ("of", TT::Keyword(KK::Of)),
+    ("on", TT::IdentifierOrKeyword(KK::On)),
+    ("operator", TT::IdentifierOrKeyword(KK::Operator)),
+    ("or", TT::Keyword(KK::Or)),
+    ("out", TT::IdentifierOrKeyword(KK::Out)),
+    ("overload", TT::IdentifierOrKeyword(KK::Overload)),
+    ("override", TT::IdentifierOrKeyword(KK::Override)),
+    ("package", TT::IdentifierOrKeyword(KK::Package)),
+    ("packed", TT::Keyword(KK::Packed)),
+    ("pascal", TT::IdentifierOrKeyword(KK::Pascal)),
+    ("platform", TT::IdentifierOrKeyword(KK::Platform)),
+    ("private", TT::IdentifierOrKeyword(KK::Private)),
+    ("procedure", TT::Keyword(KK::Procedure)),
+    ("program", TT::Keyword(KK::Program)),
+    ("property", TT::Keyword(KK::Property)),
+    ("protected", TT::IdentifierOrKeyword(KK::Protected)),
+    ("public", TT::IdentifierOrKeyword(KK::Public)),
+    ("published", TT::IdentifierOrKeyword(KK::Published)),
+    ("raise", TT::Keyword(KK::Raise)),
+    ("read", TT::IdentifierOrKeyword(KK::Read)),
+    ("readonly", TT::IdentifierOrKeyword(KK::ReadOnly)),
+    ("record", TT::Keyword(KK::Record)),
+    ("reference", TT::IdentifierOrKeyword(KK::Reference)),
+    ("register", TT::IdentifierOrKeyword(KK::Register)),
+    ("reintroduce", TT::IdentifierOrKeyword(KK::Reintroduce)),
+    ("remove", TT::IdentifierOrKeyword(KK::Remove)),
+    ("repeat", TT::Keyword(KK::Repeat)),
+    ("requires", TT::IdentifierOrKeyword(KK::Requires)),
+    ("resident", TT::IdentifierOrKeyword(KK::Resident)),
+    ("resourcestring", TT::Keyword(KK::ResourceString)),
+    ("safecall", TT::IdentifierOrKeyword(KK::SafeCall)),
+    ("sealed", TT::IdentifierOrKeyword(KK::Sealed)),
+    ("set", TT::Keyword(KK::Set)),
+    ("shl", TT::Keyword(KK::Shl)),
+    ("shr", TT::Keyword(KK::Shr)),
+    ("static", TT::IdentifierOrKeyword(KK::Static)),
+    ("stdcall", TT::IdentifierOrKeyword(KK::StdCall)),
+    ("stored", TT::IdentifierOrKeyword(KK::Stored)),
+    ("strict", TT::IdentifierOrKeyword(KK::Strict)),
+    ("then", TT::Keyword(KK::Then)),
+    ("threadvar", TT::Keyword(KK::ThreadVar)),
+    ("to", TT::Keyword(KK::To)),
+    ("try", TT::Keyword(KK::Try)),
+    ("type", TT::Keyword(KK::Type)),
+    ("unit", TT::Keyword(KK::Unit)),
+    ("unsafe", TT::IdentifierOrKeyword(KK::Unsafe)),
+    ("until", TT::Keyword(KK::Until)),
+    ("uses", TT::Keyword(KK::Uses)),
+    ("var", TT::Keyword(KK::Var)),
+    ("varargs", TT::IdentifierOrKeyword(KK::VarArgs)),
+    ("variant", TT::IdentifierOrKeyword(KK::Variant)),
+    ("virtual", TT::IdentifierOrKeyword(KK::Virtual)),
+    ("while", TT::Keyword(KK::While)),
+    ("with", TT::Keyword(KK::With)),
+    ("write", TT::IdentifierOrKeyword(KK::Write)),
+    ("writeonly", TT::IdentifierOrKeyword(KK::WriteOnly)),
+    ("xor", TT::Keyword(KK::Xor)),
 ];
 
 fn get_word_token_type(input: &str) -> TokenType {
@@ -535,7 +535,7 @@ fn get_word_token_type(input: &str) -> TokenType {
         }
     }
 
-    Identifier
+    TT::Identifier
 }
 // endregion: keywords
 
@@ -653,14 +653,14 @@ fn lex_unicode(mut args: LexArgs) -> OffsetAndTokenType {
 }
 
 fn identifier(args: LexArgs) -> OffsetAndTokenType {
-    (find_identifier_end(args.input, args.offset), Identifier)
+    (find_identifier_end(args.input, args.offset), TT::Identifier)
 }
 
 fn identifier_or_keyword(args: LexArgs) -> OffsetAndTokenType {
     let end_offset = find_identifier_end(args.input, args.offset);
     let word = &args.input[(args.offset - 1)..end_offset];
     let token_type = get_word_token_type(word);
-    args.lex_state.in_asm = token_type == Keyword(Asm);
+    args.lex_state.in_asm = token_type == TT::Keyword(KK::Asm);
     (end_offset, token_type)
 }
 
@@ -671,7 +671,7 @@ fn escaped_identifier(
 ) -> OffsetAndTokenType {
     offset += count_matching(input, offset, |b| *b == b'&');
     offset = find_identifier_end(input, offset);
-    (offset, Identifier)
+    (offset, TT::Identifier)
 }
 
 fn asm_label(LexArgs { input, offset, .. }: LexArgs) -> OffsetAndTokenType {
@@ -688,7 +688,7 @@ fn asm_label(LexArgs { input, offset, .. }: LexArgs) -> OffsetAndTokenType {
 
     (
         offset + count_bytes_in_set(input, offset, &ASM_IDENT_CHAR_SET),
-        Identifier,
+        TT::Identifier,
     )
 }
 
@@ -697,9 +697,9 @@ fn asm_identifier(args: LexArgs) -> OffsetAndTokenType {
 
     if args.input[(args.offset - 1)..end_offset].eq_ignore_ascii_case("end") {
         args.lex_state.in_asm = false;
-        (end_offset, Keyword(End))
+        (end_offset, TT::Keyword(KK::End))
     } else {
-        (end_offset, Identifier)
+        (end_offset, TT::Identifier)
     }
 }
 
@@ -789,7 +789,7 @@ fn text_literal(
 
     let unterminated = |offset: usize| {
         warn_unterminated("text literal", input, orig_offset);
-        (offset, TextLiteral)
+        (offset, TT::TextLiteral)
     };
 
     loop {
@@ -805,7 +805,7 @@ fn text_literal(
         }
     }
 
-    (offset, TextLiteral)
+    (offset, TT::TextLiteral)
 }
 
 fn asm_text_literal(mut args: LexArgs) -> OffsetAndTokenType {
@@ -817,7 +817,7 @@ fn asm_text_literal(mut args: LexArgs) -> OffsetAndTokenType {
                 args.offset += 1;
             }
             Some(b'\"') => {
-                return (args.offset + 1, TextLiteral);
+                return (args.offset + 1, TT::TextLiteral);
             }
             None | Some(b'\n' | b'\r') => {
                 break;
@@ -828,7 +828,7 @@ fn asm_text_literal(mut args: LexArgs) -> OffsetAndTokenType {
     }
 
     warn_unterminated("asm text literal", args.input, start_offset);
-    (args.offset, TextLiteral)
+    (args.offset, TT::TextLiteral)
 }
 
 fn asm_number_literal(mut args: LexArgs) -> OffsetAndTokenType {
@@ -843,13 +843,13 @@ fn asm_number_literal(mut args: LexArgs) -> OffsetAndTokenType {
     args.offset += count_hex(args.input, args.offset);
 
     match args.next_byte() {
-        Some(b'O' | b'o') => (args.offset + 1, NumberLiteral(Octal)),
-        Some(b'H' | b'h') => (args.offset + 1, NumberLiteral(Hex)),
+        Some(b'O' | b'o') => (args.offset + 1, TT::NumberLiteral(NLK::Octal)),
+        Some(b'H' | b'h') => (args.offset + 1, TT::NumberLiteral(NLK::Hex)),
         _ => {
             // if the literal ended in a 'b' it would have been consumed as hex
             match args.prev_byte() {
-                Some(b'B' | b'b') => (args.offset, NumberLiteral(Binary)),
-                _ => (args.offset, NumberLiteral(Decimal)),
+                Some(b'B' | b'b') => (args.offset, TT::NumberLiteral(NLK::Binary)),
+                _ => (args.offset, TT::NumberLiteral(NLK::Decimal)),
             }
         }
     }
@@ -869,19 +869,19 @@ fn dec_number_literal(mut args: LexArgs) -> OffsetAndTokenType {
         args.offset += count_full_decimal(args.input, args.offset);
     }
 
-    (args.offset, NumberLiteral(Decimal))
+    (args.offset, TT::NumberLiteral(NLK::Decimal))
 }
 
 fn hex_number_literal(args: LexArgs) -> OffsetAndTokenType {
     (
         args.offset + count_hex(args.input, args.offset),
-        NumberLiteral(Hex),
+        TT::NumberLiteral(NLK::Hex),
     )
 }
 fn binary_number_literal(args: LexArgs) -> OffsetAndTokenType {
     (
         args.offset + count_binary(args.input, args.offset),
-        NumberLiteral(Binary),
+        TT::NumberLiteral(NLK::Binary),
     )
 }
 
@@ -951,15 +951,15 @@ fn compiler_directive_type(input: &str, offset: usize) -> TokenType {
     let count = count_matching(input, offset, |b| b.is_ascii_alphabetic());
     // `to_lowercase` here is slow, but this code isn't hit very often.
     match input[offset..(offset + count)].to_lowercase().as_str() {
-        "if" => ConditionalDirective(ConditionalDirectiveKind::If),
-        "ifdef" => ConditionalDirective(Ifdef),
-        "ifndef" => ConditionalDirective(Ifndef),
-        "ifopt" => ConditionalDirective(Ifopt),
-        "elseif" => ConditionalDirective(Elseif),
-        "else" => ConditionalDirective(ConditionalDirectiveKind::Else),
-        "ifend" => ConditionalDirective(Ifend),
-        "endif" => ConditionalDirective(Endif),
-        _ => CompilerDirective,
+        "if" => TT::ConditionalDirective(CDK::If),
+        "ifdef" => TT::ConditionalDirective(CDK::Ifdef),
+        "ifndef" => TT::ConditionalDirective(CDK::Ifndef),
+        "ifopt" => TT::ConditionalDirective(CDK::Ifopt),
+        "elseif" => TT::ConditionalDirective(CDK::Elseif),
+        "else" => TT::ConditionalDirective(CDK::Else),
+        "ifend" => TT::ConditionalDirective(CDK::Ifend),
+        "endif" => TT::ConditionalDirective(CDK::Endif),
+        _ => TT::CompilerDirective,
     }
 }
 
@@ -1014,10 +1014,10 @@ fn _block_comment<const START_LEN: usize>(
         let nl_offset =
             memchr::memchr(b'\n', &input.as_bytes()[..end_offset]).unwrap_or(input.len());
         let comment_kind = block_comment_kind(nl_offset, offset, end_offset, lex_state);
-        (end_offset, Comment(comment_kind))
+        (end_offset, TT::Comment(comment_kind))
     } else {
         warn_unterminated("block comment", input, offset - START_LEN);
-        consume_to_eof(input, Comment(CommentKind::MultilineBlock))
+        consume_to_eof(input, TT::Comment(CommentKind::MultilineBlock))
     }
 }
 
@@ -1047,7 +1047,7 @@ fn line_comment(
         memchr::memchr2(b'\n', b'\r', &input.as_bytes()[offset..])
             .map(|o| o + offset)
             .unwrap_or(input.len()),
-        Comment(kind),
+        TT::Comment(kind),
     )
 }
 
@@ -1081,7 +1081,7 @@ fn ampersand_number_literal_or_ident(args: LexArgs) -> OffsetAndTokenType {
 // region: operators
 
 macro_rules! basic_op {
-    ($name: ident, $typ: ident) => {
+    ($name: ident, $typ: path) => {
         fn $name(args: LexArgs) -> OffsetAndTokenType {
             (args.offset, TokenType::Op($typ))
         }
@@ -1090,23 +1090,23 @@ macro_rules! basic_op {
 
 // All of these operators are dead simple, because the meaning does not depend on what comes after.
 // The other 'operators' are more complicated and require looking ahead.
-basic_op!(plus, Plus);
-basic_op!(minus, Minus);
-basic_op!(star, Star);
-basic_op!(comma, Comma);
-basic_op!(semicolon, Semicolon);
-basic_op!(equal, Equal);
-basic_op!(pointer, Pointer);
-basic_op!(address_of, AddressOf);
-basic_op!(l_brack, LBrack);
-basic_op!(r_brack, RBrack);
-basic_op!(r_paren, RParen);
+basic_op!(plus, OK::Plus);
+basic_op!(minus, OK::Minus);
+basic_op!(star, OK::Star);
+basic_op!(comma, OK::Comma);
+basic_op!(semicolon, OK::Semicolon);
+basic_op!(equal, OK::Equal);
+basic_op!(pointer, OK::Pointer);
+basic_op!(address_of, OK::AddressOf);
+basic_op!(l_brack, OK::LBrack);
+basic_op!(r_brack, OK::RBrack);
+basic_op!(r_paren, OK::RParen);
 
 fn l_paren(args: LexArgs) -> OffsetAndTokenType {
     match args.next_byte() {
         Some(b'*') => compiler_directive_or_comment_alt(args.consume(1)),
-        Some(b'.') => (args.offset + 1, TokenType::Op(LBrack)),
-        _ => (args.offset, TokenType::Op(LParen)),
+        Some(b'.') => (args.offset + 1, TT::Op(OK::LBrack)),
+        _ => (args.offset, TT::Op(OK::LParen)),
     }
 }
 
@@ -1117,37 +1117,37 @@ fn l_brace(args: LexArgs) -> OffsetAndTokenType {
 fn slash(args: LexArgs) -> OffsetAndTokenType {
     match args.next_byte() {
         Some(b'/') => line_comment(args.consume(1)),
-        _ => (args.offset, TokenType::Op(Slash)),
+        _ => (args.offset, TT::Op(OK::Slash)),
     }
 }
 
 fn colon(args: LexArgs) -> OffsetAndTokenType {
     match args.next_byte() {
-        Some(b'=') => (args.offset + 1, TokenType::Op(Assign)),
-        _ => (args.offset, TokenType::Op(Colon)),
+        Some(b'=') => (args.offset + 1, TT::Op(OK::Assign)),
+        _ => (args.offset, TT::Op(OK::Colon)),
     }
 }
 
 fn l_angle(args: LexArgs) -> OffsetAndTokenType {
     match args.next_byte() {
-        Some(b'=') => (args.offset + 1, TokenType::Op(LessEqual)),
-        Some(b'>') => (args.offset + 1, TokenType::Op(NotEqual)),
-        _ => (args.offset, TokenType::Op(LessThan)),
+        Some(b'=') => (args.offset + 1, TT::Op(OK::LessEqual)),
+        Some(b'>') => (args.offset + 1, TT::Op(OK::NotEqual)),
+        _ => (args.offset, TT::Op(OK::LessThan)),
     }
 }
 
 fn r_angle(args: LexArgs) -> OffsetAndTokenType {
     match args.next_byte() {
-        Some(b'=') => (args.offset + 1, TokenType::Op(GreaterEqual)),
-        _ => (args.offset, TokenType::Op(GreaterThan)),
+        Some(b'=') => (args.offset + 1, TT::Op(OK::GreaterEqual)),
+        _ => (args.offset, TT::Op(OK::GreaterThan)),
     }
 }
 
 fn dot(args: LexArgs) -> OffsetAndTokenType {
     match args.next_byte() {
-        Some(b'.') => (args.offset + 1, TokenType::Op(DotDot)),
-        Some(b')') => (args.offset + 1, TokenType::Op(RBrack)),
-        _ => (args.offset, TokenType::Op(Dot)),
+        Some(b'.') => (args.offset + 1, TT::Op(OK::DotDot)),
+        Some(b')') => (args.offset + 1, TT::Op(OK::RBrack)),
+        _ => (args.offset, TT::Op(OK::Dot)),
     }
 }
 
@@ -1166,7 +1166,7 @@ fn unknown(args: LexArgs) -> OffsetAndTokenType {
             rounded_prefix(args.input, MAX_LEN)
         );
     }
-    (args.offset, Unknown)
+    (args.offset, TT::Unknown)
 }
 
 fn eof(input: &str) -> (&str, LexedToken) {
@@ -1177,7 +1177,7 @@ fn eof(input: &str) -> (&str, LexedToken) {
         LexedToken {
             whitespace_count,
             token_content,
-            token_type: Eof,
+            token_type: TT::Eof,
         },
     )
 }
@@ -1197,7 +1197,7 @@ mod tests {
         let tokens = lexer.lex(input);
         let token_types: Vec<_> = tokens
             .iter()
-            .filter(|token| token.get_token_type() != Eof)
+            .filter(|token| token.get_token_type() != TT::Eof)
             .map(|token| (token.get_content(), token.get_token_type()))
             .collect();
 
@@ -1240,25 +1240,28 @@ mod tests {
                 }"
             },
             vec![
-                ("{block comment}", Comment(CommentKind::IndividualBlock)),
+                ("{block comment}", TT::Comment(CommentKind::IndividualBlock)),
                 (
                     "{.$fake compiler directive}",
-                    Comment(CommentKind::InlineBlock),
+                    TT::Comment(CommentKind::InlineBlock),
                 ),
-                ("(*star block comment*)", Comment(CommentKind::InlineBlock)),
+                (
+                    "(*star block comment*)",
+                    TT::Comment(CommentKind::InlineBlock),
+                ),
                 (
                     "(*.$fake compiler star directive*)",
-                    Comment(CommentKind::InlineBlock),
+                    TT::Comment(CommentKind::InlineBlock),
                 ),
-                ("{*)}", Comment(CommentKind::InlineBlock)),
-                ("(*{*)", Comment(CommentKind::InlineBlock)),
+                ("{*)}", TT::Comment(CommentKind::InlineBlock)),
+                ("(*{*)", TT::Comment(CommentKind::InlineBlock)),
                 (
                     indoc! {"
                         {
                             Multiline block comment
                         }"
                     },
-                    Comment(CommentKind::MultilineBlock),
+                    TT::Comment(CommentKind::MultilineBlock),
                 ),
             ],
         );
@@ -1273,10 +1276,16 @@ mod tests {
                 ; {inline block}"
             },
             vec![
-                ("{individual block}", Comment(CommentKind::IndividualBlock)),
-                ("{individual block}", Comment(CommentKind::IndividualBlock)),
-                (";", Op(Semicolon)),
-                ("{inline block}", Comment(CommentKind::InlineBlock)),
+                (
+                    "{individual block}",
+                    TT::Comment(CommentKind::IndividualBlock),
+                ),
+                (
+                    "{individual block}",
+                    TT::Comment(CommentKind::IndividualBlock),
+                ),
+                (";", TT::Op(OK::Semicolon)),
+                ("{inline block}", TT::Comment(CommentKind::InlineBlock)),
             ],
         );
     }
@@ -1293,7 +1302,7 @@ mod tests {
             },
             vec![(
                 "{individual block\n// other comment\nFoo;",
-                Comment(CommentKind::MultilineBlock),
+                TT::Comment(CommentKind::MultilineBlock),
             )],
         );
         run_test(
@@ -1306,7 +1315,7 @@ mod tests {
             },
             vec![(
                 "(*individual block\n// other comment\nFoo;",
-                Comment(CommentKind::MultilineBlock),
+                TT::Comment(CommentKind::MultilineBlock),
             )],
         );
     }
@@ -1322,14 +1331,17 @@ mod tests {
             vec![
                 (
                     "// Individual line comment 1",
-                    Comment(CommentKind::IndividualLine),
+                    TT::Comment(CommentKind::IndividualLine),
                 ),
                 (
                     "// Individual line comment 2",
-                    Comment(CommentKind::IndividualLine),
+                    TT::Comment(CommentKind::IndividualLine),
                 ),
-                (";", Op(Semicolon)),
-                ("// Inline line comment", Comment(CommentKind::InlineLine)),
+                (";", TT::Op(OK::Semicolon)),
+                (
+                    "// Inline line comment",
+                    TT::Comment(CommentKind::InlineLine),
+                ),
             ],
         );
     }
@@ -1339,37 +1351,40 @@ mod tests {
         run_test(
             "(*$message*) {$foo *) } (*$bar aa {}*)",
             vec![
-                ("(*$message*)", CompilerDirective),
-                ("{$foo *) }", CompilerDirective),
-                ("(*$bar aa {}*)", CompilerDirective),
+                ("(*$message*)", TT::CompilerDirective),
+                ("{$foo *) }", TT::CompilerDirective),
+                ("(*$bar aa {}*)", TT::CompilerDirective),
             ],
         );
         [
-            ("{$if}", ConditionalDirective(ConditionalDirectiveKind::If)),
-            ("{$ifdef}", ConditionalDirective(Ifdef)),
-            ("{$ifndef}", ConditionalDirective(Ifndef)),
-            ("{$ifopt}", ConditionalDirective(Ifopt)),
-            ("{$elseif}", ConditionalDirective(Elseif)),
+            (
+                "{$if}",
+                TT::ConditionalDirective(ConditionalDirectiveKind::If),
+            ),
+            ("{$ifdef}", TT::ConditionalDirective(CDK::Ifdef)),
+            ("{$ifndef}", TT::ConditionalDirective(CDK::Ifndef)),
+            ("{$ifopt}", TT::ConditionalDirective(CDK::Ifopt)),
+            ("{$elseif}", TT::ConditionalDirective(CDK::Elseif)),
             (
                 "{$else}",
-                ConditionalDirective(ConditionalDirectiveKind::Else),
+                TT::ConditionalDirective(ConditionalDirectiveKind::Else),
             ),
-            ("{$ifend}", ConditionalDirective(Ifend)),
-            ("{$endif}", ConditionalDirective(Endif)),
+            ("{$ifend}", TT::ConditionalDirective(CDK::Ifend)),
+            ("{$endif}", TT::ConditionalDirective(CDK::Endif)),
             (
                 "(*$if*)",
-                ConditionalDirective(ConditionalDirectiveKind::If),
+                TT::ConditionalDirective(ConditionalDirectiveKind::If),
             ),
-            ("(*$ifdef*)", ConditionalDirective(Ifdef)),
-            ("(*$ifndef*)", ConditionalDirective(Ifndef)),
-            ("(*$ifopt*)", ConditionalDirective(Ifopt)),
-            ("(*$elseif*)", ConditionalDirective(Elseif)),
+            ("(*$ifdef*)", TT::ConditionalDirective(CDK::Ifdef)),
+            ("(*$ifndef*)", TT::ConditionalDirective(CDK::Ifndef)),
+            ("(*$ifopt*)", TT::ConditionalDirective(CDK::Ifopt)),
+            ("(*$elseif*)", TT::ConditionalDirective(CDK::Elseif)),
             (
                 "(*$else*)",
-                ConditionalDirective(ConditionalDirectiveKind::Else),
+                TT::ConditionalDirective(ConditionalDirectiveKind::Else),
             ),
-            ("(*$ifend*)", ConditionalDirective(Ifend)),
-            ("(*$endif*)", ConditionalDirective(Endif)),
+            ("(*$ifend*)", TT::ConditionalDirective(CDK::Ifend)),
+            ("(*$endif*)", TT::ConditionalDirective(CDK::Endif)),
         ]
         .into_iter()
         .for_each(run_casing_test);
@@ -1387,7 +1402,7 @@ mod tests {
             },
             vec![(
                 "{$if\n// other comment\nFoo;",
-                ConditionalDirective(ConditionalDirectiveKind::If),
+                TT::ConditionalDirective(ConditionalDirectiveKind::If),
             )],
         );
         run_test(
@@ -1400,7 +1415,7 @@ mod tests {
             },
             vec![(
                 "(*$if\n// other comment\nFoo;",
-                ConditionalDirective(ConditionalDirectiveKind::If),
+                TT::ConditionalDirective(ConditionalDirectiveKind::If),
             )],
         );
     }
@@ -1410,25 +1425,25 @@ mod tests {
         run_test(
             "'' 'string' 'string''part2' 'ab''''cd' 'abc'#13#10 'after escaped stuff' 'a'#1'b' 'a'#1#0'b' 'a'#$017F #%010 #%0_1 #%_0 #%_ #$F7F #$F_7 #$_F #$_ #123 #_",
             vec![
-                ("''", TextLiteral),
-                ("'string'", TextLiteral),
-                ("'string''part2'", TextLiteral),
-                ("'ab''''cd'", TextLiteral),
-                ("'abc'#13#10", TextLiteral),
-                ("'after escaped stuff'", TextLiteral),
-                ("'a'#1'b'", TextLiteral),
-                ("'a'#1#0'b'", TextLiteral),
-                ("'a'#$017F", TextLiteral),
-                ("#%010", TextLiteral),
-                ("#%0_1", TextLiteral),
-                ("#%_0", TextLiteral),
-                ("#%_", TextLiteral),
-                ("#$F7F", TextLiteral),
-                ("#$F_7", TextLiteral),
-                ("#$_F", TextLiteral),
-                ("#$_", TextLiteral),
-                ("#123", TextLiteral),
-                ("#_", TextLiteral),
+                ("''", TT::TextLiteral),
+                ("'string'", TT::TextLiteral),
+                ("'string''part2'", TT::TextLiteral),
+                ("'ab''''cd'", TT::TextLiteral),
+                ("'abc'#13#10", TT::TextLiteral),
+                ("'after escaped stuff'", TT::TextLiteral),
+                ("'a'#1'b'", TT::TextLiteral),
+                ("'a'#1#0'b'", TT::TextLiteral),
+                ("'a'#$017F", TT::TextLiteral),
+                ("#%010", TT::TextLiteral),
+                ("#%0_1", TT::TextLiteral),
+                ("#%_0", TT::TextLiteral),
+                ("#%_", TT::TextLiteral),
+                ("#$F7F", TT::TextLiteral),
+                ("#$F_7", TT::TextLiteral),
+                ("#$_F", TT::TextLiteral),
+                ("#$_", TT::TextLiteral),
+                ("#123", TT::TextLiteral),
+                ("#_", TT::TextLiteral),
             ],
         );
     }
@@ -1438,11 +1453,11 @@ mod tests {
         run_test(
             "'string\n' + '';\n'a'#\n'a'##",
             vec![
-                ("'string", TextLiteral),
-                ("' + '';", TextLiteral),
-                ("'a'#", TextLiteral),
-                ("'a'#", TextLiteral),
-                ("#", TextLiteral),
+                ("'string", TT::TextLiteral),
+                ("' + '';", TT::TextLiteral),
+                ("'a'#", TT::TextLiteral),
+                ("'a'#", TT::TextLiteral),
+                ("#", TT::TextLiteral),
             ],
         );
     }
@@ -1452,17 +1467,17 @@ mod tests {
         run_test(
             "0 0.0 10 1_000 1_000.00 1_111_111.11 1.111_1 0e-1 0e+1 0E+1 0.5e+21",
             vec![
-                ("0", NumberLiteral(Decimal)),
-                ("0.0", NumberLiteral(Decimal)),
-                ("10", NumberLiteral(Decimal)),
-                ("1_000", NumberLiteral(Decimal)),
-                ("1_000.00", NumberLiteral(Decimal)),
-                ("1_111_111.11", NumberLiteral(Decimal)),
-                ("1.111_1", NumberLiteral(Decimal)),
-                ("0e-1", NumberLiteral(Decimal)),
-                ("0e+1", NumberLiteral(Decimal)),
-                ("0E+1", NumberLiteral(Decimal)),
-                ("0.5e+21", NumberLiteral(Decimal)),
+                ("0", TT::NumberLiteral(NLK::Decimal)),
+                ("0.0", TT::NumberLiteral(NLK::Decimal)),
+                ("10", TT::NumberLiteral(NLK::Decimal)),
+                ("1_000", TT::NumberLiteral(NLK::Decimal)),
+                ("1_000.00", TT::NumberLiteral(NLK::Decimal)),
+                ("1_111_111.11", TT::NumberLiteral(NLK::Decimal)),
+                ("1.111_1", TT::NumberLiteral(NLK::Decimal)),
+                ("0e-1", TT::NumberLiteral(NLK::Decimal)),
+                ("0e+1", TT::NumberLiteral(NLK::Decimal)),
+                ("0E+1", TT::NumberLiteral(NLK::Decimal)),
+                ("0.5e+21", TT::NumberLiteral(NLK::Decimal)),
             ],
         );
     }
@@ -1472,12 +1487,12 @@ mod tests {
         run_test(
             "0._0 0.e5 0.e-5 0.e+5 0.e-",
             vec![
-                ("0.", NumberLiteral(Decimal)),
-                ("_0", Identifier),
-                ("0.e5", NumberLiteral(Decimal)),
-                ("0.e-5", NumberLiteral(Decimal)),
-                ("0.e+5", NumberLiteral(Decimal)),
-                ("0.e-", NumberLiteral(Decimal)),
+                ("0.", TT::NumberLiteral(NLK::Decimal)),
+                ("_0", TT::Identifier),
+                ("0.e5", TT::NumberLiteral(NLK::Decimal)),
+                ("0.e-5", TT::NumberLiteral(NLK::Decimal)),
+                ("0.e+5", TT::NumberLiteral(NLK::Decimal)),
+                ("0.e-", TT::NumberLiteral(NLK::Decimal)),
             ],
         );
     }
@@ -1487,12 +1502,12 @@ mod tests {
         run_test(
             "$ $00 $FF $0_0 $_ $_1",
             vec![
-                ("$", NumberLiteral(Hex)),
-                ("$00", NumberLiteral(Hex)),
-                ("$FF", NumberLiteral(Hex)),
-                ("$0_0", NumberLiteral(Hex)),
-                ("$_", NumberLiteral(Hex)),
-                ("$_1", NumberLiteral(Hex)),
+                ("$", TT::NumberLiteral(NLK::Hex)),
+                ("$00", TT::NumberLiteral(NLK::Hex)),
+                ("$FF", TT::NumberLiteral(NLK::Hex)),
+                ("$0_0", TT::NumberLiteral(NLK::Hex)),
+                ("$_", TT::NumberLiteral(NLK::Hex)),
+                ("$_1", TT::NumberLiteral(NLK::Hex)),
             ],
         );
     }
@@ -1502,12 +1517,12 @@ mod tests {
         run_test(
             "% %0 %1 %1111_0000 %_ %_1",
             vec![
-                ("%", NumberLiteral(Binary)),
-                ("%0", NumberLiteral(Binary)),
-                ("%1", NumberLiteral(Binary)),
-                ("%1111_0000", NumberLiteral(Binary)),
-                ("%_", NumberLiteral(Binary)),
-                ("%_1", NumberLiteral(Binary)),
+                ("%", TT::NumberLiteral(NLK::Binary)),
+                ("%0", TT::NumberLiteral(NLK::Binary)),
+                ("%1", TT::NumberLiteral(NLK::Binary)),
+                ("%1111_0000", TT::NumberLiteral(NLK::Binary)),
+                ("%_", TT::NumberLiteral(NLK::Binary)),
+                ("%_1", TT::NumberLiteral(NLK::Binary)),
             ],
         );
     }
@@ -1519,9 +1534,9 @@ mod tests {
         run_test(
             "&$FF &%0 &0",
             vec![
-                ("&$FF", NumberLiteral(Hex)),
-                ("&%0", NumberLiteral(Binary)),
-                ("&0", NumberLiteral(Decimal)),
+                ("&$FF", TT::NumberLiteral(NLK::Hex)),
+                ("&%0", TT::NumberLiteral(NLK::Binary)),
+                ("&0", TT::NumberLiteral(NLK::Decimal)),
             ],
         );
     }
@@ -1531,16 +1546,16 @@ mod tests {
         run_test(
             "Foo _Foo _1Foo &begin &&op_Addition &&&Foo &&&&Foo &&",
             vec![
-                ("Foo", Identifier),
-                ("_Foo", Identifier),
-                ("_1Foo", Identifier),
-                ("&begin", Identifier),
-                ("&&op_Addition", Identifier),
+                ("Foo", TT::Identifier),
+                ("_Foo", TT::Identifier),
+                ("_1Foo", TT::Identifier),
+                ("&begin", TT::Identifier),
+                ("&&op_Addition", TT::Identifier),
                 // These aren't valid identifiers, but they're most valid as such.
-                ("&&&Foo", Identifier),
-                ("&&&&Foo", Identifier),
+                ("&&&Foo", TT::Identifier),
+                ("&&&&Foo", TT::Identifier),
                 // You can't actually use this as an identifier, but in some contexts it's valid yet ignored.
-                ("&&", Identifier),
+                ("&&", TT::Identifier),
             ],
         );
     }
@@ -1550,30 +1565,30 @@ mod tests {
         run_test(
             "+-*/:=,;=:<><<=>=>[](..)()^@...",
             vec![
-                ("+", Op(Plus)),
-                ("-", Op(Minus)),
-                ("*", Op(Star)),
-                ("/", Op(Slash)),
-                (":=", Op(Assign)),
-                (",", Op(Comma)),
-                (";", Op(Semicolon)),
-                ("=", Op(Equal)),
-                (":", Op(Colon)),
-                ("<>", Op(NotEqual)),
-                ("<", Op(LessThan)),
-                ("<=", Op(LessEqual)),
-                (">=", Op(GreaterEqual)),
-                (">", Op(GreaterThan)),
-                ("[", Op(LBrack)),
-                ("]", Op(RBrack)),
-                ("(.", Op(LBrack)),
-                (".)", Op(RBrack)),
-                ("(", Op(LParen)),
-                (")", Op(RParen)),
-                ("^", Op(Pointer)),
-                ("@", Op(AddressOf)),
-                ("..", Op(DotDot)),
-                (".", Op(Dot)),
+                ("+", TT::Op(OK::Plus)),
+                ("-", TT::Op(OK::Minus)),
+                ("*", TT::Op(OK::Star)),
+                ("/", TT::Op(OK::Slash)),
+                (":=", TT::Op(OK::Assign)),
+                (",", TT::Op(OK::Comma)),
+                (";", TT::Op(OK::Semicolon)),
+                ("=", TT::Op(OK::Equal)),
+                (":", TT::Op(OK::Colon)),
+                ("<>", TT::Op(OK::NotEqual)),
+                ("<", TT::Op(OK::LessThan)),
+                ("<=", TT::Op(OK::LessEqual)),
+                (">=", TT::Op(OK::GreaterEqual)),
+                (">", TT::Op(OK::GreaterThan)),
+                ("[", TT::Op(OK::LBrack)),
+                ("]", TT::Op(OK::RBrack)),
+                ("(.", TT::Op(OK::LBrack)),
+                (".)", TT::Op(OK::RBrack)),
+                ("(", TT::Op(OK::LParen)),
+                (")", TT::Op(OK::RParen)),
+                ("^", TT::Op(OK::Pointer)),
+                ("@", TT::Op(OK::AddressOf)),
+                ("..", TT::Op(OK::DotDot)),
+                (".", TT::Op(OK::Dot)),
             ],
         );
     }
@@ -1581,128 +1596,128 @@ mod tests {
     #[test]
     fn lex_keywords() {
         [
-            ("absolute", IdentifierOrKeyword(Absolute)),
-            ("abstract", IdentifierOrKeyword(Abstract)),
-            ("add", IdentifierOrKeyword(Add)),
-            ("align", IdentifierOrKeyword(Align)),
-            ("and", Keyword(And)),
-            ("array", Keyword(Array)),
-            ("as", Keyword(As)),
-            ("assembler", IdentifierOrKeyword(Assembler)),
-            ("at", IdentifierOrKeyword(At)),
-            ("automated", IdentifierOrKeyword(Automated)),
-            ("begin", Keyword(Begin)),
-            ("case", Keyword(Case)),
-            ("cdecl", IdentifierOrKeyword(Cdecl)),
-            ("class", Keyword(Class)),
-            ("const", Keyword(Const)),
-            ("constructor", Keyword(Constructor)),
-            ("contains", IdentifierOrKeyword(Contains)),
-            ("default", IdentifierOrKeyword(Default)),
-            ("delayed", IdentifierOrKeyword(Delayed)),
-            ("deprecated", IdentifierOrKeyword(Deprecated)),
-            ("destructor", Keyword(Destructor)),
-            ("dispid", IdentifierOrKeyword(DispId)),
-            ("dispinterface", Keyword(DispInterface)),
-            ("div", Keyword(Div)),
-            ("do", Keyword(Do)),
-            ("downto", Keyword(Downto)),
-            ("dynamic", IdentifierOrKeyword(Dynamic)),
-            ("else", Keyword(KeywordKind::Else)),
-            ("end", Keyword(End)),
-            ("except", Keyword(Except)),
-            ("experimental", IdentifierOrKeyword(Experimental)),
-            ("export", IdentifierOrKeyword(Export)),
-            ("exports", Keyword(Exports)),
-            ("external", IdentifierOrKeyword(External)),
-            ("far", IdentifierOrKeyword(Far)),
-            ("file", Keyword(File)),
-            ("final", IdentifierOrKeyword(Final)),
-            ("finalization", Keyword(Finalization)),
-            ("finally", Keyword(Finally)),
-            ("for", Keyword(For)),
-            ("forward", IdentifierOrKeyword(Forward)),
-            ("function", Keyword(Function)),
-            ("goto", Keyword(Goto)),
-            ("helper", IdentifierOrKeyword(Helper)),
-            ("if", Keyword(KeywordKind::If)),
-            ("implementation", Keyword(Implementation)),
-            ("implements", IdentifierOrKeyword(Implements)),
-            ("in", Keyword(In)),
-            ("index", IdentifierOrKeyword(Index)),
-            ("inherited", Keyword(Inherited)),
-            ("initialization", Keyword(Initialization)),
-            ("inline", Keyword(Inline)),
-            ("interface", Keyword(Interface)),
-            ("is", Keyword(Is)),
-            ("label", Keyword(Label)),
-            ("library", Keyword(Library)),
-            ("local", IdentifierOrKeyword(Local)),
-            ("message", IdentifierOrKeyword(Message)),
-            ("mod", Keyword(Mod)),
-            ("name", IdentifierOrKeyword(Name)),
-            ("near", IdentifierOrKeyword(Near)),
-            ("nil", Keyword(Nil)),
-            ("nodefault", IdentifierOrKeyword(NoDefault)),
-            ("not", Keyword(Not)),
-            ("object", Keyword(Object)),
-            ("of", Keyword(Of)),
-            ("on", IdentifierOrKeyword(On)),
-            ("operator", IdentifierOrKeyword(Operator)),
-            ("or", Keyword(Or)),
-            ("out", IdentifierOrKeyword(Out)),
-            ("overload", IdentifierOrKeyword(Overload)),
-            ("override", IdentifierOrKeyword(Override)),
-            ("package", IdentifierOrKeyword(Package)),
-            ("packed", Keyword(Packed)),
-            ("pascal", IdentifierOrKeyword(Pascal)),
-            ("platform", IdentifierOrKeyword(Platform)),
-            ("private", IdentifierOrKeyword(Private)),
-            ("procedure", Keyword(Procedure)),
-            ("program", Keyword(Program)),
-            ("property", Keyword(Property)),
-            ("protected", IdentifierOrKeyword(Protected)),
-            ("public", IdentifierOrKeyword(Public)),
-            ("published", IdentifierOrKeyword(Published)),
-            ("raise", Keyword(Raise)),
-            ("read", IdentifierOrKeyword(Read)),
-            ("readonly", IdentifierOrKeyword(ReadOnly)),
-            ("record", Keyword(Record)),
-            ("reference", IdentifierOrKeyword(Reference)),
-            ("register", IdentifierOrKeyword(Register)),
-            ("reintroduce", IdentifierOrKeyword(Reintroduce)),
-            ("remove", IdentifierOrKeyword(Remove)),
-            ("repeat", Keyword(Repeat)),
-            ("requires", IdentifierOrKeyword(Requires)),
-            ("resident", IdentifierOrKeyword(Resident)),
-            ("resourcestring", Keyword(ResourceString)),
-            ("safecall", IdentifierOrKeyword(SafeCall)),
-            ("sealed", IdentifierOrKeyword(Sealed)),
-            ("set", Keyword(Set)),
-            ("shl", Keyword(Shl)),
-            ("shr", Keyword(Shr)),
-            ("static", IdentifierOrKeyword(Static)),
-            ("stdcall", IdentifierOrKeyword(StdCall)),
-            ("stored", IdentifierOrKeyword(Stored)),
-            ("strict", IdentifierOrKeyword(Strict)),
-            ("then", Keyword(Then)),
-            ("threadvar", Keyword(ThreadVar)),
-            ("to", Keyword(To)),
-            ("try", Keyword(Try)),
-            ("type", Keyword(Type)),
-            ("unit", Keyword(Unit)),
-            ("unsafe", IdentifierOrKeyword(Unsafe)),
-            ("until", Keyword(Until)),
-            ("uses", Keyword(Uses)),
-            ("var", Keyword(Var)),
-            ("varargs", IdentifierOrKeyword(VarArgs)),
-            ("variant", IdentifierOrKeyword(Variant)),
-            ("virtual", IdentifierOrKeyword(Virtual)),
-            ("while", Keyword(While)),
-            ("with", Keyword(With)),
-            ("write", IdentifierOrKeyword(Write)),
-            ("writeonly", IdentifierOrKeyword(WriteOnly)),
-            ("xor", Keyword(Xor)),
+            ("absolute", TT::IdentifierOrKeyword(KK::Absolute)),
+            ("abstract", TT::IdentifierOrKeyword(KK::Abstract)),
+            ("add", TT::IdentifierOrKeyword(KK::Add)),
+            ("align", TT::IdentifierOrKeyword(KK::Align)),
+            ("and", TT::Keyword(KK::And)),
+            ("array", TT::Keyword(KK::Array)),
+            ("as", TT::Keyword(KK::As)),
+            ("assembler", TT::IdentifierOrKeyword(KK::Assembler)),
+            ("at", TT::IdentifierOrKeyword(KK::At)),
+            ("automated", TT::IdentifierOrKeyword(KK::Automated)),
+            ("begin", TT::Keyword(KK::Begin)),
+            ("case", TT::Keyword(KK::Case)),
+            ("cdecl", TT::IdentifierOrKeyword(KK::Cdecl)),
+            ("class", TT::Keyword(KK::Class)),
+            ("const", TT::Keyword(KK::Const)),
+            ("constructor", TT::Keyword(KK::Constructor)),
+            ("contains", TT::IdentifierOrKeyword(KK::Contains)),
+            ("default", TT::IdentifierOrKeyword(KK::Default)),
+            ("delayed", TT::IdentifierOrKeyword(KK::Delayed)),
+            ("deprecated", TT::IdentifierOrKeyword(KK::Deprecated)),
+            ("destructor", TT::Keyword(KK::Destructor)),
+            ("dispid", TT::IdentifierOrKeyword(KK::DispId)),
+            ("dispinterface", TT::Keyword(KK::DispInterface)),
+            ("div", TT::Keyword(KK::Div)),
+            ("do", TT::Keyword(KK::Do)),
+            ("downto", TT::Keyword(KK::Downto)),
+            ("dynamic", TT::IdentifierOrKeyword(KK::Dynamic)),
+            ("else", TT::Keyword(KK::Else)),
+            ("end", TT::Keyword(KK::End)),
+            ("except", TT::Keyword(KK::Except)),
+            ("experimental", TT::IdentifierOrKeyword(KK::Experimental)),
+            ("export", TT::IdentifierOrKeyword(KK::Export)),
+            ("exports", TT::Keyword(KK::Exports)),
+            ("external", TT::IdentifierOrKeyword(KK::External)),
+            ("far", TT::IdentifierOrKeyword(KK::Far)),
+            ("file", TT::Keyword(KK::File)),
+            ("final", TT::IdentifierOrKeyword(KK::Final)),
+            ("finalization", TT::Keyword(KK::Finalization)),
+            ("finally", TT::Keyword(KK::Finally)),
+            ("for", TT::Keyword(KK::For)),
+            ("forward", TT::IdentifierOrKeyword(KK::Forward)),
+            ("function", TT::Keyword(KK::Function)),
+            ("goto", TT::Keyword(KK::Goto)),
+            ("helper", TT::IdentifierOrKeyword(KK::Helper)),
+            ("if", TT::Keyword(KK::If)),
+            ("implementation", TT::Keyword(KK::Implementation)),
+            ("implements", TT::IdentifierOrKeyword(KK::Implements)),
+            ("in", TT::Keyword(KK::In)),
+            ("index", TT::IdentifierOrKeyword(KK::Index)),
+            ("inherited", TT::Keyword(KK::Inherited)),
+            ("initialization", TT::Keyword(KK::Initialization)),
+            ("inline", TT::Keyword(KK::Inline)),
+            ("interface", TT::Keyword(KK::Interface)),
+            ("is", TT::Keyword(KK::Is)),
+            ("label", TT::Keyword(KK::Label)),
+            ("library", TT::Keyword(KK::Library)),
+            ("local", TT::IdentifierOrKeyword(KK::Local)),
+            ("message", TT::IdentifierOrKeyword(KK::Message)),
+            ("mod", TT::Keyword(KK::Mod)),
+            ("name", TT::IdentifierOrKeyword(KK::Name)),
+            ("near", TT::IdentifierOrKeyword(KK::Near)),
+            ("nil", TT::Keyword(KK::Nil)),
+            ("nodefault", TT::IdentifierOrKeyword(KK::NoDefault)),
+            ("not", TT::Keyword(KK::Not)),
+            ("object", TT::Keyword(KK::Object)),
+            ("of", TT::Keyword(KK::Of)),
+            ("on", TT::IdentifierOrKeyword(KK::On)),
+            ("operator", TT::IdentifierOrKeyword(KK::Operator)),
+            ("or", TT::Keyword(KK::Or)),
+            ("out", TT::IdentifierOrKeyword(KK::Out)),
+            ("overload", TT::IdentifierOrKeyword(KK::Overload)),
+            ("override", TT::IdentifierOrKeyword(KK::Override)),
+            ("package", TT::IdentifierOrKeyword(KK::Package)),
+            ("packed", TT::Keyword(KK::Packed)),
+            ("pascal", TT::IdentifierOrKeyword(KK::Pascal)),
+            ("platform", TT::IdentifierOrKeyword(KK::Platform)),
+            ("private", TT::IdentifierOrKeyword(KK::Private)),
+            ("procedure", TT::Keyword(KK::Procedure)),
+            ("program", TT::Keyword(KK::Program)),
+            ("property", TT::Keyword(KK::Property)),
+            ("protected", TT::IdentifierOrKeyword(KK::Protected)),
+            ("public", TT::IdentifierOrKeyword(KK::Public)),
+            ("published", TT::IdentifierOrKeyword(KK::Published)),
+            ("raise", TT::Keyword(KK::Raise)),
+            ("read", TT::IdentifierOrKeyword(KK::Read)),
+            ("readonly", TT::IdentifierOrKeyword(KK::ReadOnly)),
+            ("record", TT::Keyword(KK::Record)),
+            ("reference", TT::IdentifierOrKeyword(KK::Reference)),
+            ("register", TT::IdentifierOrKeyword(KK::Register)),
+            ("reintroduce", TT::IdentifierOrKeyword(KK::Reintroduce)),
+            ("remove", TT::IdentifierOrKeyword(KK::Remove)),
+            ("repeat", TT::Keyword(KK::Repeat)),
+            ("requires", TT::IdentifierOrKeyword(KK::Requires)),
+            ("resident", TT::IdentifierOrKeyword(KK::Resident)),
+            ("resourcestring", TT::Keyword(KK::ResourceString)),
+            ("safecall", TT::IdentifierOrKeyword(KK::SafeCall)),
+            ("sealed", TT::IdentifierOrKeyword(KK::Sealed)),
+            ("set", TT::Keyword(KK::Set)),
+            ("shl", TT::Keyword(KK::Shl)),
+            ("shr", TT::Keyword(KK::Shr)),
+            ("static", TT::IdentifierOrKeyword(KK::Static)),
+            ("stdcall", TT::IdentifierOrKeyword(KK::StdCall)),
+            ("stored", TT::IdentifierOrKeyword(KK::Stored)),
+            ("strict", TT::IdentifierOrKeyword(KK::Strict)),
+            ("then", TT::Keyword(KK::Then)),
+            ("threadvar", TT::Keyword(KK::ThreadVar)),
+            ("to", TT::Keyword(KK::To)),
+            ("try", TT::Keyword(KK::Try)),
+            ("type", TT::Keyword(KK::Type)),
+            ("unit", TT::Keyword(KK::Unit)),
+            ("unsafe", TT::IdentifierOrKeyword(KK::Unsafe)),
+            ("until", TT::Keyword(KK::Until)),
+            ("uses", TT::Keyword(KK::Uses)),
+            ("var", TT::Keyword(KK::Var)),
+            ("varargs", TT::IdentifierOrKeyword(KK::VarArgs)),
+            ("variant", TT::IdentifierOrKeyword(KK::Variant)),
+            ("virtual", TT::IdentifierOrKeyword(KK::Virtual)),
+            ("while", TT::Keyword(KK::While)),
+            ("with", TT::Keyword(KK::With)),
+            ("write", TT::IdentifierOrKeyword(KK::Write)),
+            ("writeonly", TT::IdentifierOrKeyword(KK::WriteOnly)),
+            ("xor", TT::Keyword(KK::Xor)),
         ]
         .into_iter()
         .for_each(run_casing_test);
@@ -1713,20 +1728,20 @@ mod tests {
         run_test(
             "function Foo(Arg1:String;Arg2:Bar);stdcall;",
             vec![
-                ("function", Keyword(Function)),
-                ("Foo", Identifier),
-                ("(", Op(LParen)),
-                ("Arg1", Identifier),
-                (":", Op(Colon)),
-                ("String", Identifier),
-                (";", Op(Semicolon)),
-                ("Arg2", Identifier),
-                (":", Op(Colon)),
-                ("Bar", Identifier),
-                (")", Op(RParen)),
-                (";", Op(Semicolon)),
-                ("stdcall", IdentifierOrKeyword(StdCall)),
-                (";", Op(Semicolon)),
+                ("function", TT::Keyword(KK::Function)),
+                ("Foo", TT::Identifier),
+                ("(", TT::Op(OK::LParen)),
+                ("Arg1", TT::Identifier),
+                (":", TT::Op(OK::Colon)),
+                ("String", TT::Identifier),
+                (";", TT::Op(OK::Semicolon)),
+                ("Arg2", TT::Identifier),
+                (":", TT::Op(OK::Colon)),
+                ("Bar", TT::Identifier),
+                (")", TT::Op(OK::RParen)),
+                (";", TT::Op(OK::Semicolon)),
+                ("stdcall", TT::IdentifierOrKeyword(KK::StdCall)),
+                (";", TT::Op(OK::Semicolon)),
             ],
         );
     }
@@ -1735,7 +1750,7 @@ mod tests {
     fn lex_invalid_code() {
         run_test(
             "? ? ?",
-            vec![("?", Unknown), ("?", Unknown), ("?", Unknown)],
+            vec![("?", TT::Unknown), ("?", TT::Unknown), ("?", TT::Unknown)],
         );
     }
 
@@ -1749,14 +1764,14 @@ mod tests {
             end
             "},
             vec![
-                ("asm", Keyword(Asm)),
-                ("@@end", Identifier),
-                (":", Op(Colon)),
-                ("XOR", Identifier),
-                ("RBX", Identifier),
-                (",", Op(Comma)),
-                ("RBX", Identifier),
-                ("end", Keyword(End)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("@@end", TT::Identifier),
+                (":", TT::Op(OK::Colon)),
+                ("XOR", TT::Identifier),
+                ("RBX", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                ("RBX", TT::Identifier),
+                ("end", TT::Keyword(KK::End)),
             ],
         );
     }
@@ -1769,13 +1784,13 @@ mod tests {
             end
             "},
             vec![
-                ("asm", Keyword(Asm)),
-                ("XOR", Identifier),
-                ("RBX", Identifier),
-                (",", Op(Comma)),
-                ("RBX", Identifier),
-                ("{$ifdef End}", ConditionalDirective(Ifdef)),
-                ("end", Keyword(End)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("XOR", TT::Identifier),
+                ("RBX", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                ("RBX", TT::Identifier),
+                ("{$ifdef End}", TT::ConditionalDirective(CDK::Ifdef)),
+                ("end", TT::Keyword(KK::End)),
             ],
         );
     }
@@ -1788,13 +1803,13 @@ mod tests {
             end
             "},
             vec![
-                ("asm", Keyword(Asm)),
-                ("XOR", Identifier),
-                ("RBX", Identifier),
-                (",", Op(Comma)),
-                ("RBX", Identifier),
-                ("// End", Comment(CommentKind::InlineLine)),
-                ("end", Keyword(End)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("XOR", TT::Identifier),
+                ("RBX", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                ("RBX", TT::Identifier),
+                ("// End", TT::Comment(CommentKind::InlineLine)),
+                ("end", TT::Keyword(KK::End)),
             ],
         );
     }
@@ -1807,12 +1822,12 @@ mod tests {
             end
             "},
             vec![
-                ("asm", Keyword(Asm)),
-                ("XOR", Identifier),
-                ("RBX", Identifier),
-                (",", Op(Comma)),
-                ("IfEnd", Identifier),
-                ("end", Keyword(End)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("XOR", TT::Identifier),
+                ("RBX", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                ("IfEnd", TT::Identifier),
+                ("end", TT::Keyword(KK::End)),
             ],
         );
     }
@@ -1829,18 +1844,18 @@ mod tests {
             end
             "},
             vec![
-                ("asm", Keyword(Asm)),
-                ("@@A", Identifier),
-                (":", Op(Colon)),
-                ("@A", Identifier),
-                (":", Op(Colon)),
-                ("@A@a", Identifier),
-                (":", Op(Colon)),
-                ("@_", Identifier),
-                (":", Op(Colon)),
-                ("@0", Identifier),
-                (":", Op(Colon)),
-                ("end", Keyword(End)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("@@A", TT::Identifier),
+                (":", TT::Op(OK::Colon)),
+                ("@A", TT::Identifier),
+                (":", TT::Op(OK::Colon)),
+                ("@A@a", TT::Identifier),
+                (":", TT::Op(OK::Colon)),
+                ("@_", TT::Identifier),
+                (":", TT::Op(OK::Colon)),
+                ("@0", TT::Identifier),
+                (":", TT::Op(OK::Colon)),
+                ("end", TT::Keyword(KK::End)),
             ],
         );
     }
@@ -1854,16 +1869,16 @@ mod tests {
             end
             "},
             vec![
-                ("asm", Keyword(Asm)),
-                ("CMP", Identifier),
-                ("AL", Identifier),
-                (",", Op(Comma)),
-                ("\"'\"", TextLiteral),
-                ("XOR", Identifier),
-                ("RBX", Identifier),
-                (",", Op(Comma)),
-                ("RBX", Identifier),
-                ("end", Keyword(End)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("CMP", TT::Identifier),
+                ("AL", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                ("\"'\"", TT::TextLiteral),
+                ("XOR", TT::Identifier),
+                ("RBX", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                ("RBX", TT::Identifier),
+                ("end", TT::Keyword(KK::End)),
             ],
         );
     }
@@ -1877,12 +1892,12 @@ mod tests {
             end
             "#},
             vec![
-                ("asm", Keyword(Asm)),
-                ("CMP", Identifier),
-                ("AL", Identifier),
-                (",", Op(Comma)),
-                (r#""\"""#, TextLiteral),
-                ("end", Keyword(End)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("CMP", TT::Identifier),
+                ("AL", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                (r#""\"""#, TT::TextLiteral),
+                ("end", TT::Keyword(KK::End)),
             ],
         );
     }
@@ -1896,12 +1911,12 @@ mod tests {
             end
             "},
             vec![
-                ("asm", Keyword(Asm)),
-                ("CMP", Identifier),
-                ("AL", Identifier),
-                (",", Op(Comma)),
-                ("\"a", TextLiteral),
-                ("end", Keyword(End)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("CMP", TT::Identifier),
+                ("AL", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                ("\"a", TT::TextLiteral),
+                ("end", TT::Keyword(KK::End)),
             ],
         );
     }
@@ -1916,17 +1931,17 @@ mod tests {
             end
             "},
             vec![
-                ("asm", Keyword(Asm)),
-                ("MOV", Identifier),
-                ("RAX", Identifier),
-                (",", Op(Comma)),
-                ("0", NumberLiteral(Decimal)),
-                ("// comment", Comment(CommentKind::InlineLine)),
-                ("XOR", Identifier),
-                ("RBX", Identifier),
-                (",", Op(Comma)),
-                ("RBX", Identifier),
-                ("end", Keyword(End)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("MOV", TT::Identifier),
+                ("RAX", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                ("0", TT::NumberLiteral(NLK::Decimal)),
+                ("// comment", TT::Comment(CommentKind::InlineLine)),
+                ("XOR", TT::Identifier),
+                ("RBX", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                ("RBX", TT::Identifier),
+                ("end", TT::Keyword(KK::End)),
             ],
         );
     }
@@ -1940,16 +1955,16 @@ mod tests {
             end
             "},
             vec![
-                ("asm", Keyword(Asm)),
-                ("MOV", Identifier),
-                ("RAX", Identifier),
-                (",", Op(Comma)),
-                ("0", NumberLiteral(Decimal)),
-                ("XOR", Identifier),
-                ("RBX", Identifier),
-                (",", Op(Comma)),
-                ("RBX", Identifier),
-                ("end", Keyword(End)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("MOV", TT::Identifier),
+                ("RAX", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                ("0", TT::NumberLiteral(NLK::Decimal)),
+                ("XOR", TT::Identifier),
+                ("RBX", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                ("RBX", TT::Identifier),
+                ("end", TT::Keyword(KK::End)),
             ],
         );
     }
@@ -1959,14 +1974,14 @@ mod tests {
         run_test(
             "begin var asmA := 0; end;",
             vec![
-                ("begin", Keyword(Begin)),
-                ("var", Keyword(Var)),
-                ("asmA", Identifier),
-                (":=", Op(Assign)),
-                ("0", NumberLiteral(Decimal)),
-                (";", Op(Semicolon)),
-                ("end", Keyword(End)),
-                (";", Op(Semicolon)),
+                ("begin", TT::Keyword(KK::Begin)),
+                ("var", TT::Keyword(KK::Var)),
+                ("asmA", TT::Identifier),
+                (":=", TT::Op(OK::Assign)),
+                ("0", TT::NumberLiteral(NLK::Decimal)),
+                (";", TT::Op(OK::Semicolon)),
+                ("end", TT::Keyword(KK::End)),
+                (";", TT::Op(OK::Semicolon)),
             ],
         );
     }
@@ -1980,18 +1995,18 @@ mod tests {
             end
             "},
             vec![
-                ("asm", Keyword(Asm)),
-                ("0", NumberLiteral(Decimal)),
-                ("0O", NumberLiteral(Octal)),
-                ("0o", NumberLiteral(Octal)),
-                ("0B", NumberLiteral(Binary)),
-                ("0b", NumberLiteral(Binary)),
-                ("0H", NumberLiteral(Hex)),
-                ("0h", NumberLiteral(Hex)),
-                ("$0", NumberLiteral(Hex)),
-                ("0AH", NumberLiteral(Hex)),
-                ("0FH", NumberLiteral(Hex)),
-                ("end", Keyword(End)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("0", TT::NumberLiteral(NLK::Decimal)),
+                ("0O", TT::NumberLiteral(NLK::Octal)),
+                ("0o", TT::NumberLiteral(NLK::Octal)),
+                ("0B", TT::NumberLiteral(NLK::Binary)),
+                ("0b", TT::NumberLiteral(NLK::Binary)),
+                ("0H", TT::NumberLiteral(NLK::Hex)),
+                ("0h", TT::NumberLiteral(NLK::Hex)),
+                ("$0", TT::NumberLiteral(NLK::Hex)),
+                ("0AH", TT::NumberLiteral(NLK::Hex)),
+                ("0FH", TT::NumberLiteral(NLK::Hex)),
+                ("end", TT::Keyword(KK::End)),
             ],
         );
     }
@@ -2006,18 +2021,18 @@ mod tests {
             end
             "},
             vec![
-                ("asm", Keyword(Asm)),
-                ("8O", NumberLiteral(Octal)),
-                ("2B", NumberLiteral(Binary)),
-                ("$0", NumberLiteral(Hex)),
-                ("H", Identifier),
-                ("0A", NumberLiteral(Decimal)),
-                ("0", NumberLiteral(Decimal)),
-                ("GH", Identifier),
-                ("$A_A", NumberLiteral(Hex)),
-                ("00_11B", NumberLiteral(Binary)),
-                ("9_5", NumberLiteral(Decimal)),
-                ("end", Keyword(End)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("8O", TT::NumberLiteral(NLK::Octal)),
+                ("2B", TT::NumberLiteral(NLK::Binary)),
+                ("$0", TT::NumberLiteral(NLK::Hex)),
+                ("H", TT::Identifier),
+                ("0A", TT::NumberLiteral(NLK::Decimal)),
+                ("0", TT::NumberLiteral(NLK::Decimal)),
+                ("GH", TT::Identifier),
+                ("$A_A", TT::NumberLiteral(NLK::Hex)),
+                ("00_11B", TT::NumberLiteral(NLK::Binary)),
+                ("9_5", TT::NumberLiteral(NLK::Decimal)),
+                ("end", TT::Keyword(KK::End)),
             ],
         );
     }
@@ -2027,19 +2042,19 @@ mod tests {
         run_test(
             "böb öb bö ö",
             vec![
-                ("böb", Identifier),
-                ("öb", Identifier),
-                ("bö", Identifier),
-                ("ö", Identifier),
+                ("böb", TT::Identifier),
+                ("öb", TT::Identifier),
+                ("bö", TT::Identifier),
+                ("ö", TT::Identifier),
             ],
         );
 
         // Japanese
-        run_test("クールなテスト", vec![("クールなテスト", Identifier)]);
+        run_test("クールなテスト", vec![("クールなテスト", TT::Identifier)]);
         // Chinese (Traditional)
-        run_test("酷測試", vec![("酷測試", Identifier)]);
+        run_test("酷測試", vec![("酷測試", TT::Identifier)]);
         // Korean
-        run_test("멋진테스트", vec![("멋진테스트", Identifier)]);
+        run_test("멋진테스트", vec![("멋진테스트", TT::Identifier)]);
 
         /*
             Codepoints above U+FFFF are all surrogate pairs, and don't seem to be allowed in identifiers.
@@ -2048,18 +2063,21 @@ mod tests {
             no harm in doing so.
         */
         // Emojis
-        run_test("🚀🦀🚀🦀", vec![("🚀🦀🚀🦀", Identifier)]);
+        run_test("🚀🦀🚀🦀", vec![("🚀🦀🚀🦀", TT::Identifier)]);
         // Enclosed Alphanumeric
-        run_test("🄲🄾🄾🄻🅃🄴🅂🅃", vec![("🄲🄾🄾🄻🅃🄴🅂🅃", Identifier)]);
+        run_test("🄲🄾🄾🄻🅃🄴🅂🅃", vec![("🄲🄾🄾🄻🅃🄴🅂🅃", TT::Identifier)]);
     }
 
     #[test]
     fn unicode_fullwidth_chars() {
         // Fullwidth characters - valid identifier chars
-        run_test("ｃｏｏｌｔｅｓｔ", vec![("ｃｏｏｌｔｅｓｔ", Identifier)]);
+        run_test(
+            "ｃｏｏｌｔｅｓｔ",
+            vec![("ｃｏｏｌｔｅｓｔ", TT::Identifier)],
+        );
 
         // Fullwidth spaces - invalid identifier char (but valid as whitespace)
-        run_test("a　b", vec![("a", Identifier), ("b", Identifier)]);
+        run_test("a　b", vec![("a", TT::Identifier), ("b", TT::Identifier)]);
 
         /*
             Fullwidth numerals [U+FF10, U+FF19]
@@ -2076,16 +2094,16 @@ mod tests {
         run_test(
             "０ １ ２ ３ ４ ５ ６ ７ ８ ９",
             vec![
-                ("０", Identifier),
-                ("１", Identifier),
-                ("２", Identifier),
-                ("３", Identifier),
-                ("４", Identifier),
-                ("５", Identifier),
-                ("６", Identifier),
-                ("７", Identifier),
-                ("８", Identifier),
-                ("９", Identifier),
+                ("０", TT::Identifier),
+                ("１", TT::Identifier),
+                ("２", TT::Identifier),
+                ("３", TT::Identifier),
+                ("４", TT::Identifier),
+                ("５", TT::Identifier),
+                ("６", TT::Identifier),
+                ("７", TT::Identifier),
+                ("８", TT::Identifier),
+                ("９", TT::Identifier),
             ],
         );
     }
@@ -2097,12 +2115,12 @@ mod tests {
         run_test(
             "NBSP\u{A0} EN_QUAD\u{2000} THIN_SPACE\u{2009} ZERO_WIDTH_NBSP\u{FEFF} IDEOGRAPHIC_SPACE\u{3000}",
             vec![
-                ("NBSP\u{A0}", Identifier),
-                ("EN_QUAD\u{2000}", Identifier),
-                ("THIN_SPACE\u{2009}", Identifier),
-                ("ZERO_WIDTH_NBSP\u{FEFF}", Identifier),
+                ("NBSP\u{A0}", TT::Identifier),
+                ("EN_QUAD\u{2000}", TT::Identifier),
+                ("THIN_SPACE\u{2009}", TT::Identifier),
+                ("ZERO_WIDTH_NBSP\u{FEFF}", TT::Identifier),
                 // note, does not contain the U+3000 character
-                ("IDEOGRAPHIC_SPACE", Identifier),
+                ( "IDEOGRAPHIC_SPACE", TT::Identifier),
             ],
         )
     }
@@ -2150,39 +2168,39 @@ mod tests {
                 "
             },
             vec![
-                ("NUL", Identifier),
-                ("SOH", Identifier),
-                ("STX", Identifier),
-                ("ETX", Identifier),
-                ("EOT", Identifier),
-                ("ENQ", Identifier),
-                ("ACK", Identifier),
-                ("BEL", Identifier),
-                ("BS", Identifier),
-                ("HT", Identifier),
-                ("LF", Identifier),
-                ("VT", Identifier),
-                ("FF", Identifier),
-                ("CR", Identifier),
-                ("SO", Identifier),
-                ("SI", Identifier),
-                ("DLE", Identifier),
-                ("DC1", Identifier),
-                ("DC2", Identifier),
-                ("DC3", Identifier),
-                ("DC4", Identifier),
-                ("NAK", Identifier),
-                ("SYN", Identifier),
-                ("ETB", Identifier),
-                ("CAN", Identifier),
-                ("EM", Identifier),
-                ("SUB", Identifier),
-                ("ESC", Identifier),
-                ("FS", Identifier),
-                ("GS", Identifier),
-                ("RS", Identifier),
-                ("US", Identifier),
-                ("Space", Identifier),
+                ("NUL", TT::Identifier),
+                ("SOH", TT::Identifier),
+                ("STX", TT::Identifier),
+                ("ETX", TT::Identifier),
+                ("EOT", TT::Identifier),
+                ("ENQ", TT::Identifier),
+                ("ACK", TT::Identifier),
+                ("BEL", TT::Identifier),
+                ("BS", TT::Identifier),
+                ("HT", TT::Identifier),
+                ("LF", TT::Identifier),
+                ("VT", TT::Identifier),
+                ("FF", TT::Identifier),
+                ("CR", TT::Identifier),
+                ("SO", TT::Identifier),
+                ("SI", TT::Identifier),
+                ("DLE", TT::Identifier),
+                ("DC1", TT::Identifier),
+                ("DC2", TT::Identifier),
+                ("DC3", TT::Identifier),
+                ("DC4", TT::Identifier),
+                ("NAK", TT::Identifier),
+                ("SYN", TT::Identifier),
+                ("ETB", TT::Identifier),
+                ("CAN", TT::Identifier),
+                ("EM", TT::Identifier),
+                ("SUB", TT::Identifier),
+                ("ESC", TT::Identifier),
+                ("FS", TT::Identifier),
+                ("GS", TT::Identifier),
+                ("RS", TT::Identifier),
+                ("US", TT::Identifier),
+                ("Space", TT::Identifier),
             ],
         )
     }

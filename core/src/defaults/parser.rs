@@ -2,11 +2,11 @@ use std::cmp::max;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 
-use crate::lang::ConditionalDirectiveKind::*;
+use crate::lang::ConditionalDirectiveKind as CDK;
 
-use crate::lang::KeywordKind::*;
-use crate::lang::OperatorKind::*;
-use crate::lang::TokenType::*;
+use crate::lang::KeywordKind as KK;
+use crate::lang::OperatorKind as OK;
+use crate::lang::TokenType as TT;
 use crate::lang::*;
 use crate::traits::LogicalLineParser;
 
@@ -126,37 +126,39 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                 Some(token_type) => token_type,
             };
             match token_type {
-                Comment(CommentKind::IndividualLine)
-                | Comment(CommentKind::IndividualBlock)
-                | Comment(CommentKind::MultilineBlock) => {
+                TT::Comment(CommentKind::IndividualLine)
+                | TT::Comment(CommentKind::IndividualBlock)
+                | TT::Comment(CommentKind::MultilineBlock) => {
                     self.next_token();
                     self.add_logical_line();
                 }
-                Keyword(Class) => {
+                TT::Keyword(KK::Class) => {
                     // If class is the first token in the line, allow the next
                     // token to dictate how it will be parsed.
                     self.next_token();
                 }
-                Keyword(Property) => {
+                TT::Keyword(KK::Property) => {
                     self.parse_property_declaration();
                 }
-                IdentifierOrKeyword(Private | Protected | Public | Published | Automated) => {
+                TT::IdentifierOrKeyword(
+                    KK::Private | KK::Protected | KK::Public | KK::Published | KK::Automated,
+                ) => {
                     self.add_logical_line();
                     self.next_token();
                     self.add_logical_line();
                 }
-                Op(Semicolon) => {
+                TT::Op(OK::Semicolon) => {
                     self.next_token();
                     self.add_logical_line();
                 }
-                Keyword(Begin) => {
+                TT::Keyword(KK::Begin) => {
                     self.parse_block();
                     self.add_logical_line();
                 }
-                Keyword(Asm) => {
+                TT::Keyword(KK::Asm) => {
                     self.parse_asm_block();
                 }
-                Keyword(End) => {
+                TT::Keyword(KK::End) => {
                     if opening_begin.is_some() {
                         return;
                     }
@@ -204,11 +206,13 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         loop {
             let token = match self.get_current_token() {
                 None => break,
-                Some(token) if matches!(token.get_token_type(), Keyword(End) | Eof) => break,
+                Some(token) if matches!(token.get_token_type(), TT::Keyword(KK::End) | TT::Eof) => {
+                    break
+                }
                 Some(token) => token,
             };
 
-            if matches!(token.get_token_type(), Op(Semicolon)) {
+            if matches!(token.get_token_type(), TT::Op(OK::Semicolon)) {
                 self.next_token();
                 add_asm_instruction_line(self);
             } else if token.get_leading_whitespace().contains('\n') {
@@ -225,7 +229,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
         self.set_logical_line_type(LogicalLineType::PropertyDeclaration);
         self.next_token();
         self.parse_to_after_next_semicolon_or_before_end();
-        if let Some(IdentifierOrKeyword(Default)) = self.get_current_token_type() {
+        if let Some(TT::IdentifierOrKeyword(KK::Default)) = self.get_current_token_type() {
             self.next_token();
             self.parse_to_after_next_semicolon_or_before_end();
         }
@@ -239,33 +243,35 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                 Some(token_type) => token_type,
             };
             match token_type {
-                Op(LParen) => self.parse_parens(),
-                Op(Semicolon) => {
+                TT::Op(OK::LParen) => self.parse_parens(),
+                TT::Op(OK::Semicolon) => {
                     self.next_token();
                     self.add_logical_line();
                     return;
                 }
-                Keyword(Class) => {
+                TT::Keyword(KK::Class) => {
                     // If class is the first token in the line, allow the next
                     // token to dictate how it will be parsed.
                     self.next_token();
                 }
-                Keyword(Property) => {
+                TT::Keyword(KK::Property) => {
                     self.parse_property_declaration();
                     return;
                 }
-                IdentifierOrKeyword(Private | Protected | Public | Published | Automated) => {
+                TT::IdentifierOrKeyword(
+                    KK::Private | KK::Protected | KK::Public | KK::Published | KK::Automated,
+                ) => {
                     self.add_logical_line();
                     self.next_token();
                     self.add_logical_line();
                 }
-                Keyword(Uses) => {
+                TT::Keyword(KK::Uses) => {
                     self.add_logical_line();
                     self.set_logical_line_type(LogicalLineType::ImportClause);
                     self.parse_to_after_next_semicolon();
                     self.add_logical_line();
                 }
-                Keyword(Begin) => {
+                TT::Keyword(KK::Begin) => {
                     self.parse_child_block(self.current_token_index);
                 }
                 _ => self.next_token(),
@@ -276,11 +282,11 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
     fn parse_to_after_next_semicolon_or_before_end(&mut self) {
         while !matches!(
             self.get_current_token_type_no_eof(),
-            Some(TokenType::Op(OperatorKind::Semicolon) | Keyword(End)) | None
+            Some(TT::Op(OK::Semicolon) | TT::Keyword(KK::End)) | None
         ) {
             self.next_token();
         }
-        if let Some(TokenType::Op(OperatorKind::Semicolon)) = self.get_current_token_type() {
+        if let Some(TT::Op(OK::Semicolon)) = self.get_current_token_type() {
             self.next_token();
         }
     }
@@ -296,7 +302,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
     }
 
     fn parse_parens(&mut self) {
-        assert!(self.get_current_token_type() == Some(Op(LParen)));
+        assert!(self.get_current_token_type() == Some(TT::Op(OK::LParen)));
         self.next_token();
         loop {
             let token_type = match self.get_current_token_type_no_eof() {
@@ -304,12 +310,12 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
                 Some(token_type) => token_type,
             };
             match token_type {
-                Op(LParen) => self.parse_parens(),
-                Op(RParen) => {
+                TT::Op(OK::LParen) => self.parse_parens(),
+                TT::Op(OK::RParen) => {
                     self.next_token();
                     return;
                 }
-                Keyword(Begin) => self.parse_child_block(self.current_token_index),
+                TT::Keyword(KK::Begin) => self.parse_child_block(self.current_token_index),
                 _ => self.next_token(),
             }
         }
@@ -363,7 +369,10 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
             }
 
             while !self.is_in_compiler_directive()
-                && matches!(self.get_current_token_type(), Some(ConditionalDirective(_)))
+                && matches!(
+                    self.get_current_token_type(),
+                    Some(TT::ConditionalDirective(_))
+                )
             {
                 self.distribute_comments(comments_before_next_token);
                 let new_line =
@@ -384,7 +393,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
             }
 
             match self.get_current_token_type_no_eof() {
-                Some(Comment(CommentKind::InlineBlock | CommentKind::InlineLine)) => {
+                Some(TT::Comment(CommentKind::InlineBlock | CommentKind::InlineLine)) => {
                     comments_before_next_token.push(self.current_token_index);
                 }
                 Some(_) => {
@@ -471,7 +480,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
             if self.is_in_compiler_directive()
                 || matches!(
                     self.tokens.get(comment_token).map(Token::get_token_type),
-                    Some(Comment(CommentKind::IndividualLine))
+                    Some(TT::Comment(CommentKind::IndividualLine))
                 )
             {
                 should_push_to_current_line = false;
@@ -493,13 +502,13 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
     fn parse_conditional_directive(&mut self) {
         let prev_level = self.directive_context.len();
         match self.get_current_token_type() {
-            Some(ConditionalDirective(Ifdef | Ifndef | Ifopt | ConditionalDirectiveKind::If)) => {
+            Some(TT::ConditionalDirective(CDK::Ifdef | CDK::Ifndef | CDK::Ifopt | CDK::If)) => {
                 self.parse_directive_if();
             }
-            Some(ConditionalDirective(ConditionalDirectiveKind::Else | Elseif)) => {
+            Some(TT::ConditionalDirective(CDK::Else | CDK::Elseif)) => {
                 self.parse_directive_else();
             }
-            Some(ConditionalDirective(Endif | Ifend)) => {
+            Some(TT::ConditionalDirective(CDK::Endif | CDK::Ifend)) => {
                 self.parse_directive_endif();
             }
             _ => panic!(),
@@ -532,7 +541,10 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
     fn parse_directive_unknown(&mut self) {
         loop {
             self.next_token();
-            if matches!(self.get_prev_token_type(), Some(ConditionalDirective(_))) {
+            if matches!(
+                self.get_prev_token_type(),
+                Some(TT::ConditionalDirective(_))
+            ) {
                 break;
             }
         }
@@ -680,7 +692,7 @@ impl<'a> InternalDelphiLogicalLineParser<'a> {
     }
     fn get_current_token_type_no_eof(&self) -> Option<TokenType> {
         self.get_current_token_type()
-            .filter(|&token_type| token_type != Eof)
+            .filter(|&token_type| token_type != TT::Eof)
     }
     fn is_eof(&self) -> bool {
         matches!(self.get_current_token_type(), Some(TokenType::Eof) | None)

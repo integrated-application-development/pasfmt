@@ -1,9 +1,18 @@
-use crate::lang::KeywordKind::*;
-use crate::lang::TokenType::*;
+use crate::lang::KeywordKind as KK;
+use crate::lang::TokenType as TT;
 use crate::prelude::*;
 
 const PROPERTY_DECLARATION_KEYWORDS: [KeywordKind; 10] = [
-    Default, DispId, Implements, Index, NoDefault, Read, ReadOnly, Stored, Write, WriteOnly,
+    KK::Default,
+    KK::DispId,
+    KK::Implements,
+    KK::Index,
+    KK::NoDefault,
+    KK::Read,
+    KK::ReadOnly,
+    KK::Stored,
+    KK::Write,
+    KK::WriteOnly,
 ];
 
 /*
@@ -33,9 +42,9 @@ impl LogicalLinesConsolidator for PropertyDeclarationConsolidator {
                     _ => return,
                 };
 
-                if let IdentifierOrKeyword(keyword_kind) = token.get_token_type() {
+                if let TT::IdentifierOrKeyword(keyword_kind) = token.get_token_type() {
                     if PROPERTY_DECLARATION_KEYWORDS.contains(&keyword_kind) {
-                        token.set_token_type(Keyword(keyword_kind));
+                        token.set_token_type(TT::Keyword(keyword_kind));
                     };
                 }
             }
