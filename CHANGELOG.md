@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `string` as a keyword
+
 ### Fixed
 
 - Incorrect parsing for generic type param lists containing semicolons.

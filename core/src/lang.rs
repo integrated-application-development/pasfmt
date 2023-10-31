@@ -56,6 +56,7 @@ pub enum KeywordKind {
     Set,
     Shl,
     Shr,
+    String,
     Then,
     ThreadVar,
     To,

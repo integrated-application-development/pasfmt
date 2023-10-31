@@ -108,6 +108,7 @@ static
 stdcall
 stored
 strict
+string
 then
 threadvar
 to
