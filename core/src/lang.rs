@@ -73,7 +73,6 @@ pub enum KeywordKind {
     // Impure keywords
     Absolute,
     Abstract,
-    Add,
     Align,
     Assembler,
     At,
@@ -116,7 +115,6 @@ pub enum KeywordKind {
     Reference,
     Register,
     Reintroduce,
-    Remove,
     Requires,
     Resident,
     SafeCall,
@@ -127,7 +125,6 @@ pub enum KeywordKind {
     Strict,
     Unsafe,
     VarArgs,
-    Variant,
     Virtual,
     Write,
     WriteOnly,

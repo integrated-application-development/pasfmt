@@ -314,10 +314,9 @@ const fn make_byte_map<T: Copy>(map: &[(ByteSet<'_>, T)], default: T) -> [T; 256
 // endregion: byte-set
 
 // region: keywords
-const KEYWORDS: [(&str, TokenType); 124] = [
+const KEYWORDS: [(&str, TokenType); 121] = [
     ("absolute", TT::IdentifierOrKeyword(KK::Absolute)),
     ("abstract", TT::IdentifierOrKeyword(KK::Abstract)),
-    ("add", TT::IdentifierOrKeyword(KK::Add)),
     ("align", TT::IdentifierOrKeyword(KK::Align)),
     ("and", TT::Keyword(KK::And)),
     ("array", TT::Keyword(KK::Array)),
@@ -406,7 +405,6 @@ const KEYWORDS: [(&str, TokenType); 124] = [
     ("reference", TT::IdentifierOrKeyword(KK::Reference)),
     ("register", TT::IdentifierOrKeyword(KK::Register)),
     ("reintroduce", TT::IdentifierOrKeyword(KK::Reintroduce)),
-    ("remove", TT::IdentifierOrKeyword(KK::Remove)),
     ("repeat", TT::Keyword(KK::Repeat)),
     ("requires", TT::IdentifierOrKeyword(KK::Requires)),
     ("resident", TT::IdentifierOrKeyword(KK::Resident)),
@@ -432,7 +430,6 @@ const KEYWORDS: [(&str, TokenType); 124] = [
     ("uses", TT::Keyword(KK::Uses)),
     ("var", TT::Keyword(KK::Var)),
     ("varargs", TT::IdentifierOrKeyword(KK::VarArgs)),
-    ("variant", TT::IdentifierOrKeyword(KK::Variant)),
     ("virtual", TT::IdentifierOrKeyword(KK::Virtual)),
     ("while", TT::Keyword(KK::While)),
     ("with", TT::Keyword(KK::With)),
@@ -1599,7 +1596,6 @@ mod tests {
         [
             ("absolute", TT::IdentifierOrKeyword(KK::Absolute)),
             ("abstract", TT::IdentifierOrKeyword(KK::Abstract)),
-            ("add", TT::IdentifierOrKeyword(KK::Add)),
             ("align", TT::IdentifierOrKeyword(KK::Align)),
             ("and", TT::Keyword(KK::And)),
             ("array", TT::Keyword(KK::Array)),
@@ -1687,7 +1683,6 @@ mod tests {
             ("reference", TT::IdentifierOrKeyword(KK::Reference)),
             ("register", TT::IdentifierOrKeyword(KK::Register)),
             ("reintroduce", TT::IdentifierOrKeyword(KK::Reintroduce)),
-            ("remove", TT::IdentifierOrKeyword(KK::Remove)),
             ("repeat", TT::Keyword(KK::Repeat)),
             ("requires", TT::IdentifierOrKeyword(KK::Requires)),
             ("resident", TT::IdentifierOrKeyword(KK::Resident)),
@@ -1713,7 +1708,6 @@ mod tests {
             ("uses", TT::Keyword(KK::Uses)),
             ("var", TT::Keyword(KK::Var)),
             ("varargs", TT::IdentifierOrKeyword(KK::VarArgs)),
-            ("variant", TT::IdentifierOrKeyword(KK::Variant)),
             ("virtual", TT::IdentifierOrKeyword(KK::Virtual)),
             ("while", TT::Keyword(KK::While)),
             ("with", TT::Keyword(KK::With)),

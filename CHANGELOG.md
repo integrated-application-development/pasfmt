@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `string` as a keyword
 
+### Removed
+
+- `add`, `remove`, and `variant` as keywords
+
 ### Fixed
 
 - Incorrect parsing for generic type param lists containing semicolons.

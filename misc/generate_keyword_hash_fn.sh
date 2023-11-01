@@ -5,7 +5,6 @@ gperf -m 100 "$@" <<EOF
 %%
 absolute
 abstract
-add
 align
 and
 array
@@ -94,7 +93,6 @@ record
 reference
 register
 reintroduce
-remove
 repeat
 requires
 resident
@@ -120,7 +118,6 @@ until
 uses
 var
 varargs
-variant
 virtual
 while
 with
