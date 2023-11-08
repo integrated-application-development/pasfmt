@@ -180,7 +180,8 @@ fn space_operator(
                     | KeywordKind::Interface
                     | KeywordKind::Function
                     | KeywordKind::Procedure
-                    | KeywordKind::Array,
+                    | KeywordKind::Array
+                    | KeywordKind::String,
                 ),
             ) => (Some(0), Some(0)),
             Some(TT::Keyword(_)) => (Some(1), Some(0)),
@@ -259,6 +260,7 @@ mod tests {
         interface_before_parens = {"interface ( IInterface);", "interface(IInterface);"},
         procedure_before_parens = {"procedure ();", "procedure();"},
         function_before_parens = {"function  ();", "function();"},
+        string_before_parens = {"string  (str);", "string(str);"},
     );
 
     formatter_test_group!(
@@ -297,6 +299,7 @@ mod tests {
         not_between_left_parens_left_square = {"Foo([])", "Foo([])"},
         after_comma_before_left_square = {"Foo(0,  [])", "Foo(0, [])"},
         not_between_array_left_square = {"array [0..2]", "array[0..2]"},
+        not_between_string_left_square = {"string [255]", "string[255]"},
     );
 
     formatter_test_group!(
