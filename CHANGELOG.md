@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `string` as a keyword
+- Support for Delphi 12 multi-line string literals
 
 ### Removed
 

@@ -790,6 +790,26 @@ fn text_literal(
         (offset, TT::TextLiteral)
     };
 
+    let quote_count = input
+        .bytes()
+        .skip(offset)
+        .take_while(|b| b == &b'\'')
+        .count();
+
+    if quote_count >= 3
+        && quote_count % 2 == 1
+        && matches!(
+            input.as_bytes().get(offset + quote_count),
+            Some(b'\r' | b'\n')
+        )
+    {
+        let start_of_contents = offset + quote_count;
+        let quote_used = &input.as_bytes()[offset..start_of_contents];
+        return memchr::memmem::find(&input.as_bytes()[start_of_contents..], quote_used)
+            .map(|pos| (start_of_contents + pos + quote_count, TT::TextLiteral))
+            .unwrap_or_else(|| unterminated(input.len()));
+    }
+
     loop {
         match consume_escaped_chars(input, &mut offset) {
             ParseState::Continue => {}
@@ -1447,15 +1467,79 @@ mod tests {
     }
 
     #[test]
+    fn lex_multiline_string_literals() {
+        run_test(
+            indoc! {
+            "
+            '''
+            a
+            '''
+
+            '''
+            ' ''
+            '''
+
+            '''''
+            '''
+            '''''
+
+            '''''''
+            '''
+            '''''''
+            "},
+            vec![
+                ("'''\na\n'''", TT::TextLiteral),
+                ("'''\n' ''\n'''", TT::TextLiteral),
+                ("'''''\n'''\n'''''", TT::TextLiteral),
+                ("'''''''\n'''\n'''''''", TT::TextLiteral),
+            ],
+        )
+    }
+
+    #[test]
+    fn lex_invalid_multiline_string_literals() {
+        run_test(
+            indoc! {
+            "
+            ''' '
+            ''''' '
+            ''''''
+            ''' '''
+
+            '''
+            a'''
+
+            '''a
+            '''
+            //
+            "},
+            vec![
+                // unusual, but valid single-line text literals
+                ("''' '", TT::TextLiteral),
+                ("''''' '", TT::TextLiteral),
+                ("''''''", TT::TextLiteral),
+                ("''' '''", TT::TextLiteral),
+                // invalid text before closing quote
+                ("'''\na'''", TT::TextLiteral),
+                // incomplete single-line text literal
+                ("'''a", TT::TextLiteral),
+                // incomplete multiline-line text literal
+                ("'''\n//\n", TT::TextLiteral),
+            ],
+        )
+    }
+
+    #[test]
     fn lex_unterminated_string_literals() {
         run_test(
-            "'string\n' + '';\n'a'#\n'a'##",
+            "'string\n' + '';\n'a'#\n'a'## '''\n",
             vec![
                 ("'string", TT::TextLiteral),
                 ("' + '';", TT::TextLiteral),
                 ("'a'#", TT::TextLiteral),
                 ("'a'#", TT::TextLiteral),
                 ("#", TT::TextLiteral),
+                ("'''\n", TT::TextLiteral),
             ],
         );
     }
