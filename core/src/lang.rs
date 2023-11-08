@@ -4,6 +4,11 @@ use thiserror::Error;
 use crate::prelude::*;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[cfg_attr(
+    feature = "_lang_types_from_str",
+    derive(strum_macros::EnumString),
+    strum(ascii_case_insensitive)
+)]
 pub enum KeywordKind {
     // Pure keywords
     And,
@@ -244,6 +249,11 @@ impl TokenType {
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
+#[cfg_attr(
+    feature = "_lang_types_from_str",
+    derive(strum_macros::EnumString),
+    strum(ascii_case_insensitive)
+)]
 pub enum LogicalLineType {
     ConditionalDirective,
     Eof,

@@ -3,14 +3,20 @@ name = "pasfmt-core"
 version = "0.2.0-dev"
 edition = "2021"
 
+[features]
+_lang_types_from_str  = ["dep:strum", "dep:strum_macros"]
+
 [dependencies]
 itertools = "0.11.0"
 log = "0.4"
 memchr = "2.6.0"
 cfg-if = "1.0.0"
 thiserror = "1.0.56"
+strum = { version = "0.26.1", optional = true }
+strum_macros = { version = "0.26.1", optional = true }
 
 [dev-dependencies]
+pasfmt-core = { path = ".", features = [ "_lang_types_from_str" ] }
 spectral = { version = "0.6.0", default-features = false }
 indoc = "2.0.1"
 yare = "1.0.2"
