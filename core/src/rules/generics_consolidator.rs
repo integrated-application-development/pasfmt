@@ -40,7 +40,10 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                         | TokenType::Comment(_)
                         | TokenType::ConditionalDirective(_)
                         | TokenType::Keyword(
-                            KeywordKind::Class | KeywordKind::Record | KeywordKind::Constructor,
+                            KeywordKind::Class
+                            | KeywordKind::Record
+                            | KeywordKind::Constructor
+                            | KeywordKind::String,
                         ),
                     ) => {}
                     Some(TokenType::Op(OperatorKind::GreaterThan)) => {
@@ -195,6 +198,14 @@ mod tests {
         run_test(&[ID, LT, ID, COL, REC, GT], &[ID, LG, ID, COL, REC, RG]);
         // A<B: constructor>
         run_test(&[ID, LT, ID, COL, CON, GT], &[ID, LG, ID, COL, CON, RG]);
+    }
+
+    #[test]
+    fn string_keyword() {
+        const STRING: TokenType = TokenType::Keyword(KeywordKind::String);
+
+        // A<String>
+        run_test(&[ID, LT, STRING, GT], &[ID, LG, STRING, RG])
     }
 
     #[test]
