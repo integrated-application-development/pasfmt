@@ -4,6 +4,7 @@ use crate::lang::ConditionalDirectiveKind as CDK;
 use crate::lang::KeywordKind as KK;
 use crate::lang::NumberLiteralKind as NLK;
 use crate::lang::OperatorKind as OK;
+use crate::lang::TextLiteralKind as TLK;
 use crate::lang::TokenType as TT;
 use crate::lang::*;
 use crate::traits::Lexer;
@@ -787,7 +788,7 @@ fn text_literal(
 
     let unterminated = |offset: usize| {
         warn_unterminated("text literal", input, orig_offset);
-        (offset, TT::TextLiteral)
+        (offset, TT::TextLiteral(TLK::Unterminated))
     };
 
     let quote_count = input
@@ -806,7 +807,12 @@ fn text_literal(
         let start_of_contents = offset + quote_count;
         let quote_used = &input.as_bytes()[offset..start_of_contents];
         return memchr::memmem::find(&input.as_bytes()[start_of_contents..], quote_used)
-            .map(|pos| (start_of_contents + pos + quote_count, TT::TextLiteral))
+            .map(|pos| {
+                (
+                    start_of_contents + pos + quote_count,
+                    TT::TextLiteral(TLK::MultiLine),
+                )
+            })
             .unwrap_or_else(|| unterminated(input.len()));
     }
 
@@ -823,7 +829,7 @@ fn text_literal(
         }
     }
 
-    (offset, TT::TextLiteral)
+    (offset, TT::TextLiteral(TLK::SingleLine))
 }
 
 fn asm_text_literal(mut args: LexArgs) -> OffsetAndTokenType {
@@ -835,7 +841,7 @@ fn asm_text_literal(mut args: LexArgs) -> OffsetAndTokenType {
                 args.offset += 1;
             }
             Some(b'\"') => {
-                return (args.offset + 1, TT::TextLiteral);
+                return (args.offset + 1, TT::TextLiteral(TLK::Asm));
             }
             None | Some(b'\n' | b'\r') => {
                 break;
@@ -846,7 +852,7 @@ fn asm_text_literal(mut args: LexArgs) -> OffsetAndTokenType {
     }
 
     warn_unterminated("asm text literal", args.input, start_offset);
-    (args.offset, TT::TextLiteral)
+    (args.offset, TT::TextLiteral(TLK::Unterminated))
 }
 
 fn asm_number_literal(mut args: LexArgs) -> OffsetAndTokenType {
@@ -1443,25 +1449,25 @@ mod tests {
         run_test(
             "'' 'string' 'string''part2' 'ab''''cd' 'abc'#13#10 'after escaped stuff' 'a'#1'b' 'a'#1#0'b' 'a'#$017F #%010 #%0_1 #%_0 #%_ #$F7F #$F_7 #$_F #$_ #123 #_",
             vec![
-                ("''", TT::TextLiteral),
-                ("'string'", TT::TextLiteral),
-                ("'string''part2'", TT::TextLiteral),
-                ("'ab''''cd'", TT::TextLiteral),
-                ("'abc'#13#10", TT::TextLiteral),
-                ("'after escaped stuff'", TT::TextLiteral),
-                ("'a'#1'b'", TT::TextLiteral),
-                ("'a'#1#0'b'", TT::TextLiteral),
-                ("'a'#$017F", TT::TextLiteral),
-                ("#%010", TT::TextLiteral),
-                ("#%0_1", TT::TextLiteral),
-                ("#%_0", TT::TextLiteral),
-                ("#%_", TT::TextLiteral),
-                ("#$F7F", TT::TextLiteral),
-                ("#$F_7", TT::TextLiteral),
-                ("#$_F", TT::TextLiteral),
-                ("#$_", TT::TextLiteral),
-                ("#123", TT::TextLiteral),
-                ("#_", TT::TextLiteral),
+                ("''", TT::TextLiteral(TLK::SingleLine)),
+                ("'string'", TT::TextLiteral(TLK::SingleLine)),
+                ("'string''part2'", TT::TextLiteral(TLK::SingleLine)),
+                ("'ab''''cd'", TT::TextLiteral(TLK::SingleLine)),
+                ("'abc'#13#10", TT::TextLiteral(TLK::SingleLine)),
+                ("'after escaped stuff'", TT::TextLiteral(TLK::SingleLine)),
+                ("'a'#1'b'", TT::TextLiteral(TLK::SingleLine)),
+                ("'a'#1#0'b'", TT::TextLiteral(TLK::SingleLine)),
+                ("'a'#$017F", TT::TextLiteral(TLK::SingleLine)),
+                ("#%010", TT::TextLiteral(TLK::SingleLine)),
+                ("#%0_1", TT::TextLiteral(TLK::SingleLine)),
+                ("#%_0", TT::TextLiteral(TLK::SingleLine)),
+                ("#%_", TT::TextLiteral(TLK::SingleLine)),
+                ("#$F7F", TT::TextLiteral(TLK::SingleLine)),
+                ("#$F_7", TT::TextLiteral(TLK::SingleLine)),
+                ("#$_F", TT::TextLiteral(TLK::SingleLine)),
+                ("#$_", TT::TextLiteral(TLK::SingleLine)),
+                ("#123", TT::TextLiteral(TLK::SingleLine)),
+                ("#_", TT::TextLiteral(TLK::SingleLine)),
             ],
         );
     }
@@ -1488,10 +1494,10 @@ mod tests {
             '''''''
             "},
             vec![
-                ("'''\na\n'''", TT::TextLiteral),
-                ("'''\n' ''\n'''", TT::TextLiteral),
-                ("'''''\n'''\n'''''", TT::TextLiteral),
-                ("'''''''\n'''\n'''''''", TT::TextLiteral),
+                ("'''\na\n'''", TT::TextLiteral(TLK::MultiLine)),
+                ("'''\n' ''\n'''", TT::TextLiteral(TLK::MultiLine)),
+                ("'''''\n'''\n'''''", TT::TextLiteral(TLK::MultiLine)),
+                ("'''''''\n'''\n'''''''", TT::TextLiteral(TLK::MultiLine)),
             ],
         )
     }
@@ -1515,16 +1521,16 @@ mod tests {
             "},
             vec![
                 // unusual, but valid single-line text literals
-                ("''' '", TT::TextLiteral),
-                ("''''' '", TT::TextLiteral),
-                ("''''''", TT::TextLiteral),
-                ("''' '''", TT::TextLiteral),
+                ("''' '", TT::TextLiteral(TLK::SingleLine)),
+                ("''''' '", TT::TextLiteral(TLK::SingleLine)),
+                ("''''''", TT::TextLiteral(TLK::SingleLine)),
+                ("''' '''", TT::TextLiteral(TLK::SingleLine)),
                 // invalid text before closing quote
-                ("'''\na'''", TT::TextLiteral),
+                ("'''\na'''", TT::TextLiteral(TLK::MultiLine)),
                 // incomplete single-line text literal
-                ("'''a", TT::TextLiteral),
+                ("'''a", TT::TextLiteral(TLK::Unterminated)),
                 // incomplete multiline-line text literal
-                ("'''\n//\n", TT::TextLiteral),
+                ("'''\n//\n", TT::TextLiteral(TLK::Unterminated)),
             ],
         )
     }
@@ -1534,12 +1540,12 @@ mod tests {
         run_test(
             "'string\n' + '';\n'a'#\n'a'## '''\n",
             vec![
-                ("'string", TT::TextLiteral),
-                ("' + '';", TT::TextLiteral),
-                ("'a'#", TT::TextLiteral),
-                ("'a'#", TT::TextLiteral),
-                ("#", TT::TextLiteral),
-                ("'''\n", TT::TextLiteral),
+                ("'string", TT::TextLiteral(TLK::Unterminated)),
+                ("' + '';", TT::TextLiteral(TLK::Unterminated)),
+                ("'a'#", TT::TextLiteral(TLK::Unterminated)),
+                ("'a'#", TT::TextLiteral(TLK::Unterminated)),
+                ("#", TT::TextLiteral(TLK::Unterminated)),
+                ("'''\n", TT::TextLiteral(TLK::Unterminated)),
             ],
         );
     }
@@ -1953,7 +1959,7 @@ mod tests {
                 ("CMP", TT::Identifier),
                 ("AL", TT::Identifier),
                 (",", TT::Op(OK::Comma)),
-                ("\"'\"", TT::TextLiteral),
+                ("\"'\"", TT::TextLiteral(TLK::Asm)),
                 ("XOR", TT::Identifier),
                 ("RBX", TT::Identifier),
                 (",", TT::Op(OK::Comma)),
@@ -1976,7 +1982,7 @@ mod tests {
                 ("CMP", TT::Identifier),
                 ("AL", TT::Identifier),
                 (",", TT::Op(OK::Comma)),
-                (r#""\"""#, TT::TextLiteral),
+                (r#""\"""#, TT::TextLiteral(TLK::Asm)),
                 ("end", TT::Keyword(KK::End)),
             ],
         );
@@ -1995,7 +2001,7 @@ mod tests {
                 ("CMP", TT::Identifier),
                 ("AL", TT::Identifier),
                 (",", TT::Op(OK::Comma)),
-                ("\"a", TT::TextLiteral),
+                ("\"a", TT::TextLiteral(TLK::Unterminated)),
                 ("end", TT::Keyword(KK::End)),
             ],
         );

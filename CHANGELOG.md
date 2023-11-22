@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `add`, `remove`, and `variant` as keywords
 
+### Changed
+
+- `TokenType::TextLiteral` to contain a `TextLiteralKind`.
+
 ### Fixed
 
 - Incorrect parsing for generic type param lists containing semicolons.

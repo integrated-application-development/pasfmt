@@ -188,12 +188,20 @@ pub enum ConditionalDirectiveKind {
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
+pub enum TextLiteralKind {
+    SingleLine,
+    MultiLine,
+    Asm,
+    Unterminated,
+}
+
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum TokenType {
     Op(OperatorKind),
     Identifier,
     IdentifierOrKeyword(KeywordKind),
     Keyword(KeywordKind),
-    TextLiteral,
+    TextLiteral(TextLiteralKind),
     NumberLiteral(NumberLiteralKind),
     ConditionalDirective(ConditionalDirectiveKind),
     CompilerDirective,
