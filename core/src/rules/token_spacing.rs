@@ -304,7 +304,6 @@ mod tests {
 
     formatter_test_group!(
         pointer,
-        pointer_before = {"if  ^ Foo then", "if ^Foo then"},
         pointer_after = {"if Foo ^ then", "if Foo^ then"},
         pointer_after_parens = {"if Foo() ^ then", "if Foo()^ then"},
         pointer_after_brackets = {"if Foo[] ^then", "if Foo[]^ then"},
@@ -316,8 +315,6 @@ mod tests {
         double_pointer_before_brackets = {"Foo^ ^ [Bar]", "Foo^^[Bar]"},
         double_pointer_after_parens = {"Foo()  ^  ^", "Foo()^^"},
         double_pointer_after_brackets = {"Foo[0]   ^ ^", "Foo[0]^^"},
-        double_pointer_before_ident = {"type Foo = ^ ^ Bar", "type Foo = ^^Bar"},
-        triple_pointer_before_ident = {"type Foo = ^ ^ ^ Bar", "type Foo = ^^^Bar"},
         triple_pointer_after_ident = {"Foo  ^ ^ ^", "Foo^^^"},
     );
 

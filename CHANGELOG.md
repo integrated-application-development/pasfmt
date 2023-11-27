@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Incorrect lexing of asm blocks
     - Asm labels can now start with just one '@' character instead of two, and they can contain '@' characters.
     - Asm integer literals now supported (e.g. octal `076O`, hex `0FFH`/`$FF`, binary `010B`)
+- Lexing of legacy caret-escaped character literals
 
 ## [0.1.0] - 2023-08-28
 

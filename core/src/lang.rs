@@ -210,6 +210,17 @@ pub enum TokenType {
     Unknown,
 }
 
+impl TokenType {
+    pub(crate) fn is_hidden(&self) -> bool {
+        matches!(
+            self,
+            TokenType::Comment(_)
+                | TokenType::CompilerDirective
+                | TokenType::ConditionalDirective(_)
+        )
+    }
+}
+
 #[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
 pub enum LogicalLineType {
     ConditionalDirective,

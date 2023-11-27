@@ -23,6 +23,7 @@ impl Lexer for DelphiLexer {
 struct LexState {
     is_first: bool,
     in_asm: bool,
+    last_real_token_type: Option<TokenType>,
 }
 
 struct LexedToken<'a> {
@@ -51,6 +52,7 @@ fn lex(mut input: &str) -> (&str, Vec<Token>) {
     let mut lex_state = LexState {
         in_asm: false,
         is_first: true,
+        last_real_token_type: None,
     };
     while let Some((remaining, token)) = whitespace_and_token(input, &mut lex_state) {
         tokens.push(to_final_token(token));
@@ -93,6 +95,11 @@ fn whitespace_and_token<'a>(
         lex_token(args)?
     };
     lex_state.is_first = false;
+
+    if !token_type.is_hidden() {
+        lex_state.last_real_token_type = Some(token_type);
+    }
+
     let (token_content, remaining) = input.split_at(end_exclusive);
 
     Some((
@@ -191,7 +198,7 @@ const COMMON_LEXER_MAP: [Option<LexerFn>; 256] = make_byte_map(
         (ByteSet::List(b","), Some(comma)),
         (ByteSet::List(b";"), Some(semicolon)),
         (ByteSet::List(b"="), Some(equal)),
-        (ByteSet::List(b"^"), Some(pointer)),
+        (ByteSet::List(b"^"), Some(caret)),
         (ByteSet::List(b"@"), Some(address_of)),
         (ByteSet::List(b"["), Some(l_brack)),
         (ByteSet::List(b"]"), Some(r_brack)),
@@ -747,37 +754,48 @@ fn text_literal(
     fn consume_escaped_chars(input: &str, offset: &mut usize) -> ParseState {
         loop {
             let bytes = input.as_bytes();
-            if bytes.get(*offset) != Some(&b'#') {
-                return ParseState::Continue;
-            }
-            *offset += 1;
-
             match bytes.get(*offset) {
-                Some(b'0'..=b'9' | b'_') => {
-                    *offset += 1;
-                    *offset += count_decimal(input, *offset);
-                }
-                Some(b'$') => {
-                    *offset += 1;
-                    match count_hex(input, *offset) {
-                        0 => {
-                            return ParseState::Unterminated;
-                        }
-                        count => *offset += count,
+                Some(&b'^') => {
+                    // Undocumented escaped character syntax, e.g. '^A'
+                    if matches!(bytes.get(*offset + 1), Some(0x00..=0x7F)) {
+                        *offset += 2;
+                        continue;
                     }
                 }
-                // As of Delphi 11 this isn't valid, but there's no reason it shouldn't be.
-                Some(b'%') => {
+                Some(&b'#') => {
                     *offset += 1;
-                    match count_binary(input, *offset) {
-                        0 => {
+
+                    match bytes.get(*offset) {
+                        Some(b'0'..=b'9' | b'_') => {
+                            *offset += 1;
+                            *offset += count_decimal(input, *offset);
+                        }
+                        Some(b'$') => {
+                            *offset += 1;
+                            match count_hex(input, *offset) {
+                                0 => {
+                                    return ParseState::Unterminated;
+                                }
+                                count => *offset += count,
+                            }
+                        }
+                        // As of Delphi 11 this isn't valid, but there's no reason it shouldn't be.
+                        Some(b'%') => {
+                            *offset += 1;
+                            match count_binary(input, *offset) {
+                                0 => {
+                                    return ParseState::Unterminated;
+                                }
+                                count => *offset += count,
+                            }
+                        }
+                        _ => {
                             return ParseState::Unterminated;
                         }
-                        count => *offset += count,
                     }
                 }
                 _ => {
-                    return ParseState::Unterminated;
+                    return ParseState::Continue;
                 }
             }
         }
@@ -1120,11 +1138,20 @@ basic_op!(star, OK::Star);
 basic_op!(comma, OK::Comma);
 basic_op!(semicolon, OK::Semicolon);
 basic_op!(equal, OK::Equal);
-basic_op!(pointer, OK::Pointer);
 basic_op!(address_of, OK::AddressOf);
 basic_op!(l_brack, OK::LBrack);
 basic_op!(r_brack, OK::RBrack);
 basic_op!(r_paren, OK::RParen);
+
+fn caret(args: LexArgs) -> OffsetAndTokenType {
+    match args.lex_state.last_real_token_type {
+        Some(
+            TT::Identifier | TT::Keyword(KK::Nil) | TT::Op(OK::RBrack | OK::RParen | OK::Pointer),
+        ) => (args.offset, TokenType::Op(OK::Pointer)),
+        // Undocumented escaped character syntax, e.g. '^A'
+        _ => text_literal(args),
+    }
+}
 
 fn l_paren(args: LexArgs) -> OffsetAndTokenType {
     match args.next_byte() {
@@ -1447,7 +1474,28 @@ mod tests {
     #[test]
     fn lex_string_literals() {
         run_test(
-            "'' 'string' 'string''part2' 'ab''''cd' 'abc'#13#10 'after escaped stuff' 'a'#1'b' 'a'#1#0'b' 'a'#$017F #%010 #%0_1 #%_0 #%_ #$F7F #$F_7 #$_F #$_ #123 #_",
+            "
+                ''
+                'string'
+                'string''part2'
+                'ab''''cd'
+                'abc'#13#10
+                'after escaped stuff'
+                'a'#1'b'
+                'a'#1#0'b'
+                'a'#$017F
+                #%010
+                #%0_1
+                #%_0
+                #%_
+                #$F7F
+                #$F_7
+                #$_F
+                #$_
+                #123
+                #_
+                ^A^[^@^!^\x00^\x7F#10#13''
+            ",
             vec![
                 ("''", TT::TextLiteral(TLK::SingleLine)),
                 ("'string'", TT::TextLiteral(TLK::SingleLine)),
@@ -1468,6 +1516,10 @@ mod tests {
                 ("#$_", TT::TextLiteral(TLK::SingleLine)),
                 ("#123", TT::TextLiteral(TLK::SingleLine)),
                 ("#_", TT::TextLiteral(TLK::SingleLine)),
+                (
+                    "^A^[^@^!^\x00^\x7F#10#13''",
+                    TT::TextLiteral(TLK::SingleLine),
+                ),
             ],
         );
     }
@@ -1677,6 +1729,53 @@ mod tests {
                 ("@", TT::Op(OK::AddressOf)),
                 ("..", TT::Op(OK::DotDot)),
                 (".", TT::Op(OK::Dot)),
+            ],
+        );
+    }
+
+    #[test]
+    fn lex_caret() {
+        run_test(
+            "
+                ^C {$W+} ^A
+                I^
+                I{}^
+                I()^
+                I[0]^
+                I^^
+                nil^
+                S + ^C
+                A := ^C
+            ",
+            vec![
+                ("^C", TT::TextLiteral(TLK::SingleLine)),
+                ("{$W+}", TT::CompilerDirective),
+                ("^A", TT::TextLiteral(TLK::SingleLine)),
+                ("I", TT::Identifier),
+                ("^", TT::Op(OK::Pointer)),
+                ("I", TT::Identifier),
+                ("{}", TT::Comment(CommentKind::InlineBlock)),
+                ("^", TT::Op(OK::Pointer)),
+                ("I", TT::Identifier),
+                ("(", TT::Op(OK::LParen)),
+                (")", TT::Op(OK::RParen)),
+                ("^", TT::Op(OK::Pointer)),
+                ("I", TT::Identifier),
+                ("[", TT::Op(OK::LBrack)),
+                ("0", TT::NumberLiteral(NLK::Decimal)),
+                ("]", TT::Op(OK::RBrack)),
+                ("^", TT::Op(OK::Pointer)),
+                ("I", TT::Identifier),
+                ("^", TT::Op(OK::Pointer)),
+                ("^", TT::Op(OK::Pointer)),
+                ("nil", TT::Keyword(KK::Nil)),
+                ("^", TT::Op(OK::Pointer)),
+                ("S", TT::Identifier),
+                ("+", TT::Op(OK::Plus)),
+                ("^C", TT::TextLiteral(TLK::SingleLine)),
+                ("A", TT::Identifier),
+                (":=", TT::Op(OK::Assign)),
+                ("^C", TT::TextLiteral(TLK::SingleLine)),
             ],
         );
     }
