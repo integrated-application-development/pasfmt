@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::io::{IsTerminal, Read};
 
 use crate::file_formatter::FileFormatter;
 use log::LevelFilter;
@@ -16,6 +16,9 @@ impl FormattingOrchestrator {
         let files = config.get_paths();
         if files.is_empty() {
             let mut input = String::new();
+            if std::io::stdin().is_terminal() {
+                eprintln!("waiting for stdin...");
+            }
             let mut stdin = std::io::stdin().lock();
 
             stdin.read_to_string(&mut input).unwrap();
