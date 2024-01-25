@@ -4,12 +4,17 @@ version = "0.2.0-dev"
 edition = "2021"
 
 [dependencies]
-encoding_rs = "0.8.32"
+encoding_rs = { version = "0.8.32", features = ["serde"] }
 pasfmt-core = { path = "../core" }
 pasfmt-orchestrator = { path = "../orchestrator" }
 serde = "1.0.164"
 serde_derive = "1.0.164"
 stderrlog = "0.5.4"
+log = "0.4"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.52.0", features = ["Win32_Globalization"] }
+codepage = "0.1.1"
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }

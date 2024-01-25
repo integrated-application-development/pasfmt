@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `TokenType::TextLiteral` to contain a `TextLiteralKind`.
+- The default encoding on Windows to be the system ANSI codepage.
+- The default encoding on non-Windows platforms to be UTF-8.
 
 ### Fixed
 

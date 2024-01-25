@@ -1,14 +1,51 @@
-#![forbid(unsafe_code)]
 #![deny(clippy::enum_glob_use)]
 
+use encoding_rs::Encoding;
 use pasfmt_core::prelude::*;
 use pasfmt_orchestrator::predule::*;
 use serde_derive::Deserialize;
 
-#[derive(Deserialize, Default, Debug)]
+#[cfg(windows)]
+fn windows_default_encoding() -> &'static Encoding {
+    use log::warn;
+
+    // SAFETY: yes it's a foreign function, but it's a simple one from the WinAPI that we
+    // can assume to be safe.
+    let oemcp = unsafe { windows::Win32::Globalization::GetACP() };
+    oemcp
+        .try_into()
+        .ok()
+        .and_then(|cp: u16| codepage::to_encoding(cp))
+        .unwrap_or_else(|| {
+            warn!("Failed to convert system codepage to encoding. Defaulting to UTF-8.");
+            encoding_rs::UTF_8
+        })
+}
+
+fn default_encoding() -> &'static Encoding {
+    #[cfg(windows)]
+    {
+        windows_default_encoding()
+    }
+    #[cfg(not(windows))]
+    encoding_rs::UTF_8
+}
+
+#[derive(Deserialize, Debug)]
 pub struct FormattingSettings {
     reconstruction: Reconstruction,
+    encoding: &'static Encoding,
 }
+
+impl Default for FormattingSettings {
+    fn default() -> Self {
+        Self {
+            reconstruction: Default::default(),
+            encoding: default_encoding(),
+        }
+    }
+}
+
 impl From<Reconstruction> for ReconstructionSettings {
     fn from(val: Reconstruction) -> Self {
         ReconstructionSettings::new(
@@ -60,7 +97,7 @@ pub fn format_with_settings(formatting_settings: FormattingSettings, config: Pas
                 formatting_settings.reconstruction.into(),
             ))
             .build(),
-        encoding_rs::WINDOWS_1252,
+        formatting_settings.encoding,
     );
     FormattingOrchestrator::run(formatter, config);
 }
