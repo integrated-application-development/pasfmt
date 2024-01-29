@@ -1,15 +1,17 @@
-use std::{
-    env,
-    fs::{self, read_to_string},
-    path::{Path, PathBuf},
-    str::FromStr,
-};
+use std::{error::Error, fs::read_to_string, path::PathBuf, str::FromStr};
 
+use anyhow::Context;
 pub use clap;
 pub use clap::Parser;
 use clap::{builder::PossibleValuesParser, builder::TypedValueParser, Args};
 
-use log::LevelFilter;
+use figment::{
+    providers::{Format, Serialized, Toml},
+    value::{Dict, Map},
+    Figment, Metadata, Profile, Provider,
+};
+use log::{debug, warn, LevelFilter};
+use serde::{Deserialize, Serialize};
 
 use crate::formatting_orchestrator::FormatterConfiguration;
 
@@ -33,6 +35,19 @@ macro_rules! pasfmt_config {
 }
 pub use pasfmt_config;
 
+fn parse_key_val<K, V>(s: &str) -> Result<(K, V), Box<dyn Error + Send + Sync + 'static>>
+where
+    K: std::str::FromStr,
+    K::Err: Error + Send + Sync + 'static,
+    V: std::str::FromStr,
+    V::Err: Error + Send + Sync + 'static,
+{
+    let pos = s
+        .find('=')
+        .ok_or_else(|| format!("invalid KEY=value: no `=` found in `{s}`"))?;
+    Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
+}
+
 #[derive(Args, Debug)]
 pub struct PasFmtConfiguration {
     /// Paths that will be formatted. Can be a path/dir/glob. If no paths are
@@ -47,8 +62,13 @@ pub struct PasFmtConfiguration {
 
     /// Override the configuration file. By default working directory will be
     /// traversed until a `pasfmt.toml` file is found.
-    #[arg(short, long)]
-    config_file: Option<String>,
+    #[arg(long)]
+    config_file: Option<PathBuf>,
+
+    /// Override one configuration option using KEY=VALUE. This takes
+    /// precedence over `--config-file`.
+    #[arg(short = 'C', value_parser = parse_key_val::<String, String>, value_name = "KEY=VALUE")]
+    config: Vec<(String, String)>,
 
     /// Whether to format the files and update their contents in-place.
     #[arg(short, long, conflicts_with = "verify")]
@@ -101,54 +121,88 @@ impl Default for PasFmtConfiguration {
             write: Default::default(),
             verify: Default::default(),
             verbose: Default::default(),
+            config: Default::default(),
             log_level: LevelFilter::Warn,
         }
     }
 }
 
-impl PasFmtConfiguration {
-    fn get_config_file(&self) -> Option<String> {
-        if self.config_file.is_some() {
-            return self.config_file.clone();
-        }
-        let current_dir = env::current_dir();
-        if current_dir.is_err() {
-            return None;
-        }
+// By default, some providers save the source code location as their 'source'.
+// This struct and corresponding trait provide a way to erase that while also
+// providing a new name for the metadata.
+struct ErasedLocation<P: Provider> {
+    name: &'static str,
+    delegate: P,
+}
 
-        let mut path: PathBuf = current_dir.unwrap();
-        let file = Path::new(DEFAULT_CONFIG_FILE_NAME);
+trait EraseLocation<P: Provider> {
+    fn erase_with_name(self, name: &'static str) -> ErasedLocation<P>;
+}
 
-        loop {
-            path.push(file);
-
-            if path.is_file() {
-                break path.into_os_string().into_string().ok();
-            }
-
-            if !(path.pop() && path.pop()) {
-                break None;
-            }
-        }
+impl<P: Provider> Provider for ErasedLocation<P> {
+    fn metadata(&self) -> Metadata {
+        Metadata::named(self.name)
     }
 
-    pub fn get_config_object<T>(&self) -> T
-    where
-        T: for<'de> toml::macros::Deserialize<'de> + Default,
-    {
-        let config_file = self.get_config_file();
-        if config_file.is_none() {
-            return T::default();
-        }
-
-        let config_file_contents = fs::read_to_string(self.get_config_file().unwrap());
-        if config_file_contents.is_err() {
-            return T::default();
-        }
-
-        toml::from_str::<T>(&config_file_contents.unwrap()).unwrap_or_default()
+    fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
+        self.delegate.data()
     }
 }
+
+impl<P: Provider> EraseLocation<P> for P {
+    fn erase_with_name(self, name: &'static str) -> ErasedLocation<P> {
+        ErasedLocation {
+            delegate: self,
+            name,
+        }
+    }
+}
+
+impl PasFmtConfiguration {
+    pub fn get_config_object<T>(&self) -> anyhow::Result<T>
+    where
+        T: for<'de> Deserialize<'de> + Serialize + Default,
+    {
+        // A relative path will be searched for in the current directory and all parent directories.
+        // We want the user-provided path to only be resolved against the working directory, so we
+        // canonicalize it. We do want the default config path to be searched for in parent
+        // directories, so that path is left relative.
+        let config_file = match &self.config_file {
+            Some(file) => file.canonicalize().with_context(|| {
+                format!("Failed to resolve config file path: '{}'", file.display())
+            })?,
+            None => PathBuf::from(DEFAULT_CONFIG_FILE_NAME),
+        };
+        debug!("Using config file: {}", config_file.display());
+
+        let default_provider = Serialized::defaults(T::default()).erase_with_name("<default>");
+        let mut config = Figment::from(&default_provider).merge(Toml::file(config_file));
+
+        // apply overrides
+        config = self.config.iter().fold(config, |config, (key, val)| {
+            if config.find_metadata(key).is_none() {
+                warn!("Ingoring unknown configuration key '{key}'");
+                config
+            } else {
+                config
+                    .merge(Serialized::default(key, val).erase_with_name("command-line overrides"))
+            }
+        });
+
+        let obj = config
+            .extract::<T>()
+            .context("Failed to construct configuration")?;
+
+        debug!(
+            "Configuration:\n{}",
+            toml::to_string_pretty(&obj)
+                .unwrap_or("Failed to serialize config object.".to_string())
+        );
+
+        Ok(obj)
+    }
+}
+
 impl FormatterConfiguration for PasFmtConfiguration {
     fn get_paths(&self) -> Vec<String> {
         let mut paths = self.paths.clone();

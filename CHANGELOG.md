@@ -11,10 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `string` as a keyword
 - Support for Delphi 12 multi-line string literals
+- `-C` CLI option to override configuration options.
 
 ### Removed
 
 - `add`, `remove`, and `variant` as keywords
+- short version of `--config-file` CLI option
 
 ### Changed
 
