@@ -12,6 +12,5 @@ fn main() -> anyhow::Result<()> {
         .unwrap();
 
     let formatting_settings = config.get_config_object::<FormattingSettings>()?;
-    format_with_settings(formatting_settings, config);
-    Ok(())
+    format_with_settings(formatting_settings, config)
 }

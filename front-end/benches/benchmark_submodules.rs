@@ -27,7 +27,7 @@ fn bench_format_submodules(submodules: &[(&str, &PathBuf)], c: &mut Criterion) {
             b.iter(|| {
                 let config =
                     Config::parse_from(["".into(), "--write".into(), (*path).clone()]).config;
-                format_with_settings(FormattingSettings::default(), config);
+                format_with_settings(FormattingSettings::default(), config).unwrap();
             });
         });
     }

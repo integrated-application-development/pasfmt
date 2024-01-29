@@ -72,7 +72,10 @@ impl Default for Reconstruction {
     }
 }
 
-pub fn format_with_settings(formatting_settings: FormattingSettings, config: PasFmtConfiguration) {
+pub fn format_with_settings(
+    formatting_settings: FormattingSettings,
+    config: PasFmtConfiguration,
+) -> anyhow::Result<()> {
     let uses_clause_formatter = &UsesClauseFormatter {};
     let eof_newline_formatter = &EofNewline {};
     let formatter = FileFormatter::new(
@@ -99,5 +102,5 @@ pub fn format_with_settings(formatting_settings: FormattingSettings, config: Pas
             .build(),
         formatting_settings.encoding,
     );
-    FormattingOrchestrator::run(formatter, config);
+    FormattingOrchestrator::run(formatter, config)
 }

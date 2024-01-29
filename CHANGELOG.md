@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `TokenType::TextLiteral` to contain a `TextLiteralKind`.
 - The default encoding on Windows to be the system ANSI codepage.
 - The default encoding on non-Windows platforms to be UTF-8.
+- Handling of IO errors. Previously any IO error would immediately crash the program.
+  Now errors are logged when they occur and cause the program to exit non-zero after
+  all other files have been formatted successfully.
 
 ### Fixed
 

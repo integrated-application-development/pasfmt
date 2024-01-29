@@ -1,8 +1,7 @@
 use std::{error::Error, fs::read_to_string, path::PathBuf, str::FromStr};
 
 use anyhow::Context;
-pub use clap;
-pub use clap::Parser;
+pub use clap::{self, error::ErrorKind, CommandFactory, Parser};
 use clap::{builder::PossibleValuesParser, builder::TypedValueParser, Args};
 
 use figment::{
@@ -226,5 +225,8 @@ impl FormatterConfiguration for PasFmtConfiguration {
     }
     fn is_verify(&self) -> bool {
         self.verify
+    }
+    fn is_stdin(&self) -> bool {
+        self.paths.is_empty() && self.files_file.is_none()
     }
 }

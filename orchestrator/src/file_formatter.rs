@@ -1,7 +1,9 @@
+use anyhow::{bail, Context};
 use encoding_rs::Encoding;
 use log::*;
 use std::{
     borrow::Cow,
+    fmt::Display,
     fs::{File, OpenOptions},
     io::{IsTerminal, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
@@ -85,51 +87,55 @@ impl FileFormatter {
         })
     }
 
-    fn exec_format<S: AsRef<str>, T>(
+    #[must_use]
+    fn exec_format<S: AsRef<str>, T, O>(
         &self,
         paths: &[S],
         mut open_options: OpenOptions,
         result_operation: T,
-    ) where
-        T: Fn(&mut File, &Path, &DecodedFile, String) -> Result<(), String> + Sync,
+    ) -> Vec<anyhow::Result<O>>
+    where
+        T: Fn(&mut File, &Path, &DecodedFile, String) -> anyhow::Result<O> + Sync,
+        O: Send,
     {
         open_options.read(true);
 
         let valid_paths: Vec<_> = self.get_valid_files(paths);
 
-        valid_paths.into_par_iter().for_each(|file_path| {
-            let mut file = match open_options.open(&file_path) {
-                Ok(file) => file,
-                Err(e) => panic!("Failed to open '{}', {}", file_path.display(), e),
-            };
+        valid_paths
+            .into_par_iter()
+            .map(|file_path| {
+                let mut file = open_options
+                    .open(&file_path)
+                    .with_context(|| format!("Failed to open '{}'", file_path.display()))?;
 
-            let mut buf = vec![];
-            let decoded_file = match self
-                .decode_file(&mut file, &mut buf)
-                .map_err(|e| format!("Failed to read '{}', {}", file_path.display(), e))
-            {
-                Ok(contents) => contents,
-                Err(error) => {
-                    panic!("{}", error);
+                let mut buf = vec![];
+                let decoded_file = self
+                    .decode_file(&mut file, &mut buf)
+                    .with_context(|| format!("Failed to read '{}'", file_path.display()))?;
+
+                if decoded_file.replacements {
+                    bail!(
+                        "File '{}' had malformed sequences (in encoding '{}')",
+                        file_path.display(),
+                        decoded_file.encoding.name()
+                    );
                 }
-            };
 
-            if decoded_file.replacements {
-                panic!(
-                    "File '{}' had malformed sequences (in encoding '{}')",
-                    file_path.display(),
-                    decoded_file.encoding.name()
-                );
-            }
-
-            let formatted_file = self.formatter.format(&decoded_file.contents);
-            if let Err(e) = result_operation(&mut file, &file_path, &decoded_file, formatted_file) {
-                panic!("{e}");
-            }
-        });
+                let formatted_file = self.formatter.format(&decoded_file.contents);
+                result_operation(&mut file, &file_path, &decoded_file, formatted_file)
+            })
+            .map(|res| {
+                if let Err(e) = &res {
+                    error!("{}", e)
+                };
+                res
+            })
+            .collect()
     }
 
-    pub fn format_files<S: AsRef<str>>(&self, paths: &[S]) {
+    #[must_use]
+    pub fn format_files<S: AsRef<str>>(&self, paths: &[S]) -> Vec<anyhow::Result<()>> {
         self.exec_format(
             paths,
             OpenOptions::new().write(true).to_owned(),
@@ -142,45 +148,40 @@ impl FileFormatter {
                     return Ok(());
                 }
                 let encoded_output = decoded_file.encoding.encode(&formatted_output).0;
-                file.seek(SeekFrom::Start(0)).map_err(|e| {
-                    format!(
-                        "Failed to seek to start of file: '{}', {}",
-                        file_path.display(),
-                        e
-                    )
+                file.seek(SeekFrom::Start(0)).with_context(|| {
+                    format!("Failed to seek to start of file: '{}'", file_path.display())
                 })?;
                 file.write_all(&encoded_output)
-                    .map_err(|e| format!("Failed to write to '{}', {}", file_path.display(), e))?;
-                file.set_len(encoded_output.len() as u64).map_err(|e| {
-                    format!(
-                        "Failed to set file length: '{}', {}",
-                        file_path.display(),
-                        e
-                    )
+                    .with_context(|| format!("Failed to write to '{}'", file_path.display()))?;
+                file.set_len(encoded_output.len() as u64).with_context(|| {
+                    format!("Failed to set file length: '{}'", file_path.display())
                 })?;
                 Ok(())
             },
         )
     }
-    fn decode_stdin<'a>(&self, buf: &'a mut Vec<u8>) -> std::io::Result<DecodedFile<'a>> {
+
+    fn decode_stdin<'a>(&self, buf: &'a mut Vec<u8>) -> anyhow::Result<DecodedFile<'a>> {
         if std::io::stdin().is_terminal() {
             eprintln!("waiting for stdin...");
         }
         let mut stdin = std::io::stdin().lock();
 
         self.decode_file(&mut stdin, buf)
+            .context("Failed to read from stdin")
     }
-    pub fn format_stdin_to_stdout(&self) {
+
+    pub fn format_stdin_to_stdout(&self) -> anyhow::Result<()> {
         let mut buf = vec![];
-        let decoded_stdin = self
-            .decode_stdin(&mut buf)
-            .expect("Failed to read from stdin");
+        let decoded_stdin = self.decode_stdin(&mut buf)?;
         let formatted_input = self.formatter.format(&decoded_stdin.contents);
         std::io::stdout()
             .write_all(&decoded_stdin.encoding.encode(&formatted_input).0)
-            .expect("Failed to write to stdout");
+            .context("Failed to write to stdout")
     }
-    pub fn format_files_to_stdout<S: AsRef<str>>(&self, paths: &[S]) {
+
+    #[must_use]
+    pub fn format_files_to_stdout<S: AsRef<str>>(&self, paths: &[S]) -> Vec<anyhow::Result<()>> {
         self.exec_format(
             paths,
             OpenOptions::new(),
@@ -192,15 +193,25 @@ impl FileFormatter {
             },
         )
     }
-    pub fn check_files<S: AsRef<str>>(&self, paths: &[S]) {
+
+    fn check_formatting(input: &str, output: &str, path: impl Display) -> anyhow::Result<()> {
+        if input != output {
+            bail!("VERIFY: '{}' has different formatting", path);
+        }
+        Ok(())
+    }
+
+    #[must_use]
+    pub fn check_files<S: AsRef<str>>(&self, paths: &[S]) -> Vec<anyhow::Result<()>> {
         self.exec_format(
             paths,
             OpenOptions::new(),
             |_, file_path, decoded_file, formatted_output| {
-                if formatted_output != decoded_file.contents {
-                    println!("VERIFY: '{}' has different formatting", file_path.display());
-                }
-                Ok(())
+                Self::check_formatting(
+                    &decoded_file.contents,
+                    &formatted_output,
+                    file_path.display(),
+                )
             },
         )
     }
