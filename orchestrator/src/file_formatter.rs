@@ -215,6 +215,13 @@ impl FileFormatter {
             },
         )
     }
+
+    pub fn check_stdin(&self) -> anyhow::Result<()> {
+        let mut buf = vec![];
+        let decoded_stdin = self.decode_stdin(&mut buf)?;
+        let formatted_input = self.formatter.format(&decoded_stdin.contents);
+        Self::check_formatting(&decoded_stdin.contents, &formatted_input, "<stdin>")
+    }
 }
 
 fn formattable_file_path(path: &Path) -> bool {

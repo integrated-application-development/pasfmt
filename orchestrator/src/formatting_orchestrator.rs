@@ -29,7 +29,11 @@ fn verify<T: FormatterConfiguration>(
     config: &T,
     file_formatter: &FileFormatter,
 ) -> anyhow::Result<()> {
-    let check_results = file_formatter.check_files(&config.get_paths());
+    let check_results = if config.is_stdin() {
+        vec![file_formatter.check_stdin()]
+    } else {
+        file_formatter.check_files(&config.get_paths())
+    };
 
     let mut fail_count = 0;
     for err in check_results.iter().filter_map(|r| r.as_ref().err()) {
