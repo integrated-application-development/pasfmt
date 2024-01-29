@@ -83,12 +83,12 @@ impl FileFormatter {
         valid_paths.into_par_iter().for_each(|file_path| {
             let mut file = match open_options.open(&file_path) {
                 Ok(file) => file,
-                Err(e) => panic!("Failed to open '{}', {}", &file_path.to_string_lossy(), e),
+                Err(e) => panic!("Failed to open '{}', {}", file_path.display(), e),
             };
 
             let file_contents = match self
                 .get_file_contents(&mut file)
-                .map_err(|e| format!("Failed to read '{}', {}", file_path.to_string_lossy(), e))
+                .map_err(|e| format!("Failed to read '{}', {}", file_path.display(), e))
             {
                 Ok(contents) => contents,
                 Err(error) => {
@@ -110,18 +110,29 @@ impl FileFormatter {
             OpenOptions::new().write(true).to_owned(),
             |file, file_path, file_contents, formatted_output| {
                 if file_contents.eq(&formatted_output) {
-                    debug!("Skipping writing to '{file_path:?}' because it is already formatted.");
+                    debug!(
+                        "Skipping writing to '{}' because it is already formatted.",
+                        file_path.display()
+                    );
                     return Ok(());
                 }
-                let path_str = || file_path.to_string_lossy();
                 let encoded_output = self.encoding.encode(&formatted_output).0;
                 file.seek(SeekFrom::Start(0)).map_err(|e| {
-                    format!("Failed to seek to start of file: {}, {}", path_str(), e)
+                    format!(
+                        "Failed to seek to start of file: '{}', {}",
+                        file_path.display(),
+                        e
+                    )
                 })?;
                 file.write_all(&encoded_output)
-                    .map_err(|e| format!("Failed to write to '{}', {}", path_str(), e))?;
-                file.set_len(encoded_output.len() as u64)
-                    .map_err(|e| format!("Failed to set file length: {}, {}", path_str(), e))?;
+                    .map_err(|e| format!("Failed to write to '{}', {}", file_path.display(), e))?;
+                file.set_len(encoded_output.len() as u64).map_err(|e| {
+                    format!(
+                        "Failed to set file length: '{}', {}",
+                        file_path.display(),
+                        e
+                    )
+                })?;
                 Ok(())
             },
         )
@@ -137,7 +148,7 @@ impl FileFormatter {
             |_, file_path, _, formatted_output| {
                 // Append a newline to the formatted output deliberately because makes it more
                 // human-readable and no less machine-readable.
-                println!("{}:\n{}", file_path.to_string_lossy(), formatted_output);
+                println!("{}:\n{}", file_path.display(), formatted_output);
                 Ok(())
             },
         )
@@ -148,10 +159,7 @@ impl FileFormatter {
             OpenOptions::new(),
             |_, file_path, file_contents, formatted_output| {
                 if formatted_output != file_contents {
-                    println!(
-                        "VERIFY: '{}' has different formatting",
-                        file_path.to_string_lossy()
-                    );
+                    println!("VERIFY: '{}' has different formatting", file_path.display());
                 }
                 Ok(())
             },
