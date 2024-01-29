@@ -2,7 +2,7 @@ use std::{error::Error, fs::read_to_string, path::PathBuf, str::FromStr};
 
 use anyhow::Context;
 pub use clap::{self, error::ErrorKind, CommandFactory, Parser};
-use clap::{builder::PossibleValuesParser, builder::TypedValueParser, Args};
+use clap::{builder::PossibleValuesParser, builder::TypedValueParser, Args, ValueEnum};
 
 use figment::{
     providers::{Format, Serialized, Toml},
@@ -27,12 +27,33 @@ macro_rules! pasfmt_config {
         }
         impl $type_name {
             pub fn create() -> PasFmtConfiguration {
-                Self::parse().config
+                let parsed = Self::parse();
+                let mut cmd = Self::command();
+                if matches!(parsed.config.mode(), FormatMode::Files) && parsed.config.is_stdin() {
+                    cmd.error(
+                        ErrorKind::ArgumentConflict,
+                        "Files mode not supported when reading from stdin.",
+                    )
+                    .exit();
+                }
+
+                parsed.config
             }
         }
     };
 }
 pub use pasfmt_config;
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum FormatMode {
+    /// format files in-place
+    Files,
+    /// print formatted files to stdout
+    Stdout,
+    /// exit zero if input is formatted correctly, otherwise exit non-zero and
+    /// list the erroneous files
+    Check,
+}
 
 fn parse_key_val<K, V>(s: &str) -> Result<(K, V), Box<dyn Error + Send + Sync + 'static>>
 where
@@ -69,14 +90,12 @@ pub struct PasFmtConfiguration {
     #[arg(short = 'C', value_parser = parse_key_val::<String, String>, value_name = "KEY=VALUE")]
     config: Vec<(String, String)>,
 
-    /// Whether to format the files and update their contents in-place.
-    #[arg(short, long, conflicts_with = "verify")]
-    write: bool,
-
-    /// Whether to check the correctness of the formatting of the files. It will
-    /// list the files that are different.
-    #[arg(long, conflicts_with = "write")]
-    verify: bool,
+    /// The mode of operation
+    ///
+    /// The default is `files`, unless data is being read from stdin, in which
+    /// case the default is `stdout`.
+    #[arg(short, long, value_enum)]
+    mode: Option<FormatMode>,
 
     /// Increase logging verbosity (can be repeated).
     #[arg(short, long, action = clap::ArgAction::Count, conflicts_with = "log_level")]
@@ -117,11 +136,10 @@ impl Default for PasFmtConfiguration {
             paths: Default::default(),
             files_file: Default::default(),
             config_file: Default::default(),
-            write: Default::default(),
-            verify: Default::default(),
             verbose: Default::default(),
             config: Default::default(),
             log_level: LevelFilter::Warn,
+            mode: None,
         }
     }
 }
@@ -220,12 +238,16 @@ impl FormatterConfiguration for PasFmtConfiguration {
         log_level_from_usize((self.verbose as usize) + (self.log_level as usize))
             .unwrap_or(LevelFilter::max())
     }
-    fn is_write(&self) -> bool {
-        self.write
+    fn mode(&self) -> FormatMode {
+        self.mode.unwrap_or_else(|| {
+            if self.is_stdin() {
+                FormatMode::Stdout
+            } else {
+                FormatMode::Files
+            }
+        })
     }
-    fn is_verify(&self) -> bool {
-        self.verify
-    }
+
     fn is_stdin(&self) -> bool {
         self.paths.is_empty() && self.files_file.is_none()
     }

@@ -12,11 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `string` as a keyword
 - Support for Delphi 12 multi-line string literals
 - `-C` CLI option to override configuration options.
+- `--mode` CLI option which replaces the `--write` and `--verify` options.
+  The default for this option is dynamic; when files to format are provided the default is `files`,
+  otherwise (when formatting stdin) it's `stdout`. This differs from the previous default behaviour
+  which was equivalent to `stdout`. <br/>
+  `check` mode replaces `--verify` with some differences:
+  - Non-zero exit code in the case of incorrectly formatted files.
+  - Can be used in stdin/stdout mode.
 
 ### Removed
 
 - `add`, `remove`, and `variant` as keywords
 - short version of `--config-file` CLI option
+- `--write`/`-w` CLI option (now accessible via `--mode=files`).
+- `--verify` CLI option (replaced by `--mode=check` with some differences).
 
 ### Changed
 

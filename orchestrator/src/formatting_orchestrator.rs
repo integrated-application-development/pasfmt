@@ -1,4 +1,4 @@
-use crate::file_formatter::FileFormatter;
+use crate::{command_line::FormatMode, file_formatter::FileFormatter};
 use anyhow::anyhow;
 use log::LevelFilter;
 
@@ -6,8 +6,7 @@ pub trait FormatterConfiguration {
     fn is_stdin(&self) -> bool;
     fn get_paths(&self) -> Vec<String>;
     fn log_level(&self) -> LevelFilter;
-    fn is_write(&self) -> bool;
-    fn is_verify(&self) -> bool;
+    fn mode(&self) -> FormatMode;
 }
 
 fn plural<'a>(val: usize, singular: &'a str, plural: &'a str) -> &'a str {
@@ -25,7 +24,7 @@ fn coalesce_err(results: &[anyhow::Result<()>]) -> anyhow::Result<()> {
     }
 }
 
-fn verify<T: FormatterConfiguration>(
+fn check<T: FormatterConfiguration>(
     config: &T,
     file_formatter: &FileFormatter,
 ) -> anyhow::Result<()> {
@@ -57,15 +56,16 @@ impl FormattingOrchestrator {
         file_formatter: FileFormatter,
         config: T,
     ) -> anyhow::Result<()> {
-        let files = config.get_paths();
-        if files.is_empty() {
-            file_formatter.format_stdin_to_stdout()
-        } else if config.is_verify() {
-            verify(&config, &file_formatter)
-        } else if config.is_write() {
-            coalesce_err(&file_formatter.format_files(&files))
-        } else {
-            coalesce_err(&file_formatter.format_files_to_stdout(&files))
+        match config.mode() {
+            FormatMode::Check => check(&config, &file_formatter),
+            FormatMode::Files => coalesce_err(&file_formatter.format_files(&config.get_paths())),
+            FormatMode::Stdout => {
+                if config.is_stdin() {
+                    file_formatter.format_stdin_to_stdout()
+                } else {
+                    coalesce_err(&file_formatter.format_files_to_stdout(&config.get_paths()))
+                }
+            }
         }
     }
 }
