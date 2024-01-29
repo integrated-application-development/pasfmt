@@ -3,7 +3,7 @@ use log::*;
 use std::{
     borrow::Cow,
     fs::{File, OpenOptions},
-    io::{Read, Seek, SeekFrom, Write},
+    io::{IsTerminal, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
 };
 
@@ -71,7 +71,7 @@ impl FileFormatter {
 
     fn decode_file<'a>(
         &self,
-        file: &mut File,
+        file: &mut impl Read,
         buf: &'a mut Vec<u8>,
     ) -> std::io::Result<DecodedFile<'a>> {
         file.read_to_end(buf)?;
@@ -162,9 +162,23 @@ impl FileFormatter {
             },
         )
     }
-    pub fn format_stdin_to_stdout(&self, input: &str) {
-        let formatted_input = self.formatter.format(input);
-        print!("{}", formatted_input);
+    fn decode_stdin<'a>(&self, buf: &'a mut Vec<u8>) -> std::io::Result<DecodedFile<'a>> {
+        if std::io::stdin().is_terminal() {
+            eprintln!("waiting for stdin...");
+        }
+        let mut stdin = std::io::stdin().lock();
+
+        self.decode_file(&mut stdin, buf)
+    }
+    pub fn format_stdin_to_stdout(&self) {
+        let mut buf = vec![];
+        let decoded_stdin = self
+            .decode_stdin(&mut buf)
+            .expect("Failed to read from stdin");
+        let formatted_input = self.formatter.format(&decoded_stdin.contents);
+        std::io::stdout()
+            .write_all(&decoded_stdin.encoding.encode(&formatted_input).0)
+            .expect("Failed to write to stdout");
     }
     pub fn format_files_to_stdout<S: AsRef<str>>(&self, paths: &[S]) {
         self.exec_format(

@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Asm labels can now start with just one '@' character instead of two, and they can contain '@' characters.
     - Asm integer literals now supported (e.g. octal `076O`, hex `0FFH`/`$FF`, binary `010B`)
 - Incorrect encoding used for writing files with encodings inferred from a BOM.
+- Incorrect encoding used in stdin/stdout mode; UTF-8 was always used, but now the configured
+  encoding is respected.
 
 ## [0.1.0] - 2023-08-28
 
