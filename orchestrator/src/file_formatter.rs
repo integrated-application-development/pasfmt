@@ -1,5 +1,7 @@
+use encoding_rs::Encoding;
 use log::*;
 use std::{
+    borrow::Cow,
     fs::{File, OpenOptions},
     io::{Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
@@ -9,6 +11,12 @@ use glob::glob;
 use pasfmt_core::formatter::Formatter;
 use rayon::prelude::*;
 use walkdir::WalkDir;
+
+struct DecodedFile<'a> {
+    contents: Cow<'a, str>,
+    encoding: &'static Encoding,
+    replacements: bool,
+}
 
 pub struct FileFormatter {
     formatter: Formatter,
@@ -61,11 +69,20 @@ impl FileFormatter {
         valid_paths
     }
 
-    fn get_file_contents(&self, file: &mut File) -> std::io::Result<String> {
-        let mut file_bytes = Vec::new();
-        file.read_to_end(&mut file_bytes)?;
+    fn decode_file<'a>(
+        &self,
+        file: &mut File,
+        buf: &'a mut Vec<u8>,
+    ) -> std::io::Result<DecodedFile<'a>> {
+        file.read_to_end(buf)?;
 
-        Ok(self.encoding.decode(&file_bytes[..]).0.into_owned())
+        let (contents, encoding, replacements) = self.encoding.decode(buf);
+
+        Ok(DecodedFile {
+            contents,
+            encoding,
+            replacements,
+        })
     }
 
     fn exec_format<S: AsRef<str>, T>(
@@ -74,7 +91,7 @@ impl FileFormatter {
         mut open_options: OpenOptions,
         result_operation: T,
     ) where
-        T: Fn(&mut File, &Path, &str, String) -> Result<(), String> + Sync,
+        T: Fn(&mut File, &Path, &DecodedFile, String) -> Result<(), String> + Sync,
     {
         open_options.read(true);
 
@@ -86,8 +103,9 @@ impl FileFormatter {
                 Err(e) => panic!("Failed to open '{}', {}", file_path.display(), e),
             };
 
-            let file_contents = match self
-                .get_file_contents(&mut file)
+            let mut buf = vec![];
+            let decoded_file = match self
+                .decode_file(&mut file, &mut buf)
                 .map_err(|e| format!("Failed to read '{}', {}", file_path.display(), e))
             {
                 Ok(contents) => contents,
@@ -96,9 +114,16 @@ impl FileFormatter {
                 }
             };
 
-            let formatted_file = self.formatter.format(&file_contents);
-            if let Err(e) = result_operation(&mut file, &file_path, &file_contents, formatted_file)
-            {
+            if decoded_file.replacements {
+                panic!(
+                    "File '{}' had malformed sequences (in encoding '{}')",
+                    file_path.display(),
+                    decoded_file.encoding.name()
+                );
+            }
+
+            let formatted_file = self.formatter.format(&decoded_file.contents);
+            if let Err(e) = result_operation(&mut file, &file_path, &decoded_file, formatted_file) {
                 panic!("{e}");
             }
         });
@@ -108,15 +133,15 @@ impl FileFormatter {
         self.exec_format(
             paths,
             OpenOptions::new().write(true).to_owned(),
-            |file, file_path, file_contents, formatted_output| {
-                if file_contents.eq(&formatted_output) {
+            |file, file_path, decoded_file, formatted_output| {
+                if decoded_file.contents.eq(&formatted_output) {
                     debug!(
                         "Skipping writing to '{}' because it is already formatted.",
                         file_path.display()
                     );
                     return Ok(());
                 }
-                let encoded_output = self.encoding.encode(&formatted_output).0;
+                let encoded_output = decoded_file.encoding.encode(&formatted_output).0;
                 file.seek(SeekFrom::Start(0)).map_err(|e| {
                     format!(
                         "Failed to seek to start of file: '{}', {}",
@@ -157,8 +182,8 @@ impl FileFormatter {
         self.exec_format(
             paths,
             OpenOptions::new(),
-            |_, file_path, file_contents, formatted_output| {
-                if formatted_output != file_contents {
+            |_, file_path, decoded_file, formatted_output| {
+                if formatted_output != decoded_file.contents {
                     println!("VERIFY: '{}' has different formatting", file_path.display());
                 }
                 Ok(())
