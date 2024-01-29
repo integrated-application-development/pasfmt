@@ -196,7 +196,7 @@ impl FileFormatter {
 
     fn check_formatting(input: &str, output: &str, path: impl Display) -> anyhow::Result<()> {
         if input != output {
-            bail!("VERIFY: '{}' has different formatting", path);
+            bail!("CHECK: '{}' has incorrect formatting", path);
         }
         Ok(())
     }
