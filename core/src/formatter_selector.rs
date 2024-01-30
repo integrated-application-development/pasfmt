@@ -72,9 +72,10 @@ mod tests {
                 },
             })
             .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), " i".to_owned(), " c".to_owned()),
+                ReconstructionSettings::new("\n".to_owned(), "\t".to_owned(), "\r".to_owned())
+                    .unwrap(),
             ))
             .build();
-        run_test(formatter, "a;", " ia; c");
+        run_test(formatter, "a;", "\ta;\r");
     }
 }

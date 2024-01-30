@@ -1,4 +1,5 @@
 use std::vec::Drain;
+use thiserror::Error;
 
 use crate::prelude::*;
 
@@ -381,18 +382,50 @@ impl<'a> From<LogicalLines<'a>> for (&'a [Token<'a>], Vec<LogicalLine>) {
     }
 }
 
+#[derive(Error, Debug)]
+#[error("Invalid reconstruction settings: {msg}")]
+pub struct InvalidReconstructionSettingsError {
+    msg: String,
+}
+
+impl InvalidReconstructionSettingsError {
+    fn new<S: Into<String>>(msg: S) -> Self {
+        InvalidReconstructionSettingsError { msg: msg.into() }
+    }
+}
+
 pub struct ReconstructionSettings {
     newline_str: String,
     indentation_str: String,
     continuation_str: String,
 }
 impl ReconstructionSettings {
-    pub fn new(newline_str: String, indentation_str: String, continuation_str: String) -> Self {
-        ReconstructionSettings {
+    pub fn new(
+        newline_str: String,
+        indentation_str: String,
+        continuation_str: String,
+    ) -> Result<Self, InvalidReconstructionSettingsError> {
+        for (name, val) in &[
+            ("newline", &newline_str),
+            ("indentation", &indentation_str),
+            ("continuation", &continuation_str),
+        ] {
+            if val.is_empty() {
+                return Err(InvalidReconstructionSettingsError::new(
+                    name.to_string() + " sequence cannot be blank",
+                ));
+            } else if count_leading_whitespace(val) != val.len() {
+                return Err(InvalidReconstructionSettingsError::new(
+                    name.to_string() + " sequence must be all whitespace",
+                ));
+            }
+        }
+
+        Ok(ReconstructionSettings {
             newline_str,
             indentation_str,
             continuation_str,
-        }
+        })
     }
     pub fn get_newline_str(&self) -> &str {
         &self.newline_str

@@ -8,6 +8,7 @@ itertools = "0.11.0"
 log = "0.4"
 memchr = "2.6.0"
 cfg-if = "1.0.0"
+thiserror = "1.0.56"
 
 [dev-dependencies]
 spectral = { version = "0.6.0", default-features = false }

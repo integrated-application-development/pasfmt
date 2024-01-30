@@ -46,8 +46,10 @@ impl Default for FormattingSettings {
     }
 }
 
-impl From<Reconstruction> for ReconstructionSettings {
-    fn from(val: Reconstruction) -> Self {
+impl TryFrom<Reconstruction> for ReconstructionSettings {
+    type Error = InvalidReconstructionSettingsError;
+
+    fn try_from(val: Reconstruction) -> Result<Self, Self::Error> {
         ReconstructionSettings::new(
             val.eol,
             val.indentation.clone(),
@@ -97,7 +99,7 @@ pub fn format_with_settings(
                 },
             ))
             .reconstructor(DelphiLogicalLinesReconstructor::new(
-                formatting_settings.reconstruction.into(),
+                formatting_settings.reconstruction.try_into()?,
             ))
             .build(),
         formatting_settings.encoding,

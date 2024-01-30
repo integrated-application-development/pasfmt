@@ -46,7 +46,8 @@ mod tests {
                 "\n".to_owned(),
                 "  ".to_owned(),
                 "  ".to_owned(),
-            ),
+            )
+            .unwrap(),
         };
         let output = reconstructor.reconstruct(input);
         assert_that(&output).is_equal_to(expected_output.to_string());

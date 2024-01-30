@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     sent to stderr, not stdout.
 - `Formatter::format_into_buf` and `Reconstructor::reconstruct_into_buf` to allow reuse of memory
   allocations.
+- Validation on the reconstruction settings. This now ensures that indentation, eol, and continuation
+  are all non-empty and only consist of whitespace. Without this validation, the format may not be
+  idempotent.
 
 ### Removed
 

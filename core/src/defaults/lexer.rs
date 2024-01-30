@@ -121,7 +121,7 @@ fn truncate_whitespace(content: &mut &str, whitespace: usize) -> u32 {
     u32::MAX
 }
 
-fn count_leading_whitespace(input: &str) -> usize {
+pub(crate) fn count_leading_whitespace(input: &str) -> usize {
     let mut count = 0;
     for &b in input.as_bytes() {
         // All codepoints in [U+0, U+20] are considered 'blank'.
