@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `check` mode replaces `--verify` with some differences:
   - Non-zero exit code in the case of incorrectly formatted files.
   - Can be used in stdin/stdout mode.
-  - Messages for incorrectly formatted files prefixed with 'CHECK' instead of 'VERIFY'.
+  - Messages for incorrectly formatted files prefixed with 'CHECK' instead of 'VERIFY', and are
+    sent to stderr, not stdout.
 
 ### Removed
 

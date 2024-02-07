@@ -34,12 +34,7 @@ fn check<T: FormatterConfiguration>(
         file_formatter.check_files(&config.get_paths())
     };
 
-    let mut fail_count = 0;
-    for err in check_results.iter().filter_map(|r| r.as_ref().err()) {
-        fail_count += 1;
-        println!("{err}");
-    }
-
+    let fail_count = check_results.iter().filter(|r| r.is_err()).count();
     if fail_count > 0 {
         Err(anyhow!(
             "{fail_count} {} incorrectly formatted",
