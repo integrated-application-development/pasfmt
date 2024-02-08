@@ -51,6 +51,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This is to allow the logical line parser to consolidate the token types while processing.
   Additionally, formatters and consolidators operating after parsing do not need to worry about
   any identifier/keyword ambiguities.
+- Logical line parsing:
+  - Added more `LogicalLineType` variants.
+    - `Assignment`
+    - `CompilerDirective`
+    - `ForLoop`
+    - `RoutineHeader`
+    - `InlineDeclaration`
+    - `InlineStatement`
+    - `Guid`
+    - `CaseHeader`
+  - Added support for more Delphi structures:
+    - Tagged records.
+    - `with` statements.
+    - `forward` and `external` routine declarations.
+  - Simplified handling for comments and compiler directives.
+  - Consolidated all token types based on context.
+  - Improved support for `property` and routine directives.
 
 ### Fixed
 

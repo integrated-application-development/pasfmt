@@ -135,6 +135,57 @@ pub enum KeywordKind {
     Write,
     WriteOnly,
 }
+impl KeywordKind {
+    pub fn is_method_directive(&self) -> bool {
+        matches!(
+            self,
+            KeywordKind::Overload
+                | KeywordKind::Reintroduce
+                | KeywordKind::Message
+                | KeywordKind::Static
+                | KeywordKind::Dynamic
+                | KeywordKind::Override
+                | KeywordKind::Virtual
+                | KeywordKind::Abstract
+                | KeywordKind::Final
+                | KeywordKind::Inline
+                | KeywordKind::Assembler
+                | KeywordKind::Cdecl
+                | KeywordKind::Pascal
+                | KeywordKind::Register
+                | KeywordKind::SafeCall
+                | KeywordKind::StdCall
+                | KeywordKind::Export
+                | KeywordKind::Deprecated
+                | KeywordKind::Experimental
+                | KeywordKind::Platform
+                | KeywordKind::Library
+                | KeywordKind::Far
+                | KeywordKind::Local
+                | KeywordKind::Near
+                | KeywordKind::DispId
+                | KeywordKind::VarArgs
+                | KeywordKind::Unsafe
+                | KeywordKind::External
+                | KeywordKind::Forward
+        )
+    }
+    pub fn is_property_directive(&self) -> bool {
+        matches!(
+            self,
+            KeywordKind::Default
+                | KeywordKind::Read
+                | KeywordKind::Write
+                | KeywordKind::ReadOnly
+                | KeywordKind::WriteOnly
+                | KeywordKind::DispId
+                | KeywordKind::Implements
+                | KeywordKind::Index
+                | KeywordKind::NoDefault
+                | KeywordKind::Stored
+        )
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum OperatorKind {
@@ -255,39 +306,52 @@ impl TokenType {
     strum(ascii_case_insensitive)
 )]
 pub enum LogicalLineType {
+    Assignment,
     ConditionalDirective,
+    CompilerDirective,
+    ForLoop,
     Eof,
     ImportClause,
     AsmInstruction,
     PropertyDeclaration,
+    RoutineHeader,
+    InlineDeclaration,
+    Guid,
+    Attribute,
+    CaseHeader,
     Unknown,
     Voided,
 }
+#[derive(Hash, Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct LineParent {
+    pub line_index: usize,
+    pub global_token_index: usize,
+}
 #[derive(Debug, PartialEq, Eq)]
 pub struct LogicalLine {
-    parent_token: Option<usize>,
-    level: usize,
+    parent: Option<LineParent>,
+    level: u16,
     tokens: Vec<usize>,
     line_type: LogicalLineType,
 }
 impl LogicalLine {
     pub fn new(
-        parent_token: Option<usize>,
-        level: usize,
+        parent: Option<LineParent>,
+        level: u16,
         tokens: Vec<usize>,
         line_type: LogicalLineType,
     ) -> Self {
         LogicalLine {
-            parent_token,
+            parent,
             level,
             tokens,
             line_type,
         }
     }
-    pub fn get_parent_token(&self) -> Option<usize> {
-        self.parent_token
+    pub fn get_parent(&self) -> Option<LineParent> {
+        self.parent
     }
-    pub fn get_level(&self) -> usize {
+    pub fn get_level(&self) -> u16 {
         self.level
     }
     pub fn get_tokens(&self) -> &Vec<usize> {
