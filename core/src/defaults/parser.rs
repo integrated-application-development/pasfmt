@@ -2104,3 +2104,6 @@ impl<T> From<NonEmptyVec<T>> for Vec<T> {
 
 #[cfg(test)]
 mod utility_tests;
+
+#[cfg(test)]
+mod token_consolidation_tests;
