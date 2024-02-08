@@ -2099,3 +2099,8 @@ impl<T> From<NonEmptyVec<T>> for Vec<T> {
         result
     }
 }
+
+// Tests
+
+#[cfg(test)]
+mod utility_tests;
