@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handling of IO errors. Previously any IO error would immediately crash the program.
   Now errors are logged when they occur and cause the program to exit non-zero after
   all other files have been formatted successfully.
+- Default continutation to be the same as the configured indentation.
 
 ### Fixed
 

@@ -69,7 +69,7 @@ impl Default for Reconstruction {
         Reconstruction {
             eol: "\r\n".to_owned(),
             indentation: "  ".to_owned(),
-            continuation: Some("  ".to_owned()),
+            continuation: None,
         }
     }
 }
