@@ -689,7 +689,7 @@ mod tests {
                     if token.get_token_type() != TokenType::Identifier {
                         return;
                     }
-                    *token = Token::RefToken(RefToken::new("1", 0, token.get_token_type()));
+                    *token = Token::new_ref("1", 0, token.get_token_type());
                 }
             });
         }

@@ -1,4 +1,4 @@
-use std::vec::Drain;
+use std::{borrow::Cow, vec::Drain};
 use thiserror::Error;
 
 use crate::prelude::*;
@@ -586,75 +586,50 @@ impl<'a> TokenData for RawToken<'a> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct RefToken<'a> {
-    content: &'a str,
+pub struct Token<'a> {
+    content: Cow<'a, str>,
     ws_len: u32,
     token_type: TokenType,
 }
-impl<'a> RefToken<'a> {
-    pub fn new(content: &'a str, ws_len: u32, token_type: TokenType) -> RefToken<'a> {
-        RefToken {
-            content,
+impl<'a> Token<'a> {
+    pub fn new_ref(content: &'a str, ws_len: u32, token_type: TokenType) -> Self {
+        Self {
+            content: Cow::Borrowed(content),
+            ws_len,
+            token_type,
+        }
+    }
+
+    pub fn new_owned(content: String, ws_len: u32, token_type: TokenType) -> Self {
+        Self {
+            content: Cow::Owned(content),
             ws_len,
             token_type,
         }
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct OwningToken {
-    content: Box<str>,
-    ws_len: u32,
-    token_type: TokenType,
-}
-impl OwningToken {
-    pub fn new(content: String, ws_len: u32, token_type: TokenType) -> OwningToken {
-        OwningToken {
-            content: content.into(),
-            ws_len,
-            token_type,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Token<'a> {
-    RefToken(RefToken<'a>),
-    OwningToken(OwningToken),
-}
 impl<'a> TokenData for Token<'a> {
     type TokenType = TokenType;
     fn get_leading_whitespace(&self) -> &str {
-        match &self {
-            Token::RefToken(token) => &token.content[..token.ws_len as usize],
-            Token::OwningToken(token) => &token.content[..token.ws_len as usize],
-        }
+        &self.content[..self.ws_len as usize]
     }
     fn get_content(&self) -> &str {
-        match &self {
-            Token::RefToken(token) => &token.content[token.ws_len as usize..],
-            Token::OwningToken(token) => &token.content[token.ws_len as usize..],
-        }
+        &self.content[self.ws_len as usize..]
     }
     fn get_token_type(&self) -> TokenType {
-        match &self {
-            Token::RefToken(token) => token.token_type,
-            Token::OwningToken(token) => token.token_type,
-        }
+        self.token_type
     }
 
     fn set_token_type(&mut self, typ: TokenType) {
-        match self {
-            Token::RefToken(token) => token.token_type = typ,
-            Token::OwningToken(token) => token.token_type = typ,
-        }
+        self.token_type = typ
     }
 }
 impl<'a> From<RawToken<'a>> for Token<'a> {
     fn from(val: RawToken<'a>) -> Self {
         use RawTokenType as RTT;
         use TokenType as TT;
-        Token::RefToken(RefToken::new(
+        Token::new_ref(
             val.content,
             val.ws_len,
             match val.token_type {
@@ -670,7 +645,7 @@ impl<'a> From<RawToken<'a>> for Token<'a> {
                 RTT::Eof => TT::Eof,
                 RTT::Unknown => TT::Unknown,
             },
-        ))
+        )
     }
 }
 

@@ -31,14 +31,14 @@ fn ws_len(whitespace_and_content: &str) -> u32 {
 }
 
 pub fn new_token(whitespace_and_content: &str, token_type: TokenType) -> Token {
-    Token::RefToken(RefToken::new(
+    Token::new_ref(
         whitespace_and_content,
         ws_len(whitespace_and_content),
         token_type,
-    ))
+    )
 }
 
 pub fn new_owning_token<'a>(whitespace_and_content: String, token_type: TokenType) -> Token<'a> {
     let ws_len = ws_len(&whitespace_and_content);
-    Token::OwningToken(OwningToken::new(whitespace_and_content, ws_len, token_type))
+    Token::new_owned(whitespace_and_content, ws_len, token_type)
 }

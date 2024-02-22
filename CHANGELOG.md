@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- `RefToken` and `OwningToken` types.
+
+### Changed
+
+- `Token` type to be a struct containing a `std::borrow::Cow` for the token content instead of
+  an enum of `RefToken` and `OwningToken`.
+
 ### Fixed
 
 - Missing `winapi` keyword.
