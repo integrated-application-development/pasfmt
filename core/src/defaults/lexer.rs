@@ -1231,7 +1231,7 @@ mod tests {
 
     type ContentAndTokenType<'a> = (&'a str, TokenType);
 
-    fn run_test(input: &str, expected_token_types: Vec<ContentAndTokenType>) {
+    fn run_test(input: &str, expected_token_types: &[ContentAndTokenType]) {
         let lexer = DelphiLexer {};
         let tokens = lexer.lex(input);
         let token_types: Vec<_> = tokens
@@ -1240,7 +1240,7 @@ mod tests {
             .map(|token| (token.get_content(), token.get_token_type()))
             .collect();
 
-        assert_that(&token_types).is_equal_to(&expected_token_types);
+        assert_that(&token_types.as_slice()).is_equal_to(expected_token_types);
     }
 
     fn alternating_case(input: &str) -> String {
@@ -1260,7 +1260,7 @@ mod tests {
         let input = format!("{} {} {}", lowercase, uppercase, alternating);
         run_test(
             input.as_str(),
-            vec![
+            &[
                 (lowercase.as_str(), expected_token_type),
                 (uppercase.as_str(), expected_token_type),
                 (alternating.as_str(), expected_token_type),
@@ -1278,7 +1278,7 @@ mod tests {
                     Multiline block comment
                 }"
             },
-            vec![
+            &[
                 ("{block comment}", TT::Comment(CommentKind::IndividualBlock)),
                 (
                     "{.$fake compiler directive}",
@@ -1314,7 +1314,7 @@ mod tests {
                 {individual block}
                 ; {inline block}"
             },
-            vec![
+            &[
                 (
                     "{individual block}",
                     TT::Comment(CommentKind::IndividualBlock),
@@ -1339,7 +1339,7 @@ mod tests {
 
                 "
             },
-            vec![(
+            &[(
                 "{individual block\n// other comment\nFoo;",
                 TT::Comment(CommentKind::MultilineBlock),
             )],
@@ -1352,7 +1352,7 @@ mod tests {
 
                 "
             },
-            vec![(
+            &[(
                 "(*individual block\n// other comment\nFoo;",
                 TT::Comment(CommentKind::MultilineBlock),
             )],
@@ -1367,7 +1367,7 @@ mod tests {
                 // Individual line comment 2
                 ; // Inline line comment"
             },
-            vec![
+            &[
                 (
                     "// Individual line comment 1",
                     TT::Comment(CommentKind::IndividualLine),
@@ -1389,7 +1389,7 @@ mod tests {
     fn lex_compiler_directives() {
         run_test(
             "(*$message*) {$foo *) } (*$bar aa {}*)",
-            vec![
+            &[
                 ("(*$message*)", TT::CompilerDirective),
                 ("{$foo *) }", TT::CompilerDirective),
                 ("(*$bar aa {}*)", TT::CompilerDirective),
@@ -1439,7 +1439,7 @@ mod tests {
 
                 "
             },
-            vec![(
+            &[(
                 "{$if\n// other comment\nFoo;",
                 TT::ConditionalDirective(ConditionalDirectiveKind::If),
             )],
@@ -1452,7 +1452,7 @@ mod tests {
 
                 "
             },
-            vec![(
+            &[(
                 "(*$if\n// other comment\nFoo;",
                 TT::ConditionalDirective(ConditionalDirectiveKind::If),
             )],
@@ -1463,7 +1463,7 @@ mod tests {
     fn lex_string_literals() {
         run_test(
             "'' 'string' 'string''part2' 'ab''''cd' 'abc'#13#10 'after escaped stuff' 'a'#1'b' 'a'#1#0'b' 'a'#$017F #%010 #%0_1 #%_0 #%_ #$F7F #$F_7 #$_F #$_ #123 #_",
-            vec![
+            &[
                 ("''", TT::TextLiteral(TLK::SingleLine)),
                 ("'string'", TT::TextLiteral(TLK::SingleLine)),
                 ("'string''part2'", TT::TextLiteral(TLK::SingleLine)),
@@ -1508,7 +1508,7 @@ mod tests {
             '''
             '''''''
             "},
-            vec![
+            &[
                 ("'''\na\n'''", TT::TextLiteral(TLK::MultiLine)),
                 ("'''\n' ''\n'''", TT::TextLiteral(TLK::MultiLine)),
                 ("'''''\n'''\n'''''", TT::TextLiteral(TLK::MultiLine)),
@@ -1534,7 +1534,7 @@ mod tests {
             '''
             //
             "},
-            vec![
+            &[
                 // unusual, but valid single-line text literals
                 ("''' '", TT::TextLiteral(TLK::SingleLine)),
                 ("''''' '", TT::TextLiteral(TLK::SingleLine)),
@@ -1554,7 +1554,7 @@ mod tests {
     fn lex_unterminated_string_literals() {
         run_test(
             "'string\n' + '';\n'a'#\n'a'## '''\n",
-            vec![
+            &[
                 ("'string", TT::TextLiteral(TLK::Unterminated)),
                 ("' + '';", TT::TextLiteral(TLK::Unterminated)),
                 ("'a'#", TT::TextLiteral(TLK::Unterminated)),
@@ -1569,7 +1569,7 @@ mod tests {
     fn lex_decimal_number_literals() {
         run_test(
             "0 0.0 10 1_000 1_000.00 1_111_111.11 1.111_1 0e-1 0e+1 0E+1 0.5e+21",
-            vec![
+            &[
                 ("0", TT::NumberLiteral(NLK::Decimal)),
                 ("0.0", TT::NumberLiteral(NLK::Decimal)),
                 ("10", TT::NumberLiteral(NLK::Decimal)),
@@ -1589,7 +1589,7 @@ mod tests {
     fn lex_ambiguous_dotdot() {
         run_test(
             "0..1",
-            vec![
+            &[
                 ("0", TT::NumberLiteral(NLK::Decimal)),
                 ("..", TT::Op(OK::DotDot)),
                 ("1", TT::NumberLiteral(NLK::Decimal)),
@@ -1603,7 +1603,7 @@ mod tests {
         // (accessing routines defined in helper classes).
         run_test(
             "0._0 0.e5 0.e-5",
-            vec![
+            &[
                 ("0", TT::NumberLiteral(NLK::Decimal)),
                 (".", TT::Op(OK::Dot)),
                 ("_0", TT::Identifier),
@@ -1625,7 +1625,7 @@ mod tests {
     fn lex_invalid_decimal_number_literals() {
         run_test(
             "0e 0.0e 0e+ 0e- 0.0e+ 0.0e-",
-            vec![
+            &[
                 ("0e", TT::NumberLiteral(NLK::Decimal)),
                 ("0.0e", TT::NumberLiteral(NLK::Decimal)),
                 ("0e+", TT::NumberLiteral(NLK::Decimal)),
@@ -1640,7 +1640,7 @@ mod tests {
     fn lex_hex_number_literal() {
         run_test(
             "$ $00 $FF $0_0 $_ $_1",
-            vec![
+            &[
                 ("$", TT::NumberLiteral(NLK::Hex)),
                 ("$00", TT::NumberLiteral(NLK::Hex)),
                 ("$FF", TT::NumberLiteral(NLK::Hex)),
@@ -1655,7 +1655,7 @@ mod tests {
     fn lex_binary_number_literals() {
         run_test(
             "% %0 %1 %1111_0000 %_ %_1",
-            vec![
+            &[
                 ("%", TT::NumberLiteral(NLK::Binary)),
                 ("%0", TT::NumberLiteral(NLK::Binary)),
                 ("%1", TT::NumberLiteral(NLK::Binary)),
@@ -1672,7 +1672,7 @@ mod tests {
         // the other cases should be lexed in the same way (even if they are invalid).
         run_test(
             "&$FF &%0 &0",
-            vec![
+            &[
                 ("&$FF", TT::NumberLiteral(NLK::Hex)),
                 ("&%0", TT::NumberLiteral(NLK::Binary)),
                 ("&0", TT::NumberLiteral(NLK::Decimal)),
@@ -1684,7 +1684,7 @@ mod tests {
     fn lex_identifiers() {
         run_test(
             "Foo _Foo _1Foo &begin &&op_Addition &&&Foo &&&&Foo &&",
-            vec![
+            &[
                 ("Foo", TT::Identifier),
                 ("_Foo", TT::Identifier),
                 ("_1Foo", TT::Identifier),
@@ -1703,7 +1703,7 @@ mod tests {
     fn lex_operators() {
         run_test(
             "+-*/:=,;=:<><<=>=>[](..)()^@...",
-            vec![
+            &[
                 ("+", TT::Op(OK::Plus)),
                 ("-", TT::Op(OK::Minus)),
                 ("*", TT::Op(OK::Star)),
@@ -1876,7 +1876,7 @@ mod tests {
             .if
             if
             ",
-            vec![
+            &[
                 ("System", TT::Identifier),
                 (".", TT::Op(OK::Dot)),
                 ("String", TT::Identifier),
@@ -1923,7 +1923,7 @@ mod tests {
     fn lex_function_declaration() {
         run_test(
             "function Foo(Arg1:String;Arg2:Bar);stdcall;",
-            vec![
+            &[
                 ("function", TT::Keyword(KK::Function)),
                 ("Foo", TT::Identifier),
                 ("(", TT::Op(OK::LParen)),
@@ -1946,7 +1946,7 @@ mod tests {
     fn lex_invalid_code() {
         run_test(
             "? ? ?",
-            vec![("?", TT::Unknown), ("?", TT::Unknown), ("?", TT::Unknown)],
+            &[("?", TT::Unknown), ("?", TT::Unknown), ("?", TT::Unknown)],
         );
     }
 
@@ -1959,7 +1959,7 @@ mod tests {
                 XOR RBX, RBX
             end
             "},
-            vec![
+            &[
                 ("asm", TT::Keyword(KK::Asm)),
                 ("@@end", TT::Identifier),
                 (":", TT::Op(OK::Colon)),
@@ -1979,7 +1979,7 @@ mod tests {
                 XOR RBX, RBX {$ifdef End}
             end
             "},
-            vec![
+            &[
                 ("asm", TT::Keyword(KK::Asm)),
                 ("XOR", TT::Identifier),
                 ("RBX", TT::Identifier),
@@ -1998,7 +1998,7 @@ mod tests {
                 XOR RBX, RBX // End
             end
             "},
-            vec![
+            &[
                 ("asm", TT::Keyword(KK::Asm)),
                 ("XOR", TT::Identifier),
                 ("RBX", TT::Identifier),
@@ -2017,7 +2017,7 @@ mod tests {
                 XOR RBX, IfEnd
             end
             "},
-            vec![
+            &[
                 ("asm", TT::Keyword(KK::Asm)),
                 ("XOR", TT::Identifier),
                 ("RBX", TT::Identifier),
@@ -2039,7 +2039,7 @@ mod tests {
                 @0:
             end
             "},
-            vec![
+            &[
                 ("asm", TT::Keyword(KK::Asm)),
                 ("@@A", TT::Identifier),
                 (":", TT::Op(OK::Colon)),
@@ -2064,7 +2064,7 @@ mod tests {
                 XOR RBX, RBX
             end
             "},
-            vec![
+            &[
                 ("asm", TT::Keyword(KK::Asm)),
                 ("CMP", TT::Identifier),
                 ("AL", TT::Identifier),
@@ -2087,7 +2087,7 @@ mod tests {
                 CMP AL,"\""
             end
             "#},
-            vec![
+            &[
                 ("asm", TT::Keyword(KK::Asm)),
                 ("CMP", TT::Identifier),
                 ("AL", TT::Identifier),
@@ -2106,7 +2106,7 @@ mod tests {
                 CMP AL,\"a
             end
             "},
-            vec![
+            &[
                 ("asm", TT::Keyword(KK::Asm)),
                 ("CMP", TT::Identifier),
                 ("AL", TT::Identifier),
@@ -2126,7 +2126,7 @@ mod tests {
                 XOR RBX, RBX
             end
             "},
-            vec![
+            &[
                 ("asm", TT::Keyword(KK::Asm)),
                 ("MOV", TT::Identifier),
                 ("RAX", TT::Identifier),
@@ -2150,7 +2150,7 @@ mod tests {
                 XOR RBX, RBX
             end
             "},
-            vec![
+            &[
                 ("asm", TT::Keyword(KK::Asm)),
                 ("MOV", TT::Identifier),
                 ("RAX", TT::Identifier),
@@ -2169,7 +2169,7 @@ mod tests {
     fn identifier_starting_with_asm() {
         run_test(
             "begin var asmA := 0; end;",
-            vec![
+            &[
                 ("begin", TT::Keyword(KK::Begin)),
                 ("var", TT::Keyword(KK::Var)),
                 ("asmA", TT::Identifier),
@@ -2190,7 +2190,7 @@ mod tests {
                 0 0O 0o 0B 0b 0H 0h $0 0AH 0FH
             end
             "},
-            vec![
+            &[
                 ("asm", TT::Keyword(KK::Asm)),
                 ("0", TT::NumberLiteral(NLK::Decimal)),
                 ("0O", TT::NumberLiteral(NLK::Octal)),
@@ -2216,7 +2216,7 @@ mod tests {
                 $A_A 00_11B 9_5
             end
             "},
-            vec![
+            &[
                 ("asm", TT::Keyword(KK::Asm)),
                 ("8O", TT::NumberLiteral(NLK::Octal)),
                 ("2B", TT::NumberLiteral(NLK::Binary)),
@@ -2237,7 +2237,7 @@ mod tests {
     fn unicode() {
         run_test(
             "böb öb bö ö",
-            vec![
+            &[
                 ("böb", TT::Identifier),
                 ("öb", TT::Identifier),
                 ("bö", TT::Identifier),
@@ -2246,11 +2246,11 @@ mod tests {
         );
 
         // Japanese
-        run_test("クールなテスト", vec![("クールなテスト", TT::Identifier)]);
+        run_test("クールなテスト", &[("クールなテスト", TT::Identifier)]);
         // Chinese (Traditional)
-        run_test("酷測試", vec![("酷測試", TT::Identifier)]);
+        run_test("酷測試", &[("酷測試", TT::Identifier)]);
         // Korean
-        run_test("멋진테스트", vec![("멋진테스트", TT::Identifier)]);
+        run_test("멋진테스트", &[("멋진테스트", TT::Identifier)]);
 
         /*
             Codepoints above U+FFFF are all surrogate pairs, and don't seem to be allowed in identifiers.
@@ -2259,21 +2259,18 @@ mod tests {
             no harm in doing so.
         */
         // Emojis
-        run_test("🚀🦀🚀🦀", vec![("🚀🦀🚀🦀", TT::Identifier)]);
+        run_test("🚀🦀🚀🦀", &[("🚀🦀🚀🦀", TT::Identifier)]);
         // Enclosed Alphanumeric
-        run_test("🄲🄾🄾🄻🅃🄴🅂🅃", vec![("🄲🄾🄾🄻🅃🄴🅂🅃", TT::Identifier)]);
+        run_test("🄲🄾🄾🄻🅃🄴🅂🅃", &[("🄲🄾🄾🄻🅃🄴🅂🅃", TT::Identifier)]);
     }
 
     #[test]
     fn unicode_fullwidth_chars() {
         // Fullwidth characters - valid identifier chars
-        run_test(
-            "ｃｏｏｌｔｅｓｔ",
-            vec![("ｃｏｏｌｔｅｓｔ", TT::Identifier)],
-        );
+        run_test("ｃｏｏｌｔｅｓｔ", &[("ｃｏｏｌｔｅｓｔ", TT::Identifier)]);
 
         // Fullwidth spaces - invalid identifier char (but valid as whitespace)
-        run_test("a　b", vec![("a", TT::Identifier), ("b", TT::Identifier)]);
+        run_test("a　b", &[("a", TT::Identifier), ("b", TT::Identifier)]);
 
         /*
             Fullwidth numerals [U+FF10, U+FF19]
@@ -2289,7 +2286,7 @@ mod tests {
         */
         run_test(
             "０ １ ２ ３ ４ ５ ６ ７ ８ ９",
-            vec![
+            &[
                 ("０", TT::Identifier),
                 ("１", TT::Identifier),
                 ("２", TT::Identifier),
@@ -2310,7 +2307,7 @@ mod tests {
         // made for 'ideographic space'. We presume this is because it is used in Japanese text.
         run_test(
             "NBSP\u{A0} EN_QUAD\u{2000} THIN_SPACE\u{2009} ZERO_WIDTH_NBSP\u{FEFF} IDEOGRAPHIC_SPACE\u{3000}",
-            vec![
+            &[
                 ("NBSP\u{A0}", TT::Identifier),
                 ("EN_QUAD\u{2000}", TT::Identifier),
                 ("THIN_SPACE\u{2009}", TT::Identifier),
@@ -2363,7 +2360,7 @@ mod tests {
                 Space\x20
                 "
             },
-            vec![
+            &[
                 ("NUL", TT::Identifier),
                 ("SOH", TT::Identifier),
                 ("STX", TT::Identifier),
