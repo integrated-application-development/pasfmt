@@ -1682,6 +1682,21 @@ mod tests {
     }
 
     #[test]
+    fn lex_unknown_ampersand() {
+        run_test(
+            "&{} &+ &!",
+            &[
+                ("&", TT::Unknown),
+                ("{}", TT::Comment(CommentKind::InlineBlock)),
+                ("&", TT::Unknown),
+                ("+", TT::Op(OK::Plus)),
+                ("&", TT::Unknown),
+                ("!", TT::Unknown),
+            ],
+        );
+    }
+
+    #[test]
     fn lex_identifiers() {
         run_test(
             "Foo _Foo _1Foo &begin &&op_Addition &&&Foo &&&&Foo &&",
