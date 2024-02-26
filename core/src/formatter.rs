@@ -777,22 +777,6 @@ mod tests {
         run_test(formatter, "1*1*1", "1 *11 *11");
     }
 
-    struct BreakBeforeMultiply;
-    impl LogicalLineFormatter for BreakBeforeMultiply {
-        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
-            for &token in input.get_tokens() {
-                if formatted_tokens.get_token_type_for_index(token)
-                    == Some(TokenType::Op(OperatorKind::Star))
-                {
-                    if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token) {
-                        formatting_data.spaces_before = 0;
-                        formatting_data.newlines_before = 1;
-                    }
-                }
-            }
-        }
-    }
-
     #[test]
     fn line_then_token_consolidators_after_parsing() {
         let formatter = Formatter::builder()
