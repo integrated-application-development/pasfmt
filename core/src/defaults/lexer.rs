@@ -1196,15 +1196,10 @@ fn dot(args: LexArgs) -> OffsetAndTokenType {
 
 #[cold]
 fn unknown(args: LexArgs) -> OffsetAndTokenType {
-    const MAX_LEN: usize = 100;
-    if args.offset <= MAX_LEN {
-        warn!("Found unknown token: {}", &args.input[..args.offset]);
-    } else {
-        warn!(
-            "Found unknown token starting with: {}",
-            rounded_prefix(args.input, MAX_LEN)
-        );
-    }
+    warn!(
+        "Found unexpected character: {}. Creating `Unknown` token.",
+        *args.prev_byte().unwrap() as char
+    );
     (args.offset, TT::Unknown)
 }
 
