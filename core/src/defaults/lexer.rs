@@ -739,7 +739,7 @@ fn text_literal(
         *offset += 1;
 
         if *offset >= bytes.len() {
-            return ParseState::Stop;
+            return ParseState::Unterminated;
         }
 
         if let Some(pos) = memchr::memchr3(b'\'', b'\n', b'\r', &bytes[*offset..]) {
@@ -1563,6 +1563,7 @@ mod tests {
                 ("'''\n", TT::TextLiteral(TLK::Unterminated)),
             ],
         );
+        run_test("'", &[("'", TT::TextLiteral(TLK::Unterminated))]);
     }
 
     #[test]

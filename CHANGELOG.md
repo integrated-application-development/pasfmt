@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Asm integer literals now supported (e.g. octal `076O`, hex `0FFH`/`$FF`, binary `010B`)
   - Incorrect lexing of `..` tokens used directly after integer literals (e.g. `0..1`).
   - Incorrect lexing of keywords used in qualified names (e.g. `System.String`); now lexed as identifiers.
+  - Incorrect token type of unterminated text literal at end of file.
 - Incorrect encoding used for writing files with encodings inferred from a BOM.
 - Incorrect encoding used in stdin/stdout mode; UTF-8 was always used, but now the configured
   encoding is respected.
