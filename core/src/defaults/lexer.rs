@@ -19,7 +19,6 @@ impl Lexer for DelphiLexer {
     }
 }
 
-#[derive(Copy, Clone)]
 struct LexState {
     is_first: bool,
     in_asm: bool,
