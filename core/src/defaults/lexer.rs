@@ -2003,6 +2003,24 @@ mod tests {
             ],
         );
     }
+
+    #[test]
+    fn inline_assembly_unterminated() {
+        run_test(
+            indoc! {"
+            asm
+                XOR RBX, RBX
+            "},
+            &[
+                ("asm", TT::Keyword(KK::Asm)),
+                ("XOR", TT::Identifier),
+                ("RBX", TT::Identifier),
+                (",", TT::Op(OK::Comma)),
+                ("RBX", TT::Identifier),
+            ],
+        );
+    }
+
     #[test]
     fn inline_assembly_with_end_in_ifdef() {
         run_test(
