@@ -204,7 +204,7 @@ const COMMON_LEXER_MAP: [Option<LexerFn>; 256] = make_byte_map(
         (ByteSet::List(b")"), Some(r_paren)),
         //
         (ByteSet::List(b"'#"), Some(text_literal)),
-        (ByteSet::List(b"&"), Some(ampersand_number_literal_or_ident)),
+        (ByteSet::List(b"&"), Some(ampersand)),
         (ByteSet::List(b"%"), Some(binary_number_literal)),
         (ByteSet::List(b"$"), Some(hex_number_literal)),
         (ByteSet::Range(b'0'..=b'9'), Some(dec_number_literal)),
@@ -215,7 +215,7 @@ const COMMON_LEXER_MAP: [Option<LexerFn>; 256] = make_byte_map(
         // U+3000 is treated as whitespace, so this code should never see it.
         // We need to delegate to a unicode-specific sub-lexer though, so it can ensure that the next
         // lexer is positioned on a valid char boundary.
-        (ByteSet::Range(0x80..=0xFF), Some(lex_unicode)),
+        (ByteSet::Range(0x80..=0xFF), Some(unicode_identifier)),
     ],
     None,
 );
@@ -650,7 +650,7 @@ fn count_bytes_in_set(input: &str, offset: usize, set: &[bool; 256]) -> usize {
     count_matching(input, offset, |b| set[*b as usize])
 }
 
-fn lex_unicode(mut args: LexArgs) -> OffsetAndTokenType {
+fn unicode_identifier(mut args: LexArgs) -> OffsetAndTokenType {
     while !args.input.is_char_boundary(args.offset) {
         args.offset += 1;
     }
@@ -673,16 +673,6 @@ fn identifier_or_keyword(args: LexArgs) -> OffsetAndTokenType {
 
     args.lex_state.in_asm = token_type == TT::Keyword(KK::Asm);
     (end_offset, token_type)
-}
-
-fn escaped_identifier(
-    LexArgs {
-        input, mut offset, ..
-    }: LexArgs,
-) -> OffsetAndTokenType {
-    offset += count_matching(input, offset, |b| *b == b'&');
-    offset = find_identifier_end(input, offset);
-    (offset, TT::Identifier)
 }
 
 fn asm_label(LexArgs { input, offset, .. }: LexArgs) -> OffsetAndTokenType {
@@ -1105,13 +1095,15 @@ fn compiler_directive_or_comment(args: LexArgs) -> OffsetAndTokenType {
 
 // endregion: directives/comments
 
-fn ampersand_number_literal_or_ident(args: LexArgs) -> OffsetAndTokenType {
+fn ampersand(mut args: LexArgs) -> OffsetAndTokenType {
+    args.offset += count_matching(args.input, args.offset, |b| *b == b'&');
+
     match args.next_byte() {
         Some(b'$') => hex_number_literal(args.consume(1)),
         Some(b'%') => binary_number_literal(args.consume(1)),
         Some(b'0'..=b'9') => dec_number_literal(args.consume(1)),
         Some(b'a'..=b'z' | b'A'..=b'Z' | b'_') => identifier(args.consume(1)),
-        Some(b'&') => escaped_identifier(args.consume(1)),
+        Some(0x80..) => unicode_identifier(args.consume(1)),
         _ => unknown(args),
     }
 }
@@ -1678,14 +1670,36 @@ mod tests {
 
     #[test]
     fn lex_ampersand_integer_literals() {
-        // Only the &0 case is valid according to our compiler, not that it makes any sense, but we figure that
-        // the other cases should be lexed in the same way (even if they are invalid).
+        // Nonsensically, with the Delphi 11 compiler, only the `&0` and `&&0` cases are valid.
+        // We figure that the other cases should be lexed in the same way (even if they are invalid).
         run_test(
-            "&$FF &%0 &0",
+            "&$FF &&$FF &%0 &&%0 &0 &&0",
             &[
                 ("&$FF", TT::NumberLiteral(NLK::Hex)),
+                ("&&$FF", TT::NumberLiteral(NLK::Hex)),
                 ("&%0", TT::NumberLiteral(NLK::Binary)),
+                ("&&%0", TT::NumberLiteral(NLK::Binary)),
                 ("&0", TT::NumberLiteral(NLK::Decimal)),
+                ("&&0", TT::NumberLiteral(NLK::Decimal)),
+            ],
+        );
+    }
+
+    #[test]
+    fn lex_ampersand_identifiers() {
+        run_test(
+            "&begin &&op_Addition &&&Foo &&&&Foo &_ && &£ &\0",
+            &[
+                ("&begin", TT::Identifier),
+                ("&&op_Addition", TT::Identifier),
+                // These aren't valid identifiers, but they're most valid as such.
+                ("&&&Foo", TT::Identifier),
+                ("&&&&Foo", TT::Identifier),
+                ("&_", TT::Identifier),
+                // You can't actually use this as an identifier, but in some contexts it's valid yet ignored.
+                ("&&", TT::Unknown),
+                ("&£", TT::Identifier),
+                ("&", TT::Unknown),
             ],
         );
     }
@@ -1708,18 +1722,11 @@ mod tests {
     #[test]
     fn lex_identifiers() {
         run_test(
-            "Foo _Foo _1Foo &begin &&op_Addition &&&Foo &&&&Foo &&",
+            "Foo _Foo _1Foo",
             &[
                 ("Foo", TT::Identifier),
                 ("_Foo", TT::Identifier),
                 ("_1Foo", TT::Identifier),
-                ("&begin", TT::Identifier),
-                ("&&op_Addition", TT::Identifier),
-                // These aren't valid identifiers, but they're most valid as such.
-                ("&&&Foo", TT::Identifier),
-                ("&&&&Foo", TT::Identifier),
-                // You can't actually use this as an identifier, but in some contexts it's valid yet ignored.
-                ("&&", TT::Identifier),
             ],
         );
     }
