@@ -1548,15 +1548,30 @@ mod tests {
     #[test]
     fn lex_unterminated_string_literals() {
         run_test(
-            "'string\n' + '';\n'a'#\n'a'## '''\n",
+            "
+            'string
+            ' + '';
+            'a'#
+            'a'##
+            #$ #% #$Z #%A
+            ",
             &[
                 ("'string", TT::TextLiteral(TLK::Unterminated)),
                 ("' + '';", TT::TextLiteral(TLK::Unterminated)),
                 ("'a'#", TT::TextLiteral(TLK::Unterminated)),
                 ("'a'#", TT::TextLiteral(TLK::Unterminated)),
                 ("#", TT::TextLiteral(TLK::Unterminated)),
-                ("'''\n", TT::TextLiteral(TLK::Unterminated)),
+                ("#$", TT::TextLiteral(TLK::Unterminated)),
+                ("#%", TT::TextLiteral(TLK::Unterminated)),
+                ("#$", TT::TextLiteral(TLK::Unterminated)),
+                ("Z", TT::Identifier),
+                ("#%", TT::TextLiteral(TLK::Unterminated)),
+                ("A", TT::Identifier),
             ],
+        );
+        run_test(
+            "'''\nasdf",
+            &[("'''\nasdf", TT::TextLiteral(TLK::Unterminated))],
         );
         run_test("'", &[("'", TT::TextLiteral(TLK::Unterminated))]);
     }
