@@ -18,9 +18,10 @@ const DEFAULT_CONFIG_FILE_NAME: &str = "pasfmt.toml";
 
 #[macro_export]
 macro_rules! pasfmt_config {
-    ($type_name: ident $(, name = $name: expr, version = $version: expr)?) => {
+    ($(#[$attr: meta])* $type_name: ident) => {
         #[derive(clap::Parser, Debug)]
-        #[command($(name = $name,)? author, about, version $(= $version)?, long_about = None)]
+        #[command(author, about, version, long_about = None)]
+        $(#[$attr])*
         struct $type_name {
             #[command(flatten)]
             config: PasFmtConfiguration,
