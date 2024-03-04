@@ -1,8 +1,11 @@
 use std::{error::Error, fs::read_to_string, path::PathBuf, str::FromStr};
 
+use anstyle::AnsiColor;
 use anyhow::Context;
 pub use clap::{self, error::ErrorKind, CommandFactory, Parser};
-use clap::{builder::PossibleValuesParser, builder::TypedValueParser, Args, ValueEnum};
+use clap::{
+    builder::PossibleValuesParser, builder::Styles, builder::TypedValueParser, Args, ValueEnum,
+};
 
 use figment::{
     providers::{Format, Serialized, Toml},
@@ -70,6 +73,7 @@ where
 }
 
 #[derive(Args, Debug)]
+#[command(styles = get_styles())]
 pub struct PasFmtConfiguration {
     /// Paths that will be formatted. Can be a path/dir/glob. If no paths are
     /// specified, stdin is read.
@@ -129,6 +133,17 @@ fn log_level_from_usize(u: usize) -> Option<LevelFilter> {
         5 => Some(LevelFilter::Trace),
         _ => None,
     }
+}
+
+fn get_styles() -> Styles {
+    Styles::styled()
+        .usage(AnsiColor::White.on_default().bold().underline())
+        .header(AnsiColor::White.on_default().bold().underline())
+        .literal(AnsiColor::BrightCyan.on_default())
+        .invalid(AnsiColor::Red.on_default().bold())
+        .error(AnsiColor::Red.on_default().bold())
+        .valid(AnsiColor::Green.on_default().bold())
+        .placeholder(AnsiColor::White.on_default())
 }
 
 impl Default for PasFmtConfiguration {
