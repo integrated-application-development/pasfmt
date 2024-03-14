@@ -210,6 +210,15 @@ pub enum TokenType {
     Unknown,
 }
 
+impl TokenType {
+    pub(crate) fn is_comment_or_directive(&self) -> bool {
+        matches!(
+            self,
+            Self::Comment(_) | Self::CompilerDirective | Self::ConditionalDirective(_)
+        )
+    }
+}
+
 #[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
 pub enum LogicalLineType {
     ConditionalDirective,

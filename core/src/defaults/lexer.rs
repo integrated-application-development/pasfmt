@@ -23,6 +23,7 @@ impl Lexer for DelphiLexer {
 struct LexState {
     is_first: bool,
     in_asm: bool,
+    prev_real_token: Option<TokenType>,
 }
 
 struct LexedToken<'a> {
@@ -51,6 +52,7 @@ fn lex(mut input: &str) -> (&str, Vec<Token>) {
     let mut lex_state = LexState {
         in_asm: false,
         is_first: true,
+        prev_real_token: None,
     };
     while let Some((remaining, token)) = whitespace_and_token(input, &mut lex_state) {
         tokens.push(to_final_token(token));
@@ -93,6 +95,11 @@ fn whitespace_and_token<'a>(
         lex_token(args)?
     };
     lex_state.is_first = false;
+
+    if !token_type.is_comment_or_directive() {
+        lex_state.prev_real_token = Some(token_type);
+    }
+
     let (token_content, remaining) = input.split_at(end_exclusive);
 
     Some((
@@ -657,8 +664,14 @@ fn identifier(args: LexArgs) -> OffsetAndTokenType {
 
 fn identifier_or_keyword(args: LexArgs) -> OffsetAndTokenType {
     let end_offset = find_identifier_end(args.input, args.offset);
-    let word = &args.input[(args.offset - 1)..end_offset];
-    let token_type = get_word_token_type(word);
+
+    let token_type = if args.lex_state.prev_real_token == Some(TT::Op(OK::Dot)) {
+        TT::Identifier
+    } else {
+        let word = &args.input[(args.offset - 1)..end_offset];
+        get_word_token_type(word)
+    };
+
     args.lex_state.in_asm = token_type == TT::Keyword(KK::Asm);
     (end_offset, token_type)
 }
@@ -1845,6 +1858,65 @@ mod tests {
         ]
         .into_iter()
         .for_each(run_casing_test);
+    }
+
+    #[test]
+    fn lex_qualified_keyword() {
+        // prefixing a keyword with a dot '.' should make it an identifier
+        run_test(
+            "
+            System.String
+            A.if
+            A.{}if
+            A.{}{}if
+            A.{$if}if
+            A.{$define B}if
+            A.//
+            if
+            .if
+            if
+            ",
+            vec![
+                ("System", TT::Identifier),
+                (".", TT::Op(OK::Dot)),
+                ("String", TT::Identifier),
+                //
+                ("A", TT::Identifier),
+                (".", TT::Op(OK::Dot)),
+                ("if", TT::Identifier),
+                //
+                ("A", TT::Identifier),
+                (".", TT::Op(OK::Dot)),
+                ("{}", TT::Comment(CommentKind::InlineBlock)),
+                ("if", TT::Identifier),
+                //
+                ("A", TT::Identifier),
+                (".", TT::Op(OK::Dot)),
+                ("{}", TT::Comment(CommentKind::InlineBlock)),
+                ("{}", TT::Comment(CommentKind::InlineBlock)),
+                ("if", TT::Identifier),
+                //
+                ("A", TT::Identifier),
+                (".", TT::Op(OK::Dot)),
+                ("{$if}", TT::ConditionalDirective(CDK::If)),
+                ("if", TT::Identifier),
+                //
+                ("A", TT::Identifier),
+                (".", TT::Op(OK::Dot)),
+                ("{$define B}", TT::CompilerDirective),
+                ("if", TT::Identifier),
+                //
+                ("A", TT::Identifier),
+                (".", TT::Op(OK::Dot)),
+                ("//", TT::Comment(CommentKind::InlineLine)),
+                ("if", TT::Identifier),
+                //
+                (".", TT::Op(OK::Dot)),
+                ("if", TT::Identifier),
+                //
+                ("if", TT::Keyword(KK::If)),
+            ],
+        );
     }
 
     #[test]
