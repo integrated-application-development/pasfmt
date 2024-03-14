@@ -882,8 +882,10 @@ fn asm_number_literal(mut args: LexArgs) -> OffsetAndTokenType {
 fn dec_number_literal(mut args: LexArgs) -> OffsetAndTokenType {
     args.offset += count_decimal(args.input, args.offset);
     if args.next_byte() == Some(&b'.') {
-        args.offset += 1;
-        args.offset += count_full_decimal(args.input, args.offset);
+        let frac_count = count_full_decimal(args.input, args.offset + 1);
+        if frac_count > 0 {
+            args.offset += 1 + frac_count;
+        }
     }
     if matches!(args.next_byte(), Some(&b'e' | b'E')) {
         args.offset += 1;
@@ -1571,16 +1573,52 @@ mod tests {
     }
 
     #[test]
+    fn lex_ambiguous_dotdot() {
+        run_test(
+            "0..1",
+            vec![
+                ("0", TT::NumberLiteral(NLK::Decimal)),
+                ("..", TT::Op(OK::DotDot)),
+                ("1", TT::NumberLiteral(NLK::Decimal)),
+            ],
+        );
+    }
+
+    #[test]
+    fn lex_fake_decimal_number_literals() {
+        // These might look like floats, but they are actually member accesses on integers
+        // (accessing routines defined in helper classes).
+        run_test(
+            "0._0 0.e5 0.e-5",
+            vec![
+                ("0", TT::NumberLiteral(NLK::Decimal)),
+                (".", TT::Op(OK::Dot)),
+                ("_0", TT::Identifier),
+                //
+                ("0", TT::NumberLiteral(NLK::Decimal)),
+                (".", TT::Op(OK::Dot)),
+                ("e5", TT::Identifier),
+                //
+                ("0", TT::NumberLiteral(NLK::Decimal)),
+                (".", TT::Op(OK::Dot)),
+                ("e", TT::Identifier),
+                ("-", TT::Op(OK::Minus)),
+                ("5", TT::NumberLiteral(NLK::Decimal)),
+            ],
+        );
+    }
+
+    #[test]
     fn lex_invalid_decimal_number_literals() {
         run_test(
-            "0._0 0.e5 0.e-5 0.e+5 0.e-",
+            "0e 0.0e 0e+ 0e- 0.0e+ 0.0e-",
             vec![
-                ("0.", TT::NumberLiteral(NLK::Decimal)),
-                ("_0", TT::Identifier),
-                ("0.e5", TT::NumberLiteral(NLK::Decimal)),
-                ("0.e-5", TT::NumberLiteral(NLK::Decimal)),
-                ("0.e+5", TT::NumberLiteral(NLK::Decimal)),
-                ("0.e-", TT::NumberLiteral(NLK::Decimal)),
+                ("0e", TT::NumberLiteral(NLK::Decimal)),
+                ("0.0e", TT::NumberLiteral(NLK::Decimal)),
+                ("0e+", TT::NumberLiteral(NLK::Decimal)),
+                ("0e-", TT::NumberLiteral(NLK::Decimal)),
+                ("0.0e+", TT::NumberLiteral(NLK::Decimal)),
+                ("0.0e-", TT::NumberLiteral(NLK::Decimal)),
             ],
         );
     }
