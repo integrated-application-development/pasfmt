@@ -116,9 +116,8 @@ fn space_operator(
             .iter()
             .rev()
             .skip(formatted_tokens.get_tokens().len() - token_idx)
-            .find_map(|token| match token.0.get_token_type() {
-                TT::Comment(_) | TT::CompilerDirective | TT::ConditionalDirective(_) => None,
-                token_type => Some(token_type),
+            .find_map(|token| {
+                Some(token.0.get_token_type()).filter(|t| !t.is_comment_or_directive())
             })
     };
 
