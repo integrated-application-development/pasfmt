@@ -95,7 +95,7 @@ impl FileFormatter {
         result_operation: T,
     ) -> Vec<anyhow::Result<O>>
     where
-        T: Fn(&mut File, &Path, &DecodedFile, String) -> anyhow::Result<O> + Sync,
+        T: Fn(&mut File, &Path, &DecodedFile, &str) -> anyhow::Result<O> + Sync,
         O: Send,
     {
         open_options.read(true);
@@ -104,27 +104,33 @@ impl FileFormatter {
 
         valid_paths
             .into_par_iter()
-            .map(|file_path| {
-                let mut file = open_options
-                    .open(&file_path)
-                    .with_context(|| format!("Failed to open '{}'", file_path.display()))?;
+            .map_init(
+                || (Vec::<u8>::new(), String::new()),
+                |(input_buf, output_buf), file_path| {
+                    input_buf.clear();
+                    output_buf.clear();
 
-                let mut buf = vec![];
-                let decoded_file = self
-                    .decode_file(&mut file, &mut buf)
-                    .with_context(|| format!("Failed to read '{}'", file_path.display()))?;
+                    let mut file = open_options
+                        .open(&file_path)
+                        .with_context(|| format!("Failed to open '{}'", file_path.display()))?;
 
-                if decoded_file.replacements {
-                    bail!(
-                        "File '{}' had malformed sequences (in encoding '{}')",
-                        file_path.display(),
-                        decoded_file.encoding.name()
-                    );
-                }
+                    let decoded_file = self
+                        .decode_file(&mut file, input_buf)
+                        .with_context(|| format!("Failed to read '{}'", file_path.display()))?;
 
-                let formatted_file = self.formatter.format(&decoded_file.contents);
-                result_operation(&mut file, &file_path, &decoded_file, formatted_file)
-            })
+                    if decoded_file.replacements {
+                        bail!(
+                            "File '{}' had malformed sequences (in encoding '{}')",
+                            file_path.display(),
+                            decoded_file.encoding.name()
+                        );
+                    }
+
+                    self.formatter
+                        .format_into_buf(&decoded_file.contents, output_buf);
+                    result_operation(&mut file, &file_path, &decoded_file, output_buf)
+                },
+            )
             .map(|res| {
                 if let Err(e) = &res {
                     error!("{}", e)
@@ -147,7 +153,7 @@ impl FileFormatter {
                     );
                     return Ok(());
                 }
-                let encoded_output = decoded_file.encoding.encode(&formatted_output).0;
+                let encoded_output = decoded_file.encoding.encode(formatted_output).0;
                 file.seek(SeekFrom::Start(0)).with_context(|| {
                     format!("Failed to seek to start of file: '{}'", file_path.display())
                 })?;
@@ -209,7 +215,7 @@ impl FileFormatter {
             |_, file_path, decoded_file, formatted_output| {
                 Self::check_formatting(
                     &decoded_file.contents,
-                    &formatted_output,
+                    formatted_output,
                     file_path.display(),
                 )
             },

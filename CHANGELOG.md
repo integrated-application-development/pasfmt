@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Can be used in stdin/stdout mode.
   - Messages for incorrectly formatted files prefixed with 'CHECK' instead of 'VERIFY', and are
     sent to stderr, not stdout.
+- `Formatter::format_into_buf` and `Reconstructor::reconstruct_into_buf` to allow reuse of memory
+  allocations.
 
 ### Removed
 

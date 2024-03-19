@@ -11,29 +11,27 @@ impl DelphiLogicalLinesReconstructor {
     }
 }
 impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
-    fn reconstruct(&self, formatted_tokens: FormattedTokens) -> String {
-        let mut out = String::new();
+    fn reconstruct_into_buf(&self, formatted_tokens: FormattedTokens, buf: &mut String) {
         formatted_tokens
             .get_tokens()
             .iter()
             .for_each(|(token, formatting_data)| {
                 if formatting_data.is_ignored() {
-                    out.push_str(token.get_leading_whitespace());
+                    buf.push_str(token.get_leading_whitespace());
                 } else {
                     (0..formatting_data.newlines_before)
-                        .for_each(|_| out.push_str(self.reconstruction_settings.get_newline_str()));
+                        .for_each(|_| buf.push_str(self.reconstruction_settings.get_newline_str()));
                     (0..formatting_data.indentations_before).for_each(|_| {
-                        out.push_str(self.reconstruction_settings.get_indentation_str())
+                        buf.push_str(self.reconstruction_settings.get_indentation_str())
                     });
                     (0..formatting_data.continuations_before).for_each(|_| {
-                        out.push_str(self.reconstruction_settings.get_continuation_str())
+                        buf.push_str(self.reconstruction_settings.get_continuation_str())
                     });
-                    (0..formatting_data.spaces_before).for_each(|_| out.push(' '));
+                    (0..formatting_data.spaces_before).for_each(|_| buf.push(' '));
                 };
 
-                out.push_str(token.get_content());
+                buf.push_str(token.get_content());
             });
-        out
     }
 }
 

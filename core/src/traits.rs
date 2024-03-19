@@ -33,5 +33,10 @@ pub trait LogicalLineFileFormatter {
 }
 
 pub trait LogicalLinesReconstructor {
-    fn reconstruct(&self, formatted_tokens: FormattedTokens) -> String;
+    fn reconstruct_into_buf(&self, formatted_tokens: FormattedTokens, out: &mut String);
+    fn reconstruct(&self, formatted_tokens: FormattedTokens) -> String {
+        let mut out = String::new();
+        self.reconstruct_into_buf(formatted_tokens, &mut out);
+        out
+    }
 }

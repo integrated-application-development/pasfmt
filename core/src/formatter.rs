@@ -60,6 +60,11 @@ impl Formatter {
         FormatterBuilder::default()
     }
     pub fn format(&self, input: &str) -> String {
+        let mut out = String::new();
+        self.format_into_buf(input, &mut out);
+        out
+    }
+    pub fn format_into_buf(&self, input: &str, buf: &mut String) {
         let mut tokens = self.lexer.lex(input);
         for token_consolidator in self.token_consolidators.iter() {
             token_consolidator.consolidate(&mut tokens);
@@ -88,7 +93,8 @@ impl Formatter {
         for formatter in self.logical_line_formatters.iter() {
             formatter.format(&mut formatted_tokens, &lines);
         }
-        self.reconstructor.reconstruct(formatted_tokens)
+        self.reconstructor
+            .reconstruct_into_buf(formatted_tokens, buf);
     }
 }
 
