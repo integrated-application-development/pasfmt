@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `TokenType::TextLiteral` to contain a `TextLiteralKind`.
+- Handling of unterminated comments and text literals.
 - The default encoding on Windows to be the system ANSI codepage.
 - The default encoding on non-Windows platforms to be UTF-8.
 - Handling of IO errors. Previously any IO error would immediately crash the program.
@@ -74,21 +75,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Incorrect parsing for generic type param lists containing semicolons.
 - Extra trailing newline when formatting stdin to stdout.
 - Lexical edge cases:
-  - Incorrect lexing of codepoints in the interval [U+00, U+20) as `Unkown`, now lexed as whitespace.
-  - Incorrect lexing of codepoint U+3000 as `Unkown`, now lexed as whitespace.
-  - Incorrect lexing of non-ascii codepoints as `Unkown`, now lexed as identifiers (excluding U+3000).
-  - Incorrect lexing of hex and binary integer literals:
-    - Previously not accepted with no digits (`$` and `%`)
-    - Previously the classification was reversed (unobservable with the current rules).
-    - Previously not accepted with underscore as the first digit (`$_1`)
-  - Incorrect lexing of asm blocks
-    - Asm labels can now start with just one '@' character instead of two, and they can contain '@' characters.
-    - Asm integer literals now supported (e.g. octal `076O`, hex `0FFH`/`$FF`, binary `010B`)
-  - Incorrect lexing of `..` tokens used directly after integer literals (e.g. `0..1`).
-  - Incorrect lexing of keywords used in qualified names (e.g. `System.String`); now lexed as identifiers.
-  - Incorrect token type of unterminated text literal at end of file.
-  - Incorrect token type of ampersand-escaped integer literals with multiple ampersands.
-  - Incorrect lexing of ampersand-escaped unicode identifiers.
+  - Codepoints in `[U+00, U+20)` and `U+3000` are now lexed as whitespace instead of `Unknown`.
+  - Non-ascii codepoints (excluding `U+3000`) are now lexed as identifiers instead of `Unknown`.
+  - Hex and binary integer literals token types were reversed (unobservable with the current rules).
+  - Binary literals now can contain underscore (e.g. `%_1`).
+  - Asm labels now can contain `@` characters.
+  - Asm integer literals are now supported (e.g. octal `076O`, hex `0FFH`/`$FF`, binary `010B`).
+  - Keywords used in qualified names are now lexed as identifiers (e.g. `System.String`).
+  - Integer literals can now be escaped with multiple ampersands (e.g. `&&0`).
 - Incorrect encoding used for writing files with encodings inferred from a BOM.
 - Incorrect encoding used in stdin/stdout mode; UTF-8 was always used, but now the configured
   encoding is respected.
