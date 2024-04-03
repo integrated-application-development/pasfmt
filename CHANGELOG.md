@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `string` as a keyword
-- Support for Delphi 12 multi-line string literals
+- `string` as a keyword.
+- Support for Delphi 12 multi-line string literals.
 - `-C` CLI option to override configuration options.
 - `--mode` CLI option which replaces the `--write` and `--verify` options.
   The default for this option is dynamic; when files to format are provided the default is `files`,
@@ -27,16 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are all non-empty and only consist of whitespace. Without this validation, the format may not be
   idempotent.
 - Colour styling in CLI help.
-- `RawTokenType` as a copy of `TokenType` with `IdentifierOrKeyword`
-- `string-to-enum` feature to `core` for `KeywordKind` and `LogicalLineType`
+- `RawTokenType` as a copy of `TokenType` with `IdentifierOrKeyword`.
+- `string-to-enum` feature to `core` for `KeywordKind` and `LogicalLineType`.
 
 ### Removed
 
-- `add`, `remove`, and `variant` as keywords
-- short version of `--config-file` CLI option
+- `add`, `remove`, and `variant` as keywords.
+- short version of `--config-file` CLI option.
 - `--write`/`-w` CLI option (now accessible via `--mode=files`).
 - `--verify` CLI option (replaced by `--mode=check` with some differences).
-- `IdentifierOrKeyword` variant of `TokenType` enum
+- `IdentifierOrKeyword` variant of `TokenType` enum.
 
 ### Changed
 
