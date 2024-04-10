@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handling of IO errors. Previously any IO error would immediately crash the program.
   Now errors are logged when they occur and cause the program to exit non-zero after
   all other files have been formatted successfully.
-- Default continutation to be the same as the configured indentation.
+- Default continuation to be the same as the configured indentation.
 - The intermediate type of tokens between lexing and line parsing from `Token` to `RawToken`.
   This is to allow the logical line parser to consolidate the token types while processing.
   Additionally, formatters and consolidators operating after parsing do not need to worry about
