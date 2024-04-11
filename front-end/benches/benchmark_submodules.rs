@@ -18,9 +18,9 @@ use pasfmt_orchestrator::predule::*;
 pasfmt_config!(Config);
 
 fn bench_format_submodules(submodules: &[(&str, &PathBuf)], c: &mut Criterion) {
-    let mut group = c.benchmark_group("submodules");
-    group.measurement_time(Duration::from_secs(30));
-    group.sample_size(100);
+    let mut group = c.benchmark_group("format_submodules");
+    group.measurement_time(Duration::from_secs(10));
+    group.sample_size(10);
 
     for (name, path) in submodules {
         group.bench_function(*name, |b| {
@@ -111,8 +111,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     bench_format_submodules(
         &[
-            // Currently there are some severe performance issues in other Indy files, so we limit to a subdirectory.
-            ("Indy", &submodule_dir.join("Indy/Test")),
+            ("Indy", &submodule_dir.join("Indy")),
             ("DEC", &submodule_dir.join("DelphiEncryptionCompendium")),
         ],
         c,
