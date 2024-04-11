@@ -7,23 +7,23 @@ edition = "2021"
 _lang_types_from_str  = ["dep:strum", "dep:strum_macros"]
 
 [dependencies]
-itertools = "0.11.0"
-log = "0.4"
-memchr = "2.6.0"
-cfg-if = "1.0.0"
-thiserror = "1.0.56"
-strum = { version = "0.26.1", optional = true }
-strum_macros = { version = "0.26.1", optional = true }
-fxhash = "0.2.1"
+itertools = { workspace = true }
+log = { workspace = true }
+memchr = { workspace = true }
+cfg-if = { workspace = true }
+thiserror = { workspace = true }
+strum = { workspace = true, optional = true }
+strum_macros = { workspace = true, optional = true }
+fxhash = { workspace = true }
 
 [dev-dependencies]
 pasfmt-core = { path = ".", features = [ "_lang_types_from_str" ] }
-spectral = { version = "0.6.0", default-features = false }
-indoc = "2.0.1"
-yare = "1.0.2"
-criterion = { version = "0.5.1", features = ["html_reports"] }
-rand = "0.8.5"
-paste = "1.0.14"
+spectral = { workspace = true }
+indoc = { workspace = true }
+yare = { workspace = true }
+criterion = { workspace = true, features = ["html_reports"] }
+rand = { workspace = true }
+paste = { workspace = true }
 
 [[bench]]
 name = "benchmark_lexer"

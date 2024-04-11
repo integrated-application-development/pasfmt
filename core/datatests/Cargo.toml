@@ -4,16 +4,16 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-datatest-stable = "0.2.6"
+datatest-stable = { workspace = true }
 pasfmt-core = { path = "..", features = [ "_lang_types_from_str" ] }
-spectral = { version = "0.6.0", default-features = false }
-indoc = "2.0.1"
-itertools = "0.12.1"
-fxhash = "0.2.1"
+spectral = { workspace = true }
+indoc = { workspace = true }
+itertools = { workspace = true }
+fxhash = { workspace = true }
 
 [build-dependencies]
-indoc = "2.0.1"
-walkdir = "2.3.3"
+indoc = { workspace = true }
+walkdir = { workspace = true }
 
 [[test]]
 name = "datatest"
