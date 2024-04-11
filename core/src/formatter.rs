@@ -1,5 +1,6 @@
-use std::collections::HashSet;
 use std::marker::PhantomData;
+
+use fxhash::FxHashSet;
 
 use crate::lang::*;
 use crate::traits::*;
@@ -21,7 +22,7 @@ impl LogicalLinesConsolidator for PostParseConsolidatorKind {
 
 #[derive(Default)]
 pub struct TokenMarker {
-    set: HashSet<usize>,
+    set: FxHashSet<usize>,
 }
 
 impl TokenMarker {
@@ -460,7 +461,7 @@ mod tests {
             .iter()
             .map(|_| new_token("", TokenType::Unknown))
             .collect_vec();
-        let marked_tokens: HashSet<usize> = marked_tokens.into_iter().collect();
+        let marked_tokens: FxHashSet<usize> = marked_tokens.into_iter().collect();
         let mut lines = lines
             .into_iter()
             .map(|line_indices| LogicalLine::new(None, 0, line_indices, LogicalLineType::Unknown))

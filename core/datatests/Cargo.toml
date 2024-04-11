@@ -9,6 +9,7 @@ pasfmt-core = { path = "..", features = [ "_lang_types_from_str" ] }
 spectral = { version = "0.6.0", default-features = false }
 indoc = "2.0.1"
 itertools = "0.12.1"
+fxhash = "0.2.1"
 
 [build-dependencies]
 indoc = "2.0.1"

@@ -19,9 +19,8 @@
     user-added line breaks.
 */
 
-use std::collections::HashMap;
-use std::collections::HashSet;
-
+use fxhash::FxHashMap;
+use fxhash::FxHashSet;
 use itertools::Itertools;
 
 use crate::lang::ConditionalDirectiveKind as CDK;
@@ -66,8 +65,8 @@ impl LogicalLineParser for DelphiLogicalLineParser {
 fn parse_file(tokens: &mut [RawToken]) -> Vec<LogicalLine> {
     let conditional_branches = get_conditional_branches_per_directive(tokens);
     let passes = get_all_conditional_branch_paths(&conditional_branches);
-    let mut lines = HashMap::default();
-    let mut attributed_directives = HashSet::default();
+    let mut lines = FxHashMap::default();
+    let mut attributed_directives = FxHashSet::default();
     let mut pass_tokens = Vec::new();
     for pass in passes {
         get_pass_tokens(tokens, &pass, &conditional_branches, &mut pass_tokens);
@@ -139,7 +138,7 @@ fn parse_file(tokens: &mut [RawToken]) -> Vec<LogicalLine> {
 }
 
 fn consolidate_pass_lines(
-    result_lines: &mut HashMap<LocalLogicalLine, usize>,
+    result_lines: &mut FxHashMap<LocalLogicalLine, usize>,
     pass_lines: Vec<LocalLogicalLine>,
 ) {
     let mut mapped_line_indices = Vec::new();
@@ -174,14 +173,14 @@ struct InternalDelphiLogicalLineParser<'a, 'b> {
     paren_level: u32,
     brack_level: u32,
     generic_level: u32,
-    attributed_directives: &'a mut HashSet<usize>,
+    attributed_directives: &'a mut FxHashSet<usize>,
 }
 use InternalDelphiLogicalLineParser as LLP;
 impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     fn new(
         tokens: &'a mut [RawToken<'b>],
         pass_indices: &'a [usize],
-        attributed_directives: &'a mut HashSet<usize>,
+        attributed_directives: &'a mut FxHashSet<usize>,
     ) -> Self {
         InternalDelphiLogicalLineParser {
             tokens,

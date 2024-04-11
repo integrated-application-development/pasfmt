@@ -1,5 +1,5 @@
+use fxhash::FxHashMap;
 use std::{
-    collections::HashMap,
     error::Error,
     fmt::{Debug, Display},
     fs::read_to_string,
@@ -29,7 +29,7 @@ fn run_test(input: &str) -> datatest_stable::Result<()> {
     let actual_lines: Vec<AssertLL> = actual_lines.into_iter().map_into().collect();
 
     let mut orphan_line_index = actual_lines.len();
-    let mut expected_line_map = HashMap::new();
+    let mut expected_line_map = FxHashMap::default();
     for (&expected_line_index, expected_line) in &expected_lines {
         if let Some((actual_line_index, _)) = actual_lines
             .iter()
@@ -78,7 +78,7 @@ fn run_test(input: &str) -> datatest_stable::Result<()> {
 fn assert_lines(
     input: &str,
     tokens: &[Token],
-    expected_line_map: HashMap<usize, usize>,
+    expected_line_map: FxHashMap<usize, usize>,
     actual_lines: Vec<AssertLL>,
     expected_lines: Vec<AssertLL>,
 ) -> Result<(), Box<dyn Error>> {
@@ -213,7 +213,7 @@ impl PartialEq for AssertLL {
 
 struct DslParserOutput {
     pub input_str: String,
-    pub logical_lines: HashMap<usize, AssertLL>,
+    pub logical_lines: FxHashMap<usize, AssertLL>,
 }
 
 struct RawAssertLL {
@@ -328,13 +328,13 @@ fn parse_dsl(input: &str) -> Result<DslParserOutput, TestParsingError> {
         .skip(line_input.len() + 1)
         .collect_vec();
 
-    let line_types: HashMap<usize, LogicalLineType> = parse_line_types(line_type_input)?;
+    let line_types: FxHashMap<usize, LogicalLineType> = parse_line_types(line_type_input)?;
     parse_expected_lines(line_input, line_types)
 }
 
 fn parse_expected_lines(
     lines: Vec<&str>,
-    line_types: HashMap<usize, LogicalLineType>,
+    line_types: FxHashMap<usize, LogicalLineType>,
 ) -> Result<DslParserOutput, TestParsingError> {
     let mut line_data: Vec<(&str, String)> = Vec::new();
     for line in lines {
@@ -359,8 +359,8 @@ fn parse_expected_lines(
         };
     }
 
-    let mut token_markers = HashMap::new();
-    let mut parsed_lines = HashMap::new();
+    let mut token_markers = FxHashMap::default();
+    let mut parsed_lines = FxHashMap::default();
     let mut included_tokens: usize = 0;
 
     let mut input_str = String::new();
@@ -488,8 +488,8 @@ fn parse_line(
     metadata: &str,
     content: &str,
     implicit_lines: &mut usize,
-    token_markers: &HashMap<usize, LineParent>,
-    parsed_lines: &mut HashMap<LineNumber, (u16, RawAssertLL)>,
+    token_markers: &FxHashMap<usize, LineParent>,
+    parsed_lines: &mut FxHashMap<LineNumber, (u16, RawAssertLL)>,
 ) -> Result<Vec<LineNumber>, TestParsingError> {
     let metadata = parse_line_metadata(metadata)?;
     let indentation_level = ((content.len() - content.trim_start().len()) / 2) as u16;
@@ -538,9 +538,9 @@ fn parse_line(
 }
 
 fn finalise_logical_lines(
-    parsed_lines: HashMap<LineNumber, (u16, RawAssertLL)>,
-    line_types: HashMap<usize, LogicalLineType>,
-) -> HashMap<usize, AssertLL> {
+    parsed_lines: FxHashMap<LineNumber, (u16, RawAssertLL)>,
+    line_types: FxHashMap<usize, LogicalLineType>,
+) -> FxHashMap<usize, AssertLL> {
     // The generated line numbers will start after the last explicit line number
     let first_implicit_line = parsed_lines
         .keys()
@@ -620,8 +620,10 @@ fn parse_number(input: &str) -> Result<Option<usize>, TestParsingError> {
     )
 }
 
-fn parse_line_types(lines: Vec<&str>) -> Result<HashMap<usize, LogicalLineType>, TestParsingError> {
-    let mut result = HashMap::new();
+fn parse_line_types(
+    lines: Vec<&str>,
+) -> Result<FxHashMap<usize, LogicalLineType>, TestParsingError> {
+    let mut result = FxHashMap::default();
     for line in lines {
         let (line_number, line_type) = line
             .trim()
