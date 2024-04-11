@@ -20,6 +20,7 @@
 */
 
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 use itertools::Itertools;
 
@@ -65,8 +66,8 @@ impl LogicalLineParser for DelphiLogicalLineParser {
 fn parse_file(tokens: &mut [RawToken]) -> Vec<LogicalLine> {
     let conditional_branches = get_conditional_branches_per_directive(tokens);
     let passes = get_all_conditional_branch_paths(&conditional_branches);
-    let mut lines = HashMap::new();
-    let mut attributed_directives = Vec::new();
+    let mut lines = HashMap::default();
+    let mut attributed_directives = HashSet::default();
     let mut pass_tokens = Vec::new();
     for pass in passes {
         get_pass_tokens(tokens, &pass, &conditional_branches, &mut pass_tokens);
@@ -173,14 +174,14 @@ struct InternalDelphiLogicalLineParser<'a, 'b> {
     paren_level: u32,
     brack_level: u32,
     generic_level: u32,
-    attributed_directives: &'a mut Vec<usize>,
+    attributed_directives: &'a mut HashSet<usize>,
 }
 use InternalDelphiLogicalLineParser as LLP;
 impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     fn new(
         tokens: &'a mut [RawToken<'b>],
         pass_indices: &'a [usize],
-        attributed_directives: &'a mut Vec<usize>,
+        attributed_directives: &'a mut HashSet<usize>,
     ) -> Self {
         InternalDelphiLogicalLineParser {
             tokens,
@@ -248,7 +249,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     if let Some(token_index) = self.get_current_token_index() {
                         self.get_current_logical_line_mut().tokens.push(token_index);
                         if let TT::CompilerDirective = kind {
-                            self.attributed_directives.push(token_index);
+                            self.attributed_directives.insert(token_index);
                             self.set_logical_line_type(LLT::CompilerDirective);
                         }
                         self.pass_index += 1;

@@ -261,7 +261,7 @@ fn test_expression_parsing(input: &str, token_count: Option<usize>) {
         eprintln!("  {token:?}");
     }
     let token_indices = (0..tokens.len()).collect_vec();
-    let mut attributed_directives = vec![];
+    let mut attributed_directives = HashSet::default();
     let mut parser = InternalDelphiLogicalLineParser::new(
         &mut tokens,
         &token_indices,
