@@ -120,6 +120,7 @@ var
 varargs
 virtual
 while
+winapi
 with
 write
 writeonly

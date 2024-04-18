@@ -128,6 +128,7 @@ method_directive_consolidation_test!(
     register = { "register" },
     safecall = { "safecall" },
     stdcall = { "stdcall" },
+    winapi = { "winapi" },
     export = { "export" },
     // Portability directives
     far = { "far" },
@@ -160,6 +161,7 @@ method_directive_ident_consolidation_test!(
     register = { "REGISTER" },
     safecall = { "SAFECALL" },
     stdcall = { "STDCALL" },
+    winapi = { "WINAPI" },
     export = { "EXPORT" },
     // Portability directives
     far = { "FAR" },

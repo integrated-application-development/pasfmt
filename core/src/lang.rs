@@ -132,6 +132,7 @@ pub enum KeywordKind {
     Unsafe,
     VarArgs,
     Virtual,
+    WinApi,
     Write,
     WriteOnly,
 }
@@ -155,6 +156,7 @@ impl KeywordKind {
                 | KeywordKind::Register
                 | KeywordKind::SafeCall
                 | KeywordKind::StdCall
+                | KeywordKind::WinApi
                 | KeywordKind::Export
                 | KeywordKind::Deprecated
                 | KeywordKind::Experimental
