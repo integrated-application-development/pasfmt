@@ -179,25 +179,6 @@ builder_state!(WithTokenRemover: [CanAddTokenRemover, CanAddFormatter, CanAddRec
 builder_state!(WithFormatter: [CanAddFormatter, CanAddReconstructor]);
 builder_state!(WithReconstructor: [CanBuild]);
 
-trait FormattingBuilderData: Sized {
-    fn set_lexer<L: Lexer + Sync + 'static>(self, lexer: L) -> Self;
-    fn add_raw_token_consolidator<T: RawTokenConsolidator + Sync + 'static>(
-        self,
-        token_consolidator: T,
-    ) -> Self;
-    fn set_line_parser<T: LogicalLineParser + Sync + 'static>(self, line_parser: T) -> Self;
-    fn add_post_parse_consolidator(self, lines_consolidator: PostParseConsolidatorKind) -> Self;
-    fn add_token_ignorer<T: TokenIgnorer + Sync + 'static>(self, token_ignorer: T) -> Self;
-    fn add_token_remover<T: TokenRemover + Sync + 'static>(self, token_remover: T) -> Self;
-    fn add_formatter(self, logical_line_formatter: FormatterKind) -> Self;
-    fn set_reconstructor<T: LogicalLinesReconstructor + Sync + 'static>(
-        self,
-        reconstructor: T,
-    ) -> Self;
-
-    fn convert_type<U>(self) -> FormatterBuilder<U>;
-}
-
 pub trait AddLexer {
     fn lexer<T: Lexer + Sync + 'static>(self, lexer: T) -> FormatterBuilder<WithLexer>;
 }
@@ -268,21 +249,6 @@ pub struct FormatterBuilder<T> {
     builder_state: PhantomData<T>,
 }
 impl<T> FormatterBuilder<T> {
-    fn convert_type<U>(self) -> FormatterBuilder<U> {
-        FormatterBuilder::<U> {
-            lexer: self.lexer,
-            token_consolidators: self.token_consolidators,
-            logical_line_parser: self.logical_line_parser,
-            post_parse_consolidators: self.post_parse_consolidators,
-            token_ignorers: self.token_ignorers,
-            token_removers: self.token_removers,
-            logical_line_formatters: self.logical_line_formatters,
-            reconstructor: self.reconstructor,
-            builder_state: PhantomData,
-        }
-    }
-}
-impl<T> FormattingBuilderData for FormatterBuilder<T> {
     fn set_lexer<L: Lexer + Sync + 'static>(mut self, lexer: L) -> Self {
         self.lexer = Some(Box::new(lexer));
         self
