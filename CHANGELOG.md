@@ -30,7 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   idempotent.
 - Colour styling in CLI help.
 - `RawTokenType` as a copy of `TokenType` with `IdentifierOrKeyword`.
-- `string-to-enum` feature to `core` for `KeywordKind` and `LogicalLineType`.
 
 ### Removed
 
