@@ -14,7 +14,7 @@ log = { workspace = true }
 anyhow = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-windows = { workspace = true, features = ["Win32_Globalization"] }
+windows-sys = { workspace = true, features = ["Win32_Globalization"] }
 codepage = { workspace = true }
 
 [dev-dependencies]

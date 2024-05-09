@@ -11,7 +11,7 @@ fn windows_default_encoding() -> &'static Encoding {
 
     // SAFETY: yes it's a foreign function, but it's a simple one from the WinAPI that we
     // can assume to be safe.
-    let oemcp = unsafe { windows::Win32::Globalization::GetACP() };
+    let oemcp = unsafe { windows_sys::Win32::Globalization::GetACP() };
     oemcp
         .try_into()
         .ok()
