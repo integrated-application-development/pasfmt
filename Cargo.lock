@@ -640,7 +640,6 @@ dependencies = [
 name = "pasfmt-core"
 version = "0.3.0-dev"
 dependencies = [
- "cfg-if",
  "criterion",
  "fxhash",
  "indoc",

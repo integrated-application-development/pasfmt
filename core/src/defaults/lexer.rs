@@ -9,7 +9,6 @@ use crate::lang::TextLiteralKind as TLK;
 use crate::lang::*;
 use crate::traits::Lexer;
 
-use cfg_if::cfg_if;
 use log::*;
 
 pub struct DelphiLexer {}
@@ -638,12 +637,13 @@ fn find_identifier_end_x86_64(input: &str, offset: usize) -> usize {
 }
 
 fn find_identifier_end(input: &str, offset: usize) -> usize {
-    cfg_if! {
-        if #[cfg(target_arch = "x86_64")] {
-            find_identifier_end_x86_64(input, offset)
-        } else {
-            find_identifier_end_generic(input, offset)
-        }
+    #[cfg(target_arch = "x86_64")]
+    {
+        find_identifier_end_x86_64(input, offset)
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        find_identifier_end_generic(input, offset)
     }
 }
 

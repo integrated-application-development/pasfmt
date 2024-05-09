@@ -12,7 +12,6 @@ resolver = "2"
 [workspace.dependencies]
 anstyle = "1.0.7"
 anyhow = "1.0.83"
-cfg-if = "1.0.0"
 clap = "4.5.4"
 codepage = "0.1.1"
 criterion = "0.5.1"
