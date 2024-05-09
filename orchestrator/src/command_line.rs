@@ -1,4 +1,4 @@
-use std::{error::Error, fs::read_to_string, path::PathBuf, str::FromStr};
+use std::{borrow::Cow, error::Error, fs::read_to_string, path::PathBuf, str::FromStr};
 
 use anstyle::AnsiColor;
 use anyhow::Context;
@@ -237,10 +237,10 @@ impl PasFmtConfiguration {
 }
 
 impl FormatterConfiguration for PasFmtConfiguration {
-    fn get_paths(&self) -> Vec<String> {
-        let mut paths = self.paths.clone();
+    fn get_paths(&self) -> Cow<[String]> {
+        let mut paths = Cow::Borrowed(&self.paths[..]);
         if let Some(arg_file) = &self.files_from {
-            paths.extend(
+            paths.to_mut().extend(
                 read_to_string(arg_file)
                     .unwrap()
                     .lines()

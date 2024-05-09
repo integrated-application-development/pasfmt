@@ -1,10 +1,12 @@
+use std::borrow::Cow;
+
 use crate::{command_line::FormatMode, file_formatter::FileFormatter};
 use anyhow::anyhow;
 use log::LevelFilter;
 
 pub trait FormatterConfiguration {
     fn is_stdin(&self) -> bool;
-    fn get_paths(&self) -> Vec<String>;
+    fn get_paths(&self) -> Cow<[String]>;
     fn log_level(&self) -> LevelFilter;
     fn mode(&self) -> FormatMode;
 }
