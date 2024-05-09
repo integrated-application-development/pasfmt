@@ -1,5 +1,4 @@
-use std::{borrow::Cow, vec::Drain};
-use thiserror::Error;
+use std::{borrow::Cow, error::Error, fmt::Display, vec::Drain};
 
 use crate::prelude::*;
 
@@ -490,11 +489,18 @@ impl<'a> From<LogicalLines<'a>> for (&'a [Token<'a>], Vec<LogicalLine>) {
     }
 }
 
-#[derive(Error, Debug)]
-#[error("Invalid reconstruction settings: {msg}")]
+#[derive(Debug)]
 pub struct InvalidReconstructionSettingsError {
     msg: String,
 }
+
+impl Display for InvalidReconstructionSettingsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Invalid reconstruction settings: {}", self.msg)
+    }
+}
+
+impl Error for InvalidReconstructionSettingsError {}
 
 impl InvalidReconstructionSettingsError {
     fn new<S: Into<String>>(msg: S) -> Self {

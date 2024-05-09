@@ -33,7 +33,6 @@ spectral = { version = "0.6.0", default-features = false }
 stderrlog = "0.6.0"
 strum = "0.26.2"
 strum_macros = "0.26.2"
-thiserror = "1.0.60"
 toml = "0.8.12"
 walkdir = "2.5.0"
 windows-sys = "0.52.0"
