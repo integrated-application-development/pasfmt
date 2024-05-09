@@ -83,7 +83,7 @@ pub struct PasFmtConfiguration {
     /// A file containing paths to operate on. Newline separated list of
     /// path/dir/glob.
     #[arg(short, long)]
-    files_from: Option<String>,
+    files_from: Option<PathBuf>,
 
     /// Override the configuration file. By default working directory will be
     /// traversed until a `pasfmt.toml` file is found.
