@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Token` type to be a struct containing a `std::borrow::Cow` for the token content instead of
   an enum of `RefToken` and `OwningToken`.
+- `--files-file` parameter to `--files-from`.
 
 ### Fixed
 

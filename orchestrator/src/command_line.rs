@@ -83,7 +83,7 @@ pub struct PasFmtConfiguration {
     /// A file containing paths to operate on. Newline separated list of
     /// path/dir/glob.
     #[arg(short, long)]
-    files_file: Option<String>,
+    files_from: Option<String>,
 
     /// Override the configuration file. By default working directory will be
     /// traversed until a `pasfmt.toml` file is found.
@@ -150,7 +150,7 @@ impl Default for PasFmtConfiguration {
     fn default() -> Self {
         Self {
             paths: Default::default(),
-            files_file: Default::default(),
+            files_from: Default::default(),
             config_file: Default::default(),
             verbose: Default::default(),
             config: Default::default(),
@@ -239,7 +239,7 @@ impl PasFmtConfiguration {
 impl FormatterConfiguration for PasFmtConfiguration {
     fn get_paths(&self) -> Vec<String> {
         let mut paths = self.paths.clone();
-        if let Some(arg_file) = &self.files_file {
+        if let Some(arg_file) = &self.files_from {
             paths.extend(
                 read_to_string(arg_file)
                     .unwrap()
@@ -265,6 +265,6 @@ impl FormatterConfiguration for PasFmtConfiguration {
     }
 
     fn is_stdin(&self) -> bool {
-        self.paths.is_empty() && self.files_file.is_none()
+        self.paths.is_empty() && self.files_from.is_none()
     }
 }
