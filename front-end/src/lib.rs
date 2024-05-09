@@ -11,13 +11,16 @@ fn windows_default_encoding() -> &'static Encoding {
 
     // SAFETY: yes it's a foreign function, but it's a simple one from the WinAPI that we
     // can assume to be safe.
-    let oemcp = unsafe { windows_sys::Win32::Globalization::GetACP() };
-    oemcp
+    let ansi_codepage = unsafe { windows_sys::Win32::Globalization::GetACP() };
+    ansi_codepage
         .try_into()
         .ok()
         .and_then(|cp: u16| codepage::to_encoding(cp))
         .unwrap_or_else(|| {
-            warn!("Failed to convert system codepage to encoding. Defaulting to UTF-8.");
+            warn!(
+                "Failed to convert system codepage {} to encoding. Defaulting to UTF-8.",
+                ansi_codepage
+            );
             encoding_rs::UTF_8
         })
 }
