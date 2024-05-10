@@ -237,18 +237,20 @@ impl PasFmtConfiguration {
 }
 
 impl FormatterConfiguration for PasFmtConfiguration {
-    fn get_paths(&self) -> Cow<[String]> {
+    fn get_paths(&self) -> anyhow::Result<Cow<[String]>> {
         let mut paths = Cow::Borrowed(&self.paths[..]);
         if let Some(arg_file) = &self.files_from {
             paths.to_mut().extend(
                 read_to_string(arg_file)
-                    .unwrap()
+                    .with_context(|| {
+                        format!("Failed to read `--files-from` path: {}", arg_file.display())
+                    })?
                     .lines()
                     .map(String::from)
                     .collect::<Vec<_>>(),
             );
         }
-        paths
+        Ok(paths)
     }
     fn log_level(&self) -> LevelFilter {
         log_level_from_usize((self.verbose as usize) + (self.log_level as usize))

@@ -6,7 +6,7 @@ use log::LevelFilter;
 
 pub trait FormatterConfiguration {
     fn is_stdin(&self) -> bool;
-    fn get_paths(&self) -> Cow<[String]>;
+    fn get_paths(&self) -> anyhow::Result<Cow<[String]>>;
     fn log_level(&self) -> LevelFilter;
     fn mode(&self) -> FormatMode;
 }
@@ -33,7 +33,7 @@ fn check<T: FormatterConfiguration>(
     let check_results = if config.is_stdin() {
         vec![file_formatter.check_stdin()]
     } else {
-        file_formatter.check_files(&config.get_paths())
+        file_formatter.check_files(&config.get_paths()?)
     };
 
     let fail_count = check_results.iter().filter(|r| r.is_err()).count();
@@ -55,12 +55,12 @@ impl FormattingOrchestrator {
     ) -> anyhow::Result<()> {
         match config.mode() {
             FormatMode::Check => check(&config, &file_formatter),
-            FormatMode::Files => coalesce_err(&file_formatter.format_files(&config.get_paths())),
+            FormatMode::Files => coalesce_err(&file_formatter.format_files(&config.get_paths()?)),
             FormatMode::Stdout => {
                 if config.is_stdin() {
                     file_formatter.format_stdin_to_stdout()
                 } else {
-                    coalesce_err(&file_formatter.format_files_to_stdout(&config.get_paths()))
+                    coalesce_err(&file_formatter.format_files_to_stdout(&config.get_paths()?))
                 }
             }
         }
