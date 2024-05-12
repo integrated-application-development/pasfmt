@@ -525,13 +525,13 @@ impl ReconstructionSettings {
             ("continuation", &continuation_str),
         ] {
             if val.is_empty() {
-                return Err(InvalidReconstructionSettingsError::new(
-                    name.to_string() + " sequence cannot be blank",
-                ));
+                return Err(InvalidReconstructionSettingsError::new(format!(
+                    "{name} sequence cannot be blank"
+                )));
             } else if count_leading_whitespace(val) != val.len() {
-                return Err(InvalidReconstructionSettingsError::new(
-                    name.to_string() + " sequence must be all whitespace",
-                ));
+                return Err(InvalidReconstructionSettingsError::new(format!(
+                    "{name} sequence must be all whitespace (was {val:?})"
+                )));
             }
         }
 
