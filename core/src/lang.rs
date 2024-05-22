@@ -489,7 +489,7 @@ impl<'a> From<LogicalLines<'a>> for (&'a [Token<'a>], Vec<LogicalLine>) {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct InvalidReconstructionSettingsError {
     msg: String,
 }
@@ -666,6 +666,87 @@ impl LogicalLineFileFormatter for FormatterKind {
                 .iter()
                 .for_each(|logical_line| formatter.format(formatted_tokens, logical_line)),
             FormatterKind::FileFormatter(formatter) => formatter.format(formatted_tokens, input),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod reconstruction_validation {
+        use super::*;
+
+        #[test]
+        fn normal_whitespace() {
+            assert!(ReconstructionSettings::new("\n", "\t", "    ",).is_ok());
+        }
+
+        #[test]
+        fn weird_whitespace() {
+            assert!(ReconstructionSettings::new("\0", "\x1F", "\u{3000}",).is_ok());
+        }
+
+        #[test]
+        fn borrowed_or_owned() {
+            assert!(ReconstructionSettings::new("\n", " ", " ").is_ok());
+            assert!(
+                ReconstructionSettings::new("\n".to_owned(), " ".to_owned(), " ".to_owned())
+                    .is_ok()
+            );
+        }
+
+        #[test]
+        fn invalid_empty() {
+            use super::InvalidReconstructionSettingsError as E;
+
+            assert_eq!(
+                ReconstructionSettings::new("", "", "").err(),
+                Some(E::new("newline sequence cannot be blank"))
+            );
+            assert_eq!(
+                ReconstructionSettings::new("\n", "", "").err(),
+                Some(E::new("indentation sequence cannot be blank"))
+            );
+            assert_eq!(
+                ReconstructionSettings::new("\n", " ", "").err(),
+                Some(E::new("continuation sequence cannot be blank"))
+            );
+        }
+
+        #[test]
+        fn invalid_non_whitespace() {
+            use super::InvalidReconstructionSettingsError as E;
+
+            assert_eq!(
+                ReconstructionSettings::new("a", " ", " ").err(),
+                Some(E::new(
+                    "newline sequence must be all whitespace (was \"a\")"
+                ))
+            );
+            assert_eq!(
+                ReconstructionSettings::new("\n", "a", " ").err(),
+                Some(E::new(
+                    "indentation sequence must be all whitespace (was \"a\")"
+                ))
+            );
+            assert_eq!(
+                ReconstructionSettings::new("\n", " ", "a").err(),
+                Some(E::new(
+                    "continuation sequence must be all whitespace (was \"a\")"
+                ))
+            );
+        }
+
+        #[test]
+        fn display() {
+            assert_eq!(
+                ReconstructionSettings::new("", " ", " ")
+                    .err()
+                    .unwrap()
+                    .to_string(),
+                "Invalid reconstruction settings: newline sequence cannot be blank"
+            );
         }
     }
 }
