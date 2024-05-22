@@ -72,8 +72,7 @@ mod tests {
                 },
             })
             .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), "\t".to_owned(), "\r".to_owned())
-                    .unwrap(),
+                ReconstructionSettings::new("\n", "\t", "\r").unwrap(),
             ))
             .build();
         run_test(formatter, "a;", "\ta;\r");

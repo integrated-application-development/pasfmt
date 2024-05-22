@@ -964,8 +964,7 @@ mod tests {
             .parser(DelphiLogicalLineParser {})
             .file_formatter(IndentBasedOnLineNumber {})
             .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), " ".to_owned(), " ".to_owned())
-                    .unwrap(),
+                ReconstructionSettings::new("\n", " ", " ").unwrap(),
             ))
             .build();
         run_test(
@@ -1000,8 +999,7 @@ mod tests {
             .file_formatter(IndentBasedOnLineNumber {})
             .file_formatter(IndentSecondLine3SpacesIfNoNewLine {})
             .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), " ".to_owned(), " ".to_owned())
-                    .unwrap(),
+                ReconstructionSettings::new("\n", " ", " ").unwrap(),
             ))
             .build();
         run_test(
@@ -1054,8 +1052,7 @@ mod tests {
             .file_formatter(IndentSecondLine3SpacesIfNoNewLine {})
             .line_formatter(RetainSpacesLogcialLinesOnNewLines {})
             .reconstructor(DelphiLogicalLinesReconstructor::new(
-                ReconstructionSettings::new("\n".to_owned(), " ".to_owned(), " ".to_owned())
-                    .unwrap(),
+                ReconstructionSettings::new("\n", " ", " ").unwrap(),
             ))
             .build();
         run_test(

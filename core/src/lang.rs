@@ -514,15 +514,15 @@ pub struct ReconstructionSettings {
     continuation_str: String,
 }
 impl ReconstructionSettings {
-    pub fn new(
-        newline_str: String,
-        indentation_str: String,
-        continuation_str: String,
+    pub fn new<S: Into<String> + AsRef<str>>(
+        newline_str: S,
+        indentation_str: S,
+        continuation_str: S,
     ) -> Result<Self, InvalidReconstructionSettingsError> {
         for (name, val) in &[
-            ("newline", &newline_str),
-            ("indentation", &indentation_str),
-            ("continuation", &continuation_str),
+            ("newline", newline_str.as_ref()),
+            ("indentation", indentation_str.as_ref()),
+            ("continuation", continuation_str.as_ref()),
         ] {
             if val.is_empty() {
                 return Err(InvalidReconstructionSettingsError::new(format!(
@@ -536,9 +536,9 @@ impl ReconstructionSettings {
         }
 
         Ok(ReconstructionSettings {
-            newline_str,
-            indentation_str,
-            continuation_str,
+            newline_str: newline_str.into(),
+            indentation_str: indentation_str.into(),
+            continuation_str: continuation_str.into(),
         })
     }
     pub fn get_newline_str(&self) -> &str {
