@@ -3,7 +3,7 @@ name = "datatests"
 version = "0.0.0"
 edition = "2021"
 
-[dependencies]
+[dev-dependencies]
 datatest-stable = { workspace = true }
 pasfmt-core = { path = "..", features = [ "_lang_types_from_str" ] }
 spectral = { workspace = true }
