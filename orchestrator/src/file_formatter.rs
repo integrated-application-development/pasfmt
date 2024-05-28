@@ -15,6 +15,7 @@ use rayon::prelude::*;
 use walkdir::WalkDir;
 
 struct DecodedFile<'a> {
+    bom: Option<&'a [u8]>,
     contents: Cow<'a, str>,
     encoding: &'static Encoding,
     replacements: bool,
@@ -78,9 +79,16 @@ impl FileFormatter {
     ) -> std::io::Result<DecodedFile<'a>> {
         file.read_to_end(buf)?;
 
-        let (contents, encoding, replacements) = self.encoding.decode(buf);
+        let (encoding, (bom, contents)) = match Encoding::for_bom(buf) {
+            Some((encoding, bom_length)) => {
+                (encoding, (Some(&buf[..bom_length]), &buf[bom_length..]))
+            }
+            None => (self.encoding, (None, &buf[..])),
+        };
+        let (contents, replacements) = encoding.decode_without_bom_handling(contents);
 
         Ok(DecodedFile {
+            bom,
             contents,
             encoding,
             replacements,
@@ -153,18 +161,34 @@ impl FileFormatter {
                     );
                     return Ok(());
                 }
-                let encoded_output = decoded_file.encoding.encode(formatted_output).0;
                 file.seek(SeekFrom::Start(0)).with_context(|| {
                     format!("Failed to seek to start of file: '{}'", file_path.display())
                 })?;
-                file.write_all(&encoded_output)
+                let new_len = Self::write_out(file, decoded_file, formatted_output)
                     .with_context(|| format!("Failed to write to '{}'", file_path.display()))?;
-                file.set_len(encoded_output.len() as u64).with_context(|| {
+                file.set_len(new_len).with_context(|| {
                     format!("Failed to set file length: '{}'", file_path.display())
                 })?;
                 Ok(())
             },
         )
+    }
+
+    fn write_out(
+        write: &mut impl Write,
+        decoded: &DecodedFile,
+        data: &str,
+    ) -> std::io::Result<u64> {
+        let encoded_output = decoded.encoding.encode(data).0;
+        let mut len = 0;
+        if let Some(bom) = decoded.bom {
+            write.write_all(bom)?;
+            len += bom.len();
+        }
+        write.write_all(&encoded_output)?;
+        len += encoded_output.len();
+
+        Ok(len as u64)
     }
 
     fn decode_stdin<'a>(&self, buf: &'a mut Vec<u8>) -> anyhow::Result<DecodedFile<'a>> {
@@ -181,9 +205,9 @@ impl FileFormatter {
         let mut buf = vec![];
         let decoded_stdin = self.decode_stdin(&mut buf)?;
         let formatted_input = self.formatter.format(&decoded_stdin.contents);
-        std::io::stdout()
-            .write_all(&decoded_stdin.encoding.encode(&formatted_input).0)
-            .context("Failed to write to stdout")
+        Self::write_out(&mut std::io::stdout(), &decoded_stdin, &formatted_input)
+            .context("Failed to write to stdout")?;
+        Ok(())
     }
 
     #[must_use]
