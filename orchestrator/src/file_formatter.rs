@@ -141,7 +141,7 @@ impl FileFormatter {
             )
             .map(|res| {
                 if let Err(e) = &res {
-                    error!("{}", e)
+                    error!("{:?}", e)
                 };
                 res
             })
