@@ -5,7 +5,7 @@ use std::{
     borrow::Cow,
     fmt::Display,
     fs::{File, OpenOptions},
-    io::{IsTerminal, Read, Seek, SeekFrom, Write},
+    io::{self, IsTerminal, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
 };
 
@@ -174,12 +174,43 @@ impl FileFormatter {
         )
     }
 
+    fn encode_utf16(data: &str, u16_encoder: impl Fn(u16) -> [u8; 2]) -> Vec<u8> {
+        // 2 * utf8_len is a pretty good approximation for utf16_len in most cases.
+        let mut out = Vec::with_capacity(2 * data.len());
+        out.extend(data.encode_utf16().flat_map(u16_encoder));
+        out
+    }
+
+    fn encode_utf16be(data: &str) -> Vec<u8> {
+        Self::encode_utf16(data, u16::to_be_bytes)
+    }
+    fn encode_utf16le(data: &str) -> Vec<u8> {
+        Self::encode_utf16(data, u16::to_le_bytes)
+    }
+
+    fn encode<'a>(encoding: &'static Encoding, data: &'a str) -> io::Result<Cow<'a, [u8]>> {
+        // encoding_rs doesn't support encoding to UTF16, so we do it ourselves.
+        if encoding.output_encoding() == encoding {
+            Ok(encoding.encode(data).0)
+        } else if encoding == encoding_rs::UTF_16BE {
+            Ok(Cow::Owned(Self::encode_utf16be(data)))
+        } else if encoding == encoding_rs::UTF_16LE {
+            Ok(Cow::Owned(Self::encode_utf16le(data)))
+        } else {
+            Err(io::Error::new(
+                io::ErrorKind::Unsupported,
+                format!("No encoder for encoding {}", encoding.name()),
+            ))
+        }
+    }
+
     fn write_out(
         write: &mut impl Write,
         decoded: &DecodedFile,
         data: &str,
     ) -> std::io::Result<u64> {
-        let encoded_output = decoded.encoding.encode(data).0;
+        let encoded_output = Self::encode(decoded.encoding, data)?;
+
         let mut len = 0;
         if let Some(bom) = decoded.bom {
             write.write_all(bom)?;
