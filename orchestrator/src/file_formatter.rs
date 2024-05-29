@@ -191,7 +191,18 @@ impl FileFormatter {
     fn encode<'a>(encoding: &'static Encoding, data: &'a str) -> io::Result<Cow<'a, [u8]>> {
         // encoding_rs doesn't support encoding to UTF16, so we do it ourselves.
         if encoding.output_encoding() == encoding {
-            Ok(encoding.encode(data).0)
+            let (encoded_data, _encoding_used, replacements) = encoding.encode(data);
+            if replacements {
+                Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!(
+                        "Formatting result contains data that cannot be encoded as {}",
+                        encoding.name()
+                    ),
+                ))
+            } else {
+                Ok(encoded_data)
+            }
         } else if encoding == encoding_rs::UTF_16BE {
             Ok(Cow::Owned(Self::encode_utf16be(data)))
         } else if encoding == encoding_rs::UTF_16LE {
