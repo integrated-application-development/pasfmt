@@ -569,7 +569,11 @@ unsafe fn find_identifier_end_avx2(input: &str, mut offset: usize) -> usize {
         // SAFETY: requires that a 32-byte load from `input.as_ptr() + offset` does not touch uninitialised memory.
         // The above length check guarantees this.
         let ident_mask = unsafe {
-            let chunk = _mm256_loadu_si256(core::mem::transmute(input.as_ptr().add(offset)));
+            let chunk = _mm256_loadu_si256(
+                // the `loadu` variant of this intrinsic doesn't require aligned addresses
+                #[allow(clippy::cast_ptr_alignment)]
+                input.as_ptr().add(offset).cast(),
+            );
             if any_non_ascii(chunk) {
                 break;
             };
