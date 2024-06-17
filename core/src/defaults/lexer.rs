@@ -1376,6 +1376,15 @@ mod tests {
         );
     }
 
+    const IF_DIRECTIVE: TT = TT::ConditionalDirective(CDK::If);
+    const IFDEF_DIRECTIVE: TT = TT::ConditionalDirective(CDK::Ifdef);
+    const IFNDEF_DIRECTIVE: TT = TT::ConditionalDirective(CDK::Ifndef);
+    const IFOPT_DIRECTIVE: TT = TT::ConditionalDirective(CDK::Ifopt);
+    const ELSEIF_DIRECTIVE: TT = TT::ConditionalDirective(CDK::Elseif);
+    const ELSE_DIRECTIVE: TT = TT::ConditionalDirective(CDK::Else);
+    const IFEND_DIRECTIVE: TT = TT::ConditionalDirective(CDK::Ifend);
+    const ENDIF_DIRECTIVE: TT = TT::ConditionalDirective(CDK::Endif);
+
     #[test]
     fn lex_compiler_directives() {
         run_test(
@@ -1387,34 +1396,22 @@ mod tests {
             ],
         );
         [
-            (
-                "{$if}",
-                TT::ConditionalDirective(ConditionalDirectiveKind::If),
-            ),
-            ("{$ifdef}", TT::ConditionalDirective(CDK::Ifdef)),
-            ("{$ifndef}", TT::ConditionalDirective(CDK::Ifndef)),
-            ("{$ifopt}", TT::ConditionalDirective(CDK::Ifopt)),
-            ("{$elseif}", TT::ConditionalDirective(CDK::Elseif)),
-            (
-                "{$else}",
-                TT::ConditionalDirective(ConditionalDirectiveKind::Else),
-            ),
-            ("{$ifend}", TT::ConditionalDirective(CDK::Ifend)),
-            ("{$endif}", TT::ConditionalDirective(CDK::Endif)),
-            (
-                "(*$if*)",
-                TT::ConditionalDirective(ConditionalDirectiveKind::If),
-            ),
-            ("(*$ifdef*)", TT::ConditionalDirective(CDK::Ifdef)),
-            ("(*$ifndef*)", TT::ConditionalDirective(CDK::Ifndef)),
-            ("(*$ifopt*)", TT::ConditionalDirective(CDK::Ifopt)),
-            ("(*$elseif*)", TT::ConditionalDirective(CDK::Elseif)),
-            (
-                "(*$else*)",
-                TT::ConditionalDirective(ConditionalDirectiveKind::Else),
-            ),
-            ("(*$ifend*)", TT::ConditionalDirective(CDK::Ifend)),
-            ("(*$endif*)", TT::ConditionalDirective(CDK::Endif)),
+            ("{$if}", IF_DIRECTIVE),
+            ("{$ifdef}", IFDEF_DIRECTIVE),
+            ("{$ifndef}", IFNDEF_DIRECTIVE),
+            ("{$ifopt}", IFOPT_DIRECTIVE),
+            ("{$elseif}", ELSEIF_DIRECTIVE),
+            ("{$else}", ELSE_DIRECTIVE),
+            ("{$ifend}", IFEND_DIRECTIVE),
+            ("{$endif}", ENDIF_DIRECTIVE),
+            ("(*$if*)", IF_DIRECTIVE),
+            ("(*$ifdef*)", IFDEF_DIRECTIVE),
+            ("(*$ifndef*)", IFNDEF_DIRECTIVE),
+            ("(*$ifopt*)", IFOPT_DIRECTIVE),
+            ("(*$elseif*)", ELSEIF_DIRECTIVE),
+            ("(*$else*)", ELSE_DIRECTIVE),
+            ("(*$ifend*)", IFEND_DIRECTIVE),
+            ("(*$endif*)", ENDIF_DIRECTIVE),
         ]
         .into_iter()
         .for_each(run_casing_test);
@@ -1430,10 +1427,7 @@ mod tests {
 
                 "
             },
-            &[(
-                "{$if\n// other comment\nFoo;",
-                TT::ConditionalDirective(ConditionalDirectiveKind::If),
-            )],
+            &[("{$if\n// other comment\nFoo;", IF_DIRECTIVE)],
         );
         run_test(
             indoc! {"
@@ -1443,10 +1437,7 @@ mod tests {
 
                 "
             },
-            &[(
-                "(*$if\n// other comment\nFoo;",
-                TT::ConditionalDirective(ConditionalDirectiveKind::If),
-            )],
+            &[("(*$if\n// other comment\nFoo;", IF_DIRECTIVE)],
         );
     }
 
@@ -2041,7 +2032,7 @@ mod tests {
                 ("RBX", TT::Identifier),
                 (",", TT::Op(OK::Comma)),
                 ("RBX", TT::Identifier),
-                ("{$ifdef End}", TT::ConditionalDirective(CDK::Ifdef)),
+                ("{$ifdef End}", IFDEF_DIRECTIVE),
                 ("end", TT::Keyword(KK::End)),
             ],
         );
