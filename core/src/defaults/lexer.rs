@@ -179,6 +179,20 @@ impl LexArgs<'_, '_> {
     }
 }
 
+// I can't seem to write a function signature for 'cloning' this type that the borrow checker is happy with.
+// It can't be cloned in the usual way because it contains a mutable reference.
+// The borrow checker is smart enough to see that the mutable references don't overlap when you construct the clone
+// in place, and this macro just makes it more convenient to do that.
+macro_rules! lex_args_copy {
+    ($args: ident) => {
+        LexArgs {
+            input: $args.input,
+            offset: $args.offset,
+            lex_state: $args.lex_state,
+        }
+    };
+}
+
 type LexerFn = fn(LexArgs) -> OffsetAndTokenType;
 
 const COMMON_LEXER_MAP: [Option<LexerFn>; 256] = make_byte_map(
@@ -980,54 +994,150 @@ fn consume_to_eof(input: &str, token_type: RawTokenType) -> (usize, RawTokenType
 
 // region: directives/comments
 
-fn compiler_directive_type(input: &str, offset: usize) -> RawTokenType {
-    let count = count_matching(input, offset, |b| b.is_ascii_alphabetic());
+fn conditional_directive_type(
+    input: &str,
+    offset: usize,
+) -> (usize, Option<ConditionalDirectiveKind>) {
+    let end_offset = offset + count_matching(input, offset, |b| b.is_ascii_alphabetic());
 
-    let directive = &input[offset..(offset + count)];
+    let directive = &input[offset..end_offset];
 
-    if directive.eq_ignore_ascii_case("if") {
-        TT::ConditionalDirective(CDK::If)
-    } else if directive.eq_ignore_ascii_case("ifdef") {
-        TT::ConditionalDirective(CDK::Ifdef)
-    } else if directive.eq_ignore_ascii_case("ifndef") {
-        TT::ConditionalDirective(CDK::Ifndef)
-    } else if directive.eq_ignore_ascii_case("ifopt") {
-        TT::ConditionalDirective(CDK::Ifopt)
-    } else if directive.eq_ignore_ascii_case("elseif") {
-        TT::ConditionalDirective(CDK::Elseif)
-    } else if directive.eq_ignore_ascii_case("else") {
-        TT::ConditionalDirective(CDK::Else)
-    } else if directive.eq_ignore_ascii_case("ifend") {
-        TT::ConditionalDirective(CDK::Ifend)
-    } else if directive.eq_ignore_ascii_case("endif") {
-        TT::ConditionalDirective(CDK::Endif)
-    } else {
-        TT::CompilerDirective
+    let kind = {
+        if directive.eq_ignore_ascii_case("if") {
+            Some(CDK::If)
+        } else if directive.eq_ignore_ascii_case("ifdef") {
+            Some(CDK::Ifdef)
+        } else if directive.eq_ignore_ascii_case("ifndef") {
+            Some(CDK::Ifndef)
+        } else if directive.eq_ignore_ascii_case("ifopt") {
+            Some(CDK::Ifopt)
+        } else if directive.eq_ignore_ascii_case("elseif") {
+            Some(CDK::Elseif)
+        } else if directive.eq_ignore_ascii_case("else") {
+            Some(CDK::Else)
+        } else if directive.eq_ignore_ascii_case("ifend") {
+            Some(CDK::Ifend)
+        } else if directive.eq_ignore_ascii_case("endif") {
+            Some(CDK::Endif)
+        } else {
+            None
+        }
+    };
+
+    (end_offset, kind)
+}
+
+#[derive(Eq, PartialEq, Copy, Clone)]
+enum BlockCommentKind {
+    ParenStar,
+    Brace,
+}
+
+fn parse_directive_expr(
+    mut args: LexArgs,
+    kind: BlockCommentKind,
+) -> (RawTokenType, Option<usize>) {
+    let (offset, cdk) = conditional_directive_type(args.input, args.offset);
+    args.offset = offset;
+
+    match cdk {
+        Some(cdk @ (CDK::If | CDK::Elseif)) => (
+            TT::ConditionalDirective(cdk),
+            find_directive_expr_end(args, kind),
+        ),
+        Some(cdk) => (
+            TT::ConditionalDirective(cdk),
+            find_block_comment_end(args, kind),
+        ),
+        None => (TT::CompilerDirective, find_block_comment_end(args, kind)),
     }
 }
 
-fn _compiler_directive<const START_LEN: usize>(
-    input: &str,
-    start_offset: usize,
-    end_offset: Option<usize>,
-) -> OffsetAndTokenType {
-    let token_type = compiler_directive_type(input, start_offset);
+fn find_directive_expr_end(mut args: LexArgs, kind: BlockCommentKind) -> Option<usize> {
+    let input = args.input.as_bytes();
+    loop {
+        match (
+            input.get(args.offset),
+            input.get(args.offset + 1),
+            input.get(args.offset + 2),
+        ) {
+            // end alt block comment or directive
+            (Some(b'*'), Some(b')'), _) if kind == BlockCommentKind::ParenStar => {
+                return Some(args.offset + 2);
+            }
+            // end block comment or directive
+            (Some(b'}'), _, _) if kind == BlockCommentKind::Brace => {
+                return Some(args.offset + 1);
+            }
+            // start alt directive
+            (Some(b'('), Some(b'*'), Some(b'$')) => {
+                args.offset += 3;
+                args.offset =
+                    parse_directive_expr(lex_args_copy!(args), BlockCommentKind::ParenStar).1?;
+            }
+            // start directive
+            (Some(b'{'), Some(b'$'), _) => {
+                args.offset += 2;
+                args.offset =
+                    parse_directive_expr(lex_args_copy!(args), BlockCommentKind::Brace).1?;
+            }
+            // start alt block
+            (Some(b'('), Some(b'*'), _) => {
+                args.offset += 2;
+                args.offset = block_comment_alt(lex_args_copy!(args)).0;
+            }
+            // start block
+            (Some(b'{'), _, _) => {
+                args.offset += 1;
+                args.offset = block_comment(lex_args_copy!(args)).0;
+            }
+            // start string
+            (Some(b'\''), _, _) => {
+                args.offset += 1;
+                args.offset = text_literal(lex_args_copy!(args)).0;
+            }
+            // start line comment
+            (Some(b'/'), Some(b'/'), _) => {
+                args.offset += 2;
+                args.offset = line_comment(lex_args_copy!(args)).0;
+            }
+            (None, _, _) => {
+                return None;
+            }
+            _ => {
+                args.offset += 1;
+            }
+        }
+    }
+}
+
+fn find_block_comment_end(
+    LexArgs { input, offset, .. }: LexArgs,
+    kind: BlockCommentKind,
+) -> Option<usize> {
+    match kind {
+        BlockCommentKind::ParenStar => {
+            memchr::memmem::find(&input.as_bytes()[offset..], b"*)").map(|o| offset + o + 2)
+        }
+        BlockCommentKind::Brace => {
+            memchr::memchr(b'}', &input.as_bytes()[offset..]).map(|o| offset + o + 1)
+        }
+    }
+}
+
+fn compiler_directive(args: LexArgs, kind: BlockCommentKind) -> OffsetAndTokenType {
+    let (token_type, end_offset) = parse_directive_expr(lex_args_copy!(args), kind);
+
     if let Some(pos) = end_offset {
         (pos, token_type)
     } else {
-        warn_unterminated("compiler directive", input, start_offset - START_LEN);
-        consume_to_eof(input, token_type)
+        let start_len = match kind {
+            BlockCommentKind::ParenStar => 2,
+            BlockCommentKind::Brace => 1,
+        };
+        warn_unterminated("compiler directive", args.input, args.offset - start_len);
+        consume_to_eof(args.input, token_type)
     }
-}
-
-fn compiler_directive_alt(args: LexArgs) -> OffsetAndTokenType {
-    let end_offset = memchr::memmem::find(args.input.as_bytes(), b"*)").map(|o| o + 2);
-    _compiler_directive::<2>(args.input, args.offset, end_offset)
-}
-
-fn compiler_directive(args: LexArgs) -> OffsetAndTokenType {
-    let end_offset = memchr::memchr(b'}', args.input.as_bytes()).map(|o| o + 1);
-    _compiler_directive::<1>(args.input, args.offset, end_offset)
 }
 
 fn block_comment_kind(
@@ -1045,12 +1155,13 @@ fn block_comment_kind(
     }
 }
 
-fn _block_comment<const START_LEN: usize>(
+fn _block_comment(
     LexArgs {
         input,
         offset,
         lex_state,
     }: LexArgs,
+    start_len: usize,
     end_offset: Option<usize>,
 ) -> OffsetAndTokenType {
     if let Some(end_offset) = end_offset {
@@ -1059,19 +1170,19 @@ fn _block_comment<const START_LEN: usize>(
         let comment_kind = block_comment_kind(nl_offset, offset, end_offset, lex_state);
         (end_offset, TT::Comment(comment_kind))
     } else {
-        warn_unterminated("block comment", input, offset - START_LEN);
+        warn_unterminated("block comment", input, offset - start_len);
         consume_to_eof(input, TT::Comment(CommentKind::MultilineBlock))
     }
 }
 
 fn block_comment_alt(args: LexArgs) -> OffsetAndTokenType {
-    let end_offset = memchr::memmem::find(args.input.as_bytes(), b"*)").map(|pos| pos + 2);
-    _block_comment::<2>(args, end_offset)
+    let end_offset = find_block_comment_end(lex_args_copy!(args), BlockCommentKind::ParenStar);
+    _block_comment(args, 2, end_offset)
 }
 
 fn block_comment(args: LexArgs) -> OffsetAndTokenType {
-    let end_offset = memchr::memchr(b'}', args.input.as_bytes()).map(|pos| pos + 1);
-    _block_comment::<1>(args, end_offset)
+    let end_offset = find_block_comment_end(lex_args_copy!(args), BlockCommentKind::Brace);
+    _block_comment(args, 1, end_offset)
 }
 
 fn line_comment(
@@ -1096,14 +1207,14 @@ fn line_comment(
 
 fn compiler_directive_or_comment_alt(args: LexArgs) -> OffsetAndTokenType {
     match args.next_byte() {
-        Some(b'$') => compiler_directive_alt(args.consume(1)),
+        Some(b'$') => compiler_directive(args.consume(1), BlockCommentKind::ParenStar),
         _ => block_comment_alt(args),
     }
 }
 
 fn compiler_directive_or_comment(args: LexArgs) -> OffsetAndTokenType {
     match args.next_byte() {
-        Some(b'$') => compiler_directive(args.consume(1)),
+        Some(b'$') => compiler_directive(args.consume(1), BlockCommentKind::Brace),
         _ => block_comment(args),
     }
 }
@@ -1449,6 +1560,102 @@ mod tests {
             },
             &[("(*$if\n// other comment\nFoo;", IF_DIRECTIVE)],
         );
+        // nested unterminated block comment
+        run_test("{$if (*if } //", &[("{$if (*if } //", IF_DIRECTIVE)]);
+        // nested unterminated directive
+        run_test("{$if (*$if } //", &[("{$if (*$if } //", IF_DIRECTIVE)]);
+        // nested line comment
+        run_test("{$if // } //", &[("{$if // } //", IF_DIRECTIVE)]);
+        // nested string literal
+        run_test("{$if '} //", &[("{$if '} //", IF_DIRECTIVE)]);
+    }
+
+    #[test]
+    fn lex_complex_directive_expressions() {
+        /*
+            Since Delphi conditional directives contain expressions, they can also contain comments
+            and other conditional directives (to a limited and buggy extent). This means that we
+            can't just treat them as block comments when finding the bounds of the token for the
+            directive.
+
+            The only directives that can contain these expressions are `if` and `elseif`, all the
+            others can safely be lexed as a simple block comment.
+        */
+
+        run_test(
+            indoc! {"
+            {$if {$i foo} = 0}
+            {$if (*$i foo*) = 0}
+            (*$if (*$i foo*) = 0*)
+            (*$if {$i foo} = 0*)
+
+            {$if {(*} (*{*) {(* {$if }}
+
+            {$if {{} }
+            {$if {$if {}} }
+
+            {$if {$i foo} = 0*) }
+            (*$if {$i foo} = 0} *)
+
+            {$if
+                {$if True}
+                    FOO
+                (*$elseif {$if True}FOO{$else}BAR{$endif} *)
+                    BAR
+                {$endif}
+                = 0
+            }
+
+            {$ifdef {$i inc}
+            {$if {$ifdef {}}
+
+            {$if a = '}'#10#13''''}
+            {$if a = #10}
+
+            {$if a = '''
+            }
+            '''
+            }
+
+            "},
+            &[
+                // Ensure directives and comments can be mixed in any order
+                ("{$if {$i foo} = 0}", IF_DIRECTIVE),
+                ("{$if (*$i foo*) = 0}", IF_DIRECTIVE),
+                ("(*$if (*$i foo*) = 0*)", IF_DIRECTIVE),
+                ("(*$if {$i foo} = 0*)", IF_DIRECTIVE),
+                ("{$if {(*} (*{*) {(* {$if }}", IF_DIRECTIVE),
+                // Ensure that block comments cannot be started from within nested block comments
+                ("{$if {{} }", IF_DIRECTIVE),
+                // Ensure that block comments can be started from within nested conditional directives
+                ("{$if {$if {}} }", IF_DIRECTIVE),
+                // Ensure that the nested directives are closed with the right half of the pair
+                ("{$if {$i foo} = 0*) }", IF_DIRECTIVE),
+                ("(*$if {$i foo} = 0} *)", IF_DIRECTIVE),
+                // Ensure nesting works recursively
+                (
+                    indoc! {"
+                        {$if
+                            {$if True}
+                                FOO
+                            (*$elseif {$if True}FOO{$else}BAR{$endif} *)
+                                BAR
+                            {$endif}
+                            = 0
+                        }"
+                    },
+                    IF_DIRECTIVE,
+                ),
+                // Ensure that the nesting doesn't work with non-expression directives
+                ("{$ifdef {$i inc}", IFDEF_DIRECTIVE),
+                // Ensure that the nesting doesn't work within a nested non-expression directive
+                ("{$if {$ifdef {}}", IF_DIRECTIVE),
+                // Ensure that nested text literals work
+                ("{$if a = '}'#10#13''''}", IF_DIRECTIVE),
+                ("{$if a = #10}", IF_DIRECTIVE),
+                ("{$if a = '''\n}\n'''\n}", IF_DIRECTIVE),
+            ],
+        )
     }
 
     #[test]
