@@ -982,17 +982,27 @@ fn consume_to_eof(input: &str, token_type: RawTokenType) -> (usize, RawTokenType
 
 fn compiler_directive_type(input: &str, offset: usize) -> RawTokenType {
     let count = count_matching(input, offset, |b| b.is_ascii_alphabetic());
-    // `to_lowercase` here is slow, but this code isn't hit very often.
-    match input[offset..(offset + count)].to_lowercase().as_str() {
-        "if" => TT::ConditionalDirective(CDK::If),
-        "ifdef" => TT::ConditionalDirective(CDK::Ifdef),
-        "ifndef" => TT::ConditionalDirective(CDK::Ifndef),
-        "ifopt" => TT::ConditionalDirective(CDK::Ifopt),
-        "elseif" => TT::ConditionalDirective(CDK::Elseif),
-        "else" => TT::ConditionalDirective(CDK::Else),
-        "ifend" => TT::ConditionalDirective(CDK::Ifend),
-        "endif" => TT::ConditionalDirective(CDK::Endif),
-        _ => TT::CompilerDirective,
+
+    let directive = &input[offset..(offset + count)];
+
+    if directive.eq_ignore_ascii_case("if") {
+        TT::ConditionalDirective(CDK::If)
+    } else if directive.eq_ignore_ascii_case("ifdef") {
+        TT::ConditionalDirective(CDK::Ifdef)
+    } else if directive.eq_ignore_ascii_case("ifndef") {
+        TT::ConditionalDirective(CDK::Ifndef)
+    } else if directive.eq_ignore_ascii_case("ifopt") {
+        TT::ConditionalDirective(CDK::Ifopt)
+    } else if directive.eq_ignore_ascii_case("elseif") {
+        TT::ConditionalDirective(CDK::Elseif)
+    } else if directive.eq_ignore_ascii_case("else") {
+        TT::ConditionalDirective(CDK::Else)
+    } else if directive.eq_ignore_ascii_case("ifend") {
+        TT::ConditionalDirective(CDK::Ifend)
+    } else if directive.eq_ignore_ascii_case("endif") {
+        TT::ConditionalDirective(CDK::Endif)
+    } else {
+        TT::CompilerDirective
     }
 }
 
