@@ -1,0 +1,704 @@
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.16s
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.15s
+     Running `target\x86_64-pc-windows-msvc\release\parse.exe '-artifact_prefix=C:\Users\zad\Documents\Code\pasfmt\fuzz\artifacts\parse\' 'C:\Users\zad\Documents\Code\pasfmt\fuzz\corpus\parse' -fork=6`
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 485508345
+INFO: Loaded 1 modules   (56945 inline 8-bit counters): 56945 [00007FF740304008, 00007FF740311E79), 
+INFO: Loaded 1 PC tables (56945 PCs): 56945 [00007FF7401A0F48,00007FF74027F658), 
+INFO: -fork=6: fuzzing in separate process(s)
+INFO: -fork=6: 67 seed inputs, starting to fuzz in C:\Temp\\libFuzzerTemp.FuzzWithFork29400.dir
+#0: cov: 10821 ft: 10821 corp: 67 exec/s 0 oom/timeout/crash: 0/0/0 time: 3s job: 1 dft_time: 0
+  NEW_FUNC: 0x7ff73fe622e0 in core::ptr::drop_in_place<tuple$<alloc::vec::Vec<pasfmt_core::lang::LogicalLine,alloc::alloc::Global>,alloc::vec::Vec<pasfmt_core::lang::Token,alloc::alloc::Global> > > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\core\src\ptr\mod.rs:574
+  NEW_FUNC: 0x7ff73fe69720 in parse::_::rust_fuzzer_test_input C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\libfuzzer-sys-0.4.7\src\lib.rs:259
+  NEW_FUNC: 0x7ff73fe6a510 in parse::_::__libfuzzer_sys_run C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\libfuzzer-sys-0.4.7\src\lib.rs:303
+  NEW_FUNC: 0x7ff73fe7afc0 in alloc::vec::spec_from_iter_nested::impl$0::from_iter<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,std::collections::hash::map::IntoIter<pasfmt_core::defaults::parser::LocalLogicalLine,usize> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\vec\spec_from_iter_nested.rs:18
+  NEW_FUNC: 0x7ff73fe7b720 in alloc::vec::spec_from_iter_nested::impl$1::from_iter<pasfmt_core::lang::Token,core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<pasfmt_core::lang::RawToken,alloc::alloc::Global>,pasfmt_core::lang::Token (*)(pasfmt_core::lang::RawToken)> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\vec\spec_from_iter_nested.rs:50
+  NEW_FUNC: 0x7ff73fe7c9b0 in alloc::vec::spec_from_iter_nested::impl$1::from_iter<usize,alloc::vec::drain::Drain<usize,alloc::alloc::Global> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\vec\spec_from_iter_nested.rs:50
+  NEW_FUNC: 0x7ff73fe7d5a0 in alloc::vec::spec_from_iter_nested::impl$1::from_iter<pasfmt_core::defaults::parser::ConditionalBranchLevel,core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<usize,alloc::alloc::Global>,pasfmt_core::defaults::parser::get_all_conditional_branch_paths::closure$0::closure_env$0> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\vec\spec_from_iter_nested.rs:50
+  NEW_FUNC: 0x7ff73fe87530 in itertools::adaptors::multi_product::impl$3::next<core::ops::range::RangeInclusive<usize> > C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\itertools-0.12.1\src\adaptors\multi_product.rs:173
+  NEW_FUNC: 0x7ff73fe8b330 in core::fmt::impl$55::fmt<str$> C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\core\src\fmt\mod.rs:2390
+  NEW_FUNC: 0x7ff73fec69f0 in core::slice::sort::shared::pivot::median3_rec<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::slice::impl$0::sort_by_key::closure_env$0<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,usize,pasfmt_core::defaults::parser::parse_file::closure_env$1> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\core\src\slice\sort\shared\pivot.rs:49
+  NEW_FUNC: 0x7ff73fec9710 in core::slice::sort::shared::smallsort::small_sort_general_with_scratch<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::slice::impl$0::sort_by_key::closure_env$0<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,usize,pasfmt_core::defaults::parser::parse_file::closure_env$1> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\core\src\slice\sort\shared\smallsort.rs:220
+  NEW_FUNC: 0x7ff73fecb7f0 in core::slice::sort::stable::driftsort_main<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::slice::impl$0::sort_by_key::closure_env$0<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,usize,pasfmt_core::defaults::parser::parse_file::closure_env$1>,alloc::vec::Vec<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::alloc::Global> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\core\src\slice\sort\stable\mod.rs:90
+  NEW_FUNC: 0x7ff73fecc130 in core::slice::sort::stable::drift::create_run<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::slice::impl$0::sort_by_key::closure_env$0<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,usize,pasfmt_core::defaults::parser::parse_file::closure_env$1> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\core\src\slice\sort\stable\drift.rs:226
+  NEW_FUNC: 0x7ff73fecd080 in core::slice::sort::stable::drift::sort<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::slice::impl$0::sort_by_key::closure_env$0<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,usize,pasfmt_core::defaults::parser::parse_file::closure_env$1> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\core\src\slice\sort\stable\drift.rs:20
+  NEW_FUNC: 0x7ff73fed20c0 in core::slice::sort::stable::quicksort::quicksort<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::slice::impl$0::sort_by_key::closure_env$0<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,usize,pasfmt_core::defaults::parser::parse_file::closure_env$1> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\core\src\slice\sort\stable\quicksort.rs:14
+  NEW_FUNC: 0x7ff73fedc690 in alloc::vec::Vec<pasfmt_core::defaults::parser::ConditionalBranchLevel,alloc::alloc::Global>::extend_trusted<pasfmt_core::defaults::parser::ConditionalBranchLevel,alloc::alloc::Global,core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<usize,alloc::alloc::Global>,pasfmt_core::defaults::parser::get_all_conditional_branch_paths::closure$0::closure_env$0> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\vec\mod.rs:3478
+  NEW_FUNC: 0x7ff73fedd000 in alloc::vec::Vec<pasfmt_core::lang::Token,alloc::alloc::Global>::extend_trusted<pasfmt_core::lang::Token,alloc::alloc::Global,core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<pasfmt_core::lang::RawToken,alloc::alloc::Global>,pasfmt_core::lang::Token (*)(pasfmt_core::lang::RawToken)> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\vec\mod.rs:3478
+  NEW_FUNC: 0x7ff73fee01d0 in alloc::vec::Vec<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::alloc::Global>::extend_desugared<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::alloc::Global,std::collections::hash::map::IntoIter<pasfmt_core::defaults::parser::LocalLogicalLine,usize> > C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\vec\mod.rs:3451
+  NEW_FUNC: 0x7ff73fee2e20 in alloc::vec::in_place_collect::from_iter_in_place<core::iter::adapters::map::Map<alloc::vec::into_iter::IntoIter<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::alloc::Global>,pasfmt_core::defaults::parser::parse_file::closure_env$2>,pasfmt_core::lang::LogicalLine> C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\vec\in_place_collect.rs:249
+  NEW_FUNC: 0x7ff73fee5680 in alloc::raw_vec::finish_grow<alloc::alloc::Global> C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\raw_vec.rs:745
+  NEW_FUNC: 0x7ff73fee5970 in alloc::raw_vec::RawVec<pasfmt_core::defaults::parser::ParserContext,alloc::alloc::Global>::grow_one<pasfmt_core::defaults::parser::ParserContext,alloc::alloc::Global> C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\raw_vec.rs:335
+  NEW_FUNC: 0x7ff73fee6170 in alloc::raw_vec::RawVec<pasfmt_core::defaults::parser::ConditionalBranchLevel,alloc::alloc::Global>::grow_one<pasfmt_core::defaults::parser::ConditionalBranchLevel,alloc::alloc::Global> C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\raw_vec.rs:335
+  NEW_FUNC: 0x7ff73fee65a0 in alloc::raw_vec::RawVec<pasfmt_core::defaults::parser::LocalLogicalLine,alloc::alloc::Global>::grow_one<pasfmt_core::defaults::parser::LocalLogicalLine,alloc::alloc::Global> C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\raw_vec.rs:335
+  NEW_FUNC: 0x7ff73fee69c0 in alloc::raw_vec::RawVec<usize,alloc::alloc::Global>::grow_one<usize,alloc::alloc::Global> C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\raw_vec.rs:335
+  NEW_FUNC: 0x7ff73fee6df0 in alloc::raw_vec::RawVec<pasfmt_core::lang::RawToken,alloc::alloc::Global>::grow_one<pasfmt_core::lang::RawToken,alloc::alloc::Global> C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\raw_vec.rs:335
+  NEW_FUNC: 0x7ff73fee7210 in alloc::raw_vec::RawVec<pasfmt_core::defaults::parser::ConditionalBranch,alloc::alloc::Global>::grow_one<pasfmt_core::defaults::parser::ConditionalBranch,alloc::alloc::Global> C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\raw_vec.rs:335
+  NEW_FUNC: 0x7ff73fef76a0 in hashbrown::raw::impl$38::drop<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::alloc::Global> /rust/deps\hashbrown-0.14.5\src\raw\mod.rs:4307
+  NEW_FUNC: 0x7ff73fef86e0 in alloc::vec::into_iter::impl$15::drop<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::alloc::Global> C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\alloc\src\vec\into_iter.rs:487
+  NEW_FUNC: 0x7ff73ff08ea0 in hashbrown::map::HashMap<pasfmt_core::defaults::parser::LocalLogicalLine,usize,core::hash::BuildHasherDefault<fxhash::FxHasher>,alloc::alloc::Global>::insert<pasfmt_core::defaults::parser::LocalLogicalLine,usize,core::hash::BuildHasherDefault<fxhash::FxHasher>,alloc::alloc::Global> /rust/deps\hashbrown-0.14.5\src\map.rs:1751
+  NEW_FUNC: 0x7ff73ff09ec0 in hashbrown::map::HashMap<usize,tuple$<>,core::hash::BuildHasherDefault<fxhash::FxHasher>,alloc::alloc::Global>::insert<usize,tuple$<>,core::hash::BuildHasherDefault<fxhash::FxHasher>,alloc::alloc::Global> /rust/deps\hashbrown-0.14.5\src\map.rs:1751
+  NEW_FUNC: 0x7ff740195f00 in hashbrown::raw::RawTable<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::alloc::Global>::reserve_rehash<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::alloc::Global,hashbrown::map::make_hasher::closure_env$0<pasfmt_core::defaults::parser::LocalLogicalLine,usize,core::hash::BuildHasherDefault<fxhash::FxHasher> > > /rust/deps\hashbrown-0.14.5\src\raw\mod.rs:1217
+  NEW_FUNC: 0x7ff7401976f0 in hashbrown::raw::RawTable<tuple$<usize,tuple$<> >,alloc::alloc::Global>::reserve_rehash<tuple$<usize,tuple$<> >,alloc::alloc::Global,hashbrown::map::make_hasher::closure_env$0<usize,tuple$<>,core::hash::BuildHasherDefault<fxhash::FxHasher> > > /rust/deps\hashbrown-0.14.5\src\raw\mod.rs:1217
+  NEW_FUNC: 0x7ff73ff132e0 in hashbrown::raw::RawTable<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::alloc::Global>::find_or_find_insert_slot<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::alloc::Global,hashbrown::map::equivalent_key::closure_env$0<pasfmt_core::defaults::parser::LocalLogicalLine,pasfmt_core::defaults::parser::LocalLogicalLine,usize>,hashbrown::map::make_hasher::closure_env$0<pasfmt_core::defaults::parser::LocalLogicalLine,usize,core::hash::BuildHasherDefault<fxhash::FxHasher> > > /rust/deps\hashbrown-0.14.5\src\raw\mod.rs:1407
+  NEW_FUNC: 0x7ff73ff14cc0 in hashbrown::raw::RawTable<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::alloc::Global>::find<tuple$<pasfmt_core::defaults::parser::LocalLogicalLine,usize>,alloc::alloc::Global,hashbrown::map::equivalent_key::closure_env$0<pasfmt_core::defaults::parser::LocalLogicalLine,pasfmt_core::defaults::parser::LocalLogicalLine,usize> > /rust/deps\hashbrown-0.14.5\src\raw\mod.rs:1454
+  NEW_FUNC: 0x7ff73ff169b0 in itertools::adaptors::multi_product::MultiProduct<core::ops::range::RangeInclusive<usize> >::iterate_last<core::ops::range::RangeInclusive<usize> > C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\itertools-0.12.1\src\adaptors\multi_product.rs:76
+  NEW_FUNC: 0x7ff73ff18210 in pasfmt_core::defaults::lexer::impl$0::lex C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:16
+  NEW_FUNC: 0x7ff73ff18240 in pasfmt_core::defaults::lexer::lex_complete C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:33
+  NEW_FUNC: 0x7ff73ff18710 in pasfmt_core::defaults::lexer::lex C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:46
+  NEW_FUNC: 0x7ff73ff19220 in pasfmt_core::defaults::lexer::whitespace_and_token C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:80
+  NEW_FUNC: 0x7ff7401993f0 in pasfmt_core::defaults::lexer::count_unicode_whitespace<core::iter::adapters::rev::Rev<core::str::iter::Chars> > C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:148
+  NEW_FUNC: 0x7ff73ff1bd20 in pasfmt_core::defaults::lexer::find_identifier_end_avx2 C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:567
+  NEW_FUNC: 0x7ff73ff1c340 in pasfmt_core::defaults::lexer::find_identifier_end_x86_64::detect C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:658
+  NEW_FUNC: 0x7ff73ff1ce30 in pasfmt_core::defaults::lexer::identifier_or_keyword C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:714
+  NEW_FUNC: 0x7ff73ff1e5e0 in pasfmt_core::defaults::lexer::text_literal C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:761
+  NEW_FUNC: 0x7ff73ff1f1a0 in pasfmt_core::defaults::lexer::text_literal::consume_escaped_chars C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:799
+  NEW_FUNC: 0x7ff73ff202c0 in pasfmt_core::defaults::lexer::dec_number_literal C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:938
+  NEW_FUNC: 0x7ff73ff20d00 in pasfmt_core::defaults::lexer::hex_number_literal C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:957
+  NEW_FUNC: 0x7ff73ff222b0 in pasfmt_core::defaults::lexer::count_matching_char_bytes<pasfmt_core::defaults::lexer::find_identifier_end_generic::closure_env$0> C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:974
+  NEW_FUNC: 0x7ff740199b90 in pasfmt_core::defaults::lexer::warn_unterminated C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1017
+  NEW_FUNC: 0x7ff73ff23500 in pasfmt_core::defaults::lexer::conditional_directive_type C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1032
+  NEW_FUNC: 0x7ff73ff251c0 in pasfmt_core::defaults::lexer::parse_directive_expr C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1078
+  NEW_FUNC: 0x7ff73ff26a00 in pasfmt_core::defaults::lexer::_block_comment C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1195
+  NEW_FUNC: 0x7ff73ff27310 in pasfmt_core::defaults::lexer::line_comment C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1225
+  NEW_FUNC: 0x7ff73ff27cd0 in pasfmt_core::defaults::lexer::compiler_directive_or_comment C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1252
+  NEW_FUNC: 0x7ff73ff28e00 in pasfmt_core::defaults::lexer::l_paren C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1298
+  NEW_FUNC: 0x7ff73ff291b0 in pasfmt_core::defaults::lexer::l_brace C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1306
+  NEW_FUNC: 0x7ff73ff291d0 in pasfmt_core::defaults::lexer::slash C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1310
+  NEW_FUNC: 0x7ff73ff29480 in pasfmt_core::defaults::lexer::colon C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1317
+  NEW_FUNC: 0x7ff73ff296c0 in pasfmt_core::defaults::lexer::l_angle C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1324
+  NEW_FUNC: 0x7ff73ff29b50 in pasfmt_core::defaults::lexer::r_angle C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1332
+  NEW_FUNC: 0x7ff73ff29ee0 in pasfmt_core::defaults::lexer::dot C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1339
+  NEW_FUNC: 0x7ff74019a4c0 in pasfmt_core::defaults::lexer::unknown C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1352
+  NEW_FUNC: 0x7ff73ff2a140 in pasfmt_core::defaults::lexer::eof C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1360
+  NEW_FUNC: 0x7ff73ff2a5b0 in pasfmt_core::defaults::parser::impl$0::parse C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:40
+  NEW_FUNC: 0x7ff73ff2a7a0 in pasfmt_core::defaults::parser::parse_file C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:66
+  NEW_FUNC: 0x7ff73ff2d8e0 in pasfmt_core::defaults::parser::consolidate_pass_lines C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:141
+  NEW_FUNC: 0x7ff73ff2f2f0 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::parse C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:205
+  NEW_FUNC: 0x7ff73ff2fd70 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::parse_structures C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:213
+  NEW_FUNC: 0x7ff73ff3aaa0 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::parse_import_clause C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:673
+  NEW_FUNC: 0x7ff73ff3b940 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::parse_statement C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:698
+  NEW_FUNC: 0x7ff73ff47460 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::parse_block C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1028
+  NEW_FUNC: 0x7ff73ff47d80 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::parse_parens C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1052
+  NEW_FUNC: 0x7ff73ff48900 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::parse_anonymous_routine C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1086
+  NEW_FUNC: 0x7ff73ff4a320 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::parse_routine_header C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1125
+  NEW_FUNC: 0x7ff73ff4adc0 in pasfmt_core::defaults::parser::impl$1::parse_routine_header::closure$0 C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1135
+  NEW_FUNC: 0x7ff73ff4afa0 in pasfmt_core::defaults::parser::impl$1::parse_routine_header::closure$1 C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1140
+  NEW_FUNC: 0x7ff73ff4dd20 in pasfmt_core::defaults::parser::impl$1::parse_parameter_list::closure$0 C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1221
+  NEW_FUNC: 0x7ff73ff4eee0 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::parse_property_declaration C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1260
+  NEW_FUNC: 0x7ff73ff4fc80 in pasfmt_core::defaults::parser::impl$1::parse_property_declaration::closure$0 C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1276
+  NEW_FUNC: 0x7ff73ff50610 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::parse_expression C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1310
+  NEW_FUNC: 0x7ff73ff53930 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::parse_begin_end C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1389
+  NEW_FUNC: 0x7ff73ff54160 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::consolidate_portability_directives C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1405
+  NEW_FUNC: 0x7ff73ff55e10 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::simple_op_until<pasfmt_core::defaults::parser::no_more_separators::closure_env$0,pasfmt_core::defaults::parser::impl$1::take_until::closure_env$0<pasfmt_core::defaults::parser::no_more_separators::closure_env$0> > C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1498
+  NEW_FUNC: 0x7ff73ff575e0 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::op_until<pasfmt_core::defaults::parser::after_semicolon::closure_env$0,pasfmt_core::defaults::parser::impl$1::simple_op_until::closure_env$0<pasfmt_core::defaults::parser::after_semicolon::closure_env$0,pasfmt_core::defaults::parser::impl$1::parse_import_clause::closure_env$0> > C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1508
+  NEW_FUNC: 0x7ff73ff58ec0 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::op_until<pasfmt_core::defaults::parser::predicate_and::closure_env$0<pasfmt_core::defaults::parser::after_rparen::closure_env$0,pasfmt_core::defaults::parser::outside_parens::closure_env$0>,pasfmt_core::defaults::parser::impl$1::simple_op_until::closure_env$0<pasfmt_core::defaults::parser::predicate_and::closure_env$0<pasfmt_core::defaults::parser::after_rparen::closure_env$0,pasfmt_core::defaults::parser::outside_parens::closure_env$0>,pasfmt_core::defaults::parser::impl$1::parse_parameter_list::closure_env$0> > C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1508
+  NEW_FUNC: 0x7ff73ff597a0 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::op_until<pasfmt_core::defaults::parser::predicate_and::closure_env$0<pasfmt_core::defaults::parser::after_semicolon::closure_env$0,pasfmt_core::defaults::parser::predicate_and::closure_env$0<pasfmt_core::defaults::parser::outside_parens::closure_env$0,pasfmt_core::defaults::parser::outside_bracks::closure_env$0> >,pasfmt_core::defaults::parser::impl$1::simple_op_until::closure_env$0<pasfmt_core::defaults::parser::predicate_and::closure_env$0<pasfmt_core::defaults::parser::after_semicolon::closure_env$0,pasfmt_core::defaults::parser::predicate_and::closure_env$0<pasfmt_core::defaults::parser::outside_parens::closure_env$0,pasfmt_core::defaults::parser::outside_bracks::closure_env$0> >,pasfmt_core::defaults::parser::impl$1::parse_property_declaration::closure_env$0> > C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1508
+  NEW_FUNC: 0x7ff73ff5aef0 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::op_until<pasfmt_core::defaults::parser::after_semicolon::closure_env$0,pasfmt_core::defaults::parser::impl$1::simple_op_until::closure_env$0<pasfmt_core::defaults::parser::after_semicolon::closure_env$0,pasfmt_core::defaults::parser::keyword_consolidator::closure_env$0<pasfmt_core::defaults::parser::impl$1::parse_statement::closure_env$1> > > C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1508
+  NEW_FUNC: 0x7ff73ff5bd40 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::op_until<pasfmt_core::defaults::parser::after_semicolon::closure_env$0,pasfmt_core::defaults::parser::impl$1::simple_op_until::closure_env$0<pasfmt_core::defaults::parser::after_semicolon::closure_env$0,pasfmt_core::defaults::parser::keyword_consolidator::closure_env$0<pasfmt_core::defaults::parser::impl$1::parse_structures::closure_env$1> > > C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1508
+  NEW_FUNC: 0x7ff73ff5ddf0 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::finish_logical_line C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1524
+  NEW_FUNC: 0x7ff73ff60620 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::next_token C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1609
+  NEW_FUNC: 0x7ff73ff64540 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::get_current_token_type_window C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1733
+  NEW_FUNC: 0x7ff73ff65d70 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::set_current_decl_kind C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1776
+  NEW_FUNC: 0x7ff73ff69210 in pasfmt_core::defaults::parser::never_ending C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1885
+  NEW_FUNC: 0x7ff73ff69220 in pasfmt_core::defaults::parser::section_headings C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1889
+  NEW_FUNC: 0x7ff73ff69bd0 in pasfmt_core::defaults::parser::visibility_block_ending C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1906
+  NEW_FUNC: 0x7ff73ff6a190 in pasfmt_core::defaults::parser::begin_asm C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1910
+  NEW_FUNC: 0x7ff73ff6a4a0 in pasfmt_core::defaults::parser::else_end C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1916
+  NEW_FUNC: 0x7ff73ff6a7b0 in pasfmt_core::defaults::parser::semicolon_else_or_parent C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1922
+  NEW_FUNC: 0x7ff73ff6b0b0 in pasfmt_core::defaults::parser::end C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1934
+  NEW_FUNC: 0x7ff73ff6b670 in pasfmt_core::defaults::parser::except_finally C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1944
+  NEW_FUNC: 0x7ff73ff6b960 in pasfmt_core::defaults::parser::declaration_section C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1951
+  NEW_FUNC: 0x7ff73ff6e2a0 in pasfmt_core::defaults::parser::get_directive_level_last_indices C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:2148
+  NEW_FUNC: 0x7ff73ff6eb50 in pasfmt_core::defaults::parser::get_all_conditional_branch_paths C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:2164
+  NEW_FUNC: 0x7ff73ff6fb00 in pasfmt_core::defaults::parser::get_conditional_branches_per_directive C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:2180
+  NEW_FUNC: 0x7ff73ff89b90 in pasfmt_core::defaults::lexer::plus C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1278
+  NEW_FUNC: 0x7ff73ff89cd0 in pasfmt_core::defaults::lexer::minus C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1278
+  NEW_FUNC: 0x7ff73ff89e10 in pasfmt_core::defaults::lexer::star C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1278
+  NEW_FUNC: 0x7ff73ff89f50 in pasfmt_core::defaults::lexer::comma C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1278
+  NEW_FUNC: 0x7ff73ff8a090 in pasfmt_core::defaults::lexer::semicolon C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1278
+  NEW_FUNC: 0x7ff73ff8a1d0 in pasfmt_core::defaults::lexer::equal C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1278
+  NEW_FUNC: 0x7ff73ff8a630 in pasfmt_core::defaults::lexer::l_brack C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1278
+  NEW_FUNC: 0x7ff73ff8a770 in pasfmt_core::defaults::lexer::r_brack C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1278
+  NEW_FUNC: 0x7ff73ff8a8b0 in pasfmt_core::defaults::lexer::r_paren C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1278
+  NEW_FUNC: 0x7ff73ff8f170 in pasfmt_core::lang::impl$88::eq C:\Users\zad\Documents\Code\pasfmt\core\src\lang.rs:336
+  NEW_FUNC: 0x7ff740022220 in memchr::arch::x86_64::avx2::memchr::One::find_raw C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\avx2\memchr.rs:179
+  NEW_FUNC: 0x7ff7400255a0 in memchr::arch::x86_64::avx2::memchr::One::find_raw_avx2 C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\avx2\memchr.rs:396
+  NEW_FUNC: 0x7ff74002c9f0 in memchr::arch::x86_64::avx2::memchr::Two::find_raw C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\avx2\memchr.rs:654
+  NEW_FUNC: 0x7ff74002e4b0 in memchr::arch::x86_64::avx2::memchr::Two::find_raw_avx2 C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\avx2\memchr.rs:804
+  NEW_FUNC: 0x7ff740032c50 in memchr::arch::x86_64::avx2::memchr::Three::find_raw C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\avx2\memchr.rs:1037
+  NEW_FUNC: 0x7ff740034b90 in memchr::arch::x86_64::avx2::memchr::Three::find_raw_avx2 C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\avx2\memchr.rs:1191
+  NEW_FUNC: 0x7ff740071c40 in memchr::arch::x86_64::memchr::memchr_raw::find_avx2 C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\memchr.rs:78
+  NEW_FUNC: 0x7ff740072a30 in memchr::arch::x86_64::memchr::memchr_raw::detect C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\memchr.rs:109
+  NEW_FUNC: 0x7ff7400738f0 in memchr::arch::x86_64::memchr::memchr2_raw::find_avx2 C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\memchr.rs:78
+  NEW_FUNC: 0x7ff7400745d0 in memchr::arch::x86_64::memchr::memchr2_raw::detect C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\memchr.rs:109
+  NEW_FUNC: 0x7ff7400753e0 in memchr::arch::x86_64::memchr::memchr3_raw::find_avx2 C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\memchr.rs:78
+  NEW_FUNC: 0x7ff740075cf0 in memchr::arch::x86_64::memchr::memchr3_raw::detect C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\memchr.rs:109
+  NEW_FUNC: 0x7ff740090200 in std::panicking::try::do_call<libfuzzer_sys::test_input_wrap::closure_env$0,i32> C:\Users\zad\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\std\src\panicking.rs:551
+  NEW_FUNC: 0x7ff7400960c0 in libfuzzer_sys::test_input_wrap C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\libfuzzer-sys-0.4.7\src\lib.rs:58
+  NEW_FUNC: 0x7ff740096d40 in libfuzzer_sys::impl$2::fmt+0xa0 (C:\Users\zad\Documents\Code\pasfmt\target\x86_64-pc-windows-msvc\release\parse.exe+0x140236d40)
+  NEW_FUNC: 0x7ff7400b6520 in arbitrary::impl$23::arbitrary_take_rest C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\arbitrary-1.3.2\src\lib.rs:878
+#0: cov: 12958 ft: 11897 corp: 125 exec/s 0 oom/timeout/crash: 0/0/0 time: 5s job: 2 dft_time: 0
+  NEW_FUNC: 0x7ff73feead90 in memchr::arch::all::packedpair::Pair::with_ranker<ref$<memchr::arch::all::packedpair::DefaultFrequencyRank> > C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\all\packedpair\mod.rs:163
+  NEW_FUNC: 0x7ff73feec390 in memchr::arch::x86_64::avx2::packedpair::Finder::with_pair_impl C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\avx2\packedpair.rs:68
+  NEW_FUNC: 0x7ff73feed360 in memchr::memmem::find C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\memmem\mod.rs:185
+  NEW_FUNC: 0x7ff73feedf70 in memchr::memmem::searcher::Searcher::new<memchr::arch::all::packedpair::DefaultFrequencyRank> C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\memmem\searcher.rs:44
+  NEW_FUNC: 0x7ff7401990a0 in pasfmt_core::defaults::lexer::count_unicode_whitespace<core::str::iter::Chars> C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:148
+  NEW_FUNC: 0x7ff73ff1ca00 in pasfmt_core::defaults::lexer::unicode_identifier C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:703
+  NEW_FUNC: 0x7ff73ff27820 in pasfmt_core::defaults::lexer::compiler_directive_or_comment_alt C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1245
+  NEW_FUNC: 0x7ff73ff281d0 in pasfmt_core::defaults::lexer::ampersand C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1261
+  NEW_FUNC: 0x7ff73ff58490 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::op_until<pasfmt_core::defaults::parser::outside_parens::closure_env$0,pasfmt_core::defaults::parser::impl$1::simple_op_until::closure_env$0<pasfmt_core::defaults::parser::outside_parens::closure_env$0,pasfmt_core::defaults::parser::impl$1::parse_statement::closure_env$4> > C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1508
+  NEW_FUNC: 0x7ff73ff661d0 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::consolidate_current_caret_to_type C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1786
+  NEW_FUNC: 0x7ff73ff8a360 in pasfmt_core::defaults::lexer::caret C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1278
+  NEW_FUNC: 0x7ff73ff8a4f0 in pasfmt_core::defaults::lexer::address_of C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1278
+  NEW_FUNC: 0x7ff740018db0 in memchr::arch::all::packedpair::impl$2::rank C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\all\packedpair\mod.rs:324
+  NEW_FUNC: 0x7ff740038d10 in memchr::arch::x86_64::avx2::packedpair::Finder::find_impl C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\x86_64\avx2\packedpair.rs:150
+  NEW_FUNC: 0x7ff740061d50 in memchr::memmem::searcher::searcher_kind_avx2 C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\memmem\searcher.rs:383
+#208: cov: 13234 ft: 13073 corp: 225 exec/s 52 oom/timeout/crash: 0/0/0 time: 7s job: 3 dft_time: 0
+  NEW_FUNC: 0x7ff73ff657b0 in pasfmt_core::defaults::parser::InternalDelphiLogicalLineParser::consolidate_current_keyword C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1763
+  NEW_FUNC: 0x7ff73ff6b390 in pasfmt_core::defaults::parser::until C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:1937
+#208: cov: 13308 ft: 13793 corp: 269 exec/s 0 oom/timeout/crash: 0/0/0 time: 9s job: 4 dft_time: 0
+#208: cov: 13354 ft: 14093 corp: 340 exec/s 0 oom/timeout/crash: 0/0/0 time: 11s job: 5 dft_time: 0
+  NEW_FUNC: 0x7ff73ff1ccc0 in pasfmt_core::defaults::lexer::identifier C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:710
+  NEW_FUNC: 0x7ff74019ac10 in memchr::arch::all::rabinkarp::is_equal_raw C:\Users\zad\.cargo\registry\src\index.crates.io-6f17d22bba15001f\memchr-2.7.2\src\arch\all\rabinkarp.rs:362
+#208: cov: 13411 ft: 14497 corp: 409 exec/s 0 oom/timeout/crash: 0/0/0 time: 12s job: 6 dft_time: 0
+  NEW_FUNC: 0x7ff73ff210f0 in pasfmt_core::defaults::lexer::binary_number_literal C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:963
+#208: cov: 13510 ft: 14822 corp: 484 exec/s 0 oom/timeout/crash: 0/0/0 time: 14s job: 7 dft_time: 0
+#208: cov: 13532 ft: 15096 corp: 529 exec/s 0 oom/timeout/crash: 0/0/0 time: 17s job: 8 dft_time: 0
+  NEW_FUNC: 0x7ff73ff25870 in pasfmt_core::defaults::lexer::find_directive_expr_end C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\lexer.rs:1098
+#208: cov: 13571 ft: 15445 corp: 613 exec/s 0 oom/timeout/crash: 0/0/0 time: 21s job: 9 dft_time: 0
+  NEW_FUNC: 0x7ff73ff6cfe0 in pasfmt_core::defaults::parser::local_declaration_section C:\Users\zad\Documents\Code\pasfmt\core\src\defaults\parser.rs:2027
+#208: cov: 13595 ft: 15649 corp: 659 exec/s 0 oom/timeout/crash: 0/0/0 time: 24s job: 11 dft_time: 0
+#968: cov: 13632 ft: 15901 corp: 735 exec/s 58 oom/timeout/crash: 0/0/0 time: 27s job: 12 dft_time: 0
+#968: cov: 13645 ft: 16127 corp: 772 exec/s 0 oom/timeout/crash: 0/0/0 time: 31s job: 13 dft_time: 0
+#968: cov: 13695 ft: 16465 corp: 818 exec/s 0 oom/timeout/crash: 0/0/0 time: 36s job: 14 dft_time: 0
+#968: cov: 13706 ft: 16703 corp: 868 exec/s 0 oom/timeout/crash: 0/0/0 time: 39s job: 15 dft_time: 0
+#968: cov: 13708 ft: 16747 corp: 877 exec/s 0 oom/timeout/crash: 0/0/0 time: 51s job: 16 dft_time: 0
+#968: cov: 13714 ft: 16899 corp: 922 exec/s 0 oom/timeout/crash: 0/0/0 time: 54s job: 17 dft_time: 0
+#968: cov: 13722 ft: 16988 corp: 954 exec/s 0 oom/timeout/crash: 0/0/0 time: 56s job: 18 dft_time: 0
+#968: cov: 13725 ft: 17065 corp: 984 exec/s 0 oom/timeout/crash: 0/0/0 time: 59s job: 19 dft_time: 0
+#968: cov: 13747 ft: 17199 corp: 1034 exec/s 0 oom/timeout/crash: 0/0/0 time: 90s job: 23 dft_time: 0
+#968: cov: 13748 ft: 17266 corp: 1048 exec/s 0 oom/timeout/crash: 0/0/0 time: 109s job: 24 dft_time: 0
+#968: cov: 13748 ft: 17284 corp: 1054 exec/s 0 oom/timeout/crash: 0/0/0 time: 144s job: 25 dft_time: 0
+#968: cov: 13762 ft: 17379 corp: 1095 exec/s 0 oom/timeout/crash: 0/0/0 time: 173s job: 26 dft_time: 0
+#968: cov: 13765 ft: 17430 corp: 1105 exec/s 0 oom/timeout/crash: 0/0/0 time: 176s job: 27 dft_time: 0
+#1242: cov: 13765 ft: 17478 corp: 1119 exec/s 2 oom/timeout/crash: 0/0/0 time: 185s job: 22 dft_time: 0
+#1242: cov: 13768 ft: 17531 corp: 1130 exec/s 0 oom/timeout/crash: 0/0/0 time: 297s job: 29 dft_time: 0
+#1242: cov: 13782 ft: 17652 corp: 1172 exec/s 0 oom/timeout/crash: 0/0/0 time: 328s job: 30 dft_time: 0
+#1242: cov: 13789 ft: 17748 corp: 1208 exec/s 0 oom/timeout/crash: 0/0/0 time: 365s job: 32 dft_time: 0
+#1242: cov: 13795 ft: 17785 corp: 1222 exec/s 0 oom/timeout/crash: 0/0/0 time: 409s job: 33 dft_time: 0
+#1242: cov: 13803 ft: 17848 corp: 1256 exec/s 0 oom/timeout/crash: 0/0/0 time: 454s job: 34 dft_time: 0
+#1242: cov: 13808 ft: 17905 corp: 1285 exec/s 0 oom/timeout/crash: 0/0/0 time: 463s job: 31 dft_time: 0
+#1242: cov: 13810 ft: 17929 corp: 1297 exec/s 0 oom/timeout/crash: 0/0/0 time: 510s job: 36 dft_time: 0
+#1242: cov: 13814 ft: 17978 corp: 1319 exec/s 0 oom/timeout/crash: 0/0/0 time: 602s job: 37 dft_time: 0
+#1242: cov: 13815 ft: 18034 corp: 1332 exec/s 0 oom/timeout/crash: 0/0/0 time: 699s job: 38 dft_time: 0
+#1242: cov: 13820 ft: 18069 corp: 1351 exec/s 0 oom/timeout/crash: 0/0/0 time: 756s job: 39 dft_time: 0
+#1242: cov: 13820 ft: 18069 corp: 1351 exec/s 0 oom/timeout/crash: 0/0/0 time: 799s job: 40 dft_time: 0
+#1242: cov: 13823 ft: 18082 corp: 1359 exec/s 0 oom/timeout/crash: 0/0/0 time: 844s job: 41 dft_time: 0
+#1242: cov: 13823 ft: 18103 corp: 1372 exec/s 0 oom/timeout/crash: 0/0/0 time: 899s job: 42 dft_time: 0
+#1242: cov: 13823 ft: 18103 corp: 1372 exec/s 0 oom/timeout/crash: 0/0/0 time: 944s job: 43 dft_time: 0
+#1242: cov: 13848 ft: 18225 corp: 1410 exec/s 0 oom/timeout/crash: 0/0/0 time: 1044s job: 44 dft_time: 0
+#1242: cov: 13848 ft: 18225 corp: 1410 exec/s 0 oom/timeout/crash: 0/0/0 time: 1091s job: 45 dft_time: 0
+#1242: cov: 13850 ft: 18257 corp: 1421 exec/s 0 oom/timeout/crash: 0/0/0 time: 1144s job: 46 dft_time: 0
+#1242: cov: 13853 ft: 18288 corp: 1445 exec/s 0 oom/timeout/crash: 0/0/0 time: 1197s job: 47 dft_time: 0
+#1242: cov: 13858 ft: 18366 corp: 1485 exec/s 0 oom/timeout/crash: 0/0/0 time: 1213s job: 10 dft_time: 0
+#1242: cov: 13858 ft: 18368 corp: 1487 exec/s 0 oom/timeout/crash: 0/1/0 time: 1253s job: 20 dft_time: 0
+#1242: cov: 13858 ft: 18370 corp: 1488 exec/s 0 oom/timeout/crash: 0/2/0 time: 1254s job: 48 dft_time: 0
+#1242: cov: 13859 ft: 18388 corp: 1492 exec/s 0 oom/timeout/crash: 0/2/0 time: 1268s job: 49 dft_time: 0
+#1242: cov: 13859 ft: 18418 corp: 1503 exec/s 0 oom/timeout/crash: 0/2/0 time: 1331s job: 52 dft_time: 0
+#1242: cov: 13859 ft: 18418 corp: 1503 exec/s 0 oom/timeout/crash: 0/2/0 time: 1348s job: 50 dft_time: 0
+#1242: cov: 13859 ft: 18422 corp: 1507 exec/s 0 oom/timeout/crash: 0/2/0 time: 1464s job: 54 dft_time: 0
+#1242: cov: 13859 ft: 18444 corp: 1511 exec/s 0 oom/timeout/crash: 0/2/0 time: 1767s job: 53 dft_time: 0
+#1242: cov: 13861 ft: 18483 corp: 1535 exec/s 0 oom/timeout/crash: 0/2/0 time: 1831s job: 56 dft_time: 0
+#1242: cov: 13864 ft: 18526 corp: 1555 exec/s 0 oom/timeout/crash: 0/2/0 time: 1857s job: 21 dft_time: 0
+#1242: cov: 13864 ft: 18540 corp: 1563 exec/s 0 oom/timeout/crash: 0/3/0 time: 1905s job: 57 dft_time: 0
+#1242: cov: 13864 ft: 18542 corp: 1564 exec/s 0 oom/timeout/crash: 0/3/0 time: 1979s job: 28 dft_time: 0
+#1242: cov: 13864 ft: 18544 corp: 1565 exec/s 0 oom/timeout/crash: 0/4/0 time: 2046s job: 60 dft_time: 0
+#1576: cov: 13865 ft: 18557 corp: 1573 exec/s 0 oom/timeout/crash: 0/4/0 time: 2260s job: 35 dft_time: 0
+#1621: cov: 13865 ft: 18567 corp: 1577 exec/s 0 oom/timeout/crash: 0/5/0 time: 2261s job: 55 dft_time: 0
+#1621: cov: 13865 ft: 18570 corp: 1578 exec/s 0 oom/timeout/crash: 0/5/0 time: 3027s job: 62 dft_time: 0
+#1686: cov: 13876 ft: 18624 corp: 1597 exec/s 0 oom/timeout/crash: 0/5/0 time: 3068s job: 51 dft_time: 0
+#1686: cov: 13876 ft: 18633 corp: 1598 exec/s 0 oom/timeout/crash: 0/6/0 time: 3101s job: 64 dft_time: 0
+#1686: cov: 13876 ft: 18669 corp: 1609 exec/s 0 oom/timeout/crash: 0/6/0 time: 3115s job: 63 dft_time: 0
+#1686: cov: 13878 ft: 18695 corp: 1616 exec/s 0 oom/timeout/crash: 0/6/0 time: 3145s job: 65 dft_time: 0
+#1686: cov: 13879 ft: 18714 corp: 1623 exec/s 0 oom/timeout/crash: 0/6/0 time: 3270s job: 68 dft_time: 0
+#1686: cov: 13881 ft: 18743 corp: 1644 exec/s 0 oom/timeout/crash: 0/6/0 time: 3661s job: 58 dft_time: 0
+#1686: cov: 13881 ft: 18745 corp: 1646 exec/s 0 oom/timeout/crash: 0/7/0 time: 3709s job: 59 dft_time: 0
+#1686: cov: 13885 ft: 18799 corp: 1666 exec/s 0 oom/timeout/crash: 0/8/0 time: 3738s job: 70 dft_time: 0
+#1686: cov: 13885 ft: 18799 corp: 1666 exec/s 0 oom/timeout/crash: 0/8/0 time: 3790s job: 71 dft_time: 0
+#1686: cov: 13886 ft: 18811 corp: 1672 exec/s 0 oom/timeout/crash: 0/8/0 time: 3813s job: 72 dft_time: 0
+#1686: cov: 13889 ft: 18835 corp: 1689 exec/s 0 oom/timeout/crash: 0/8/0 time: 3850s job: 61 dft_time: 0
+#1686: cov: 13889 ft: 18835 corp: 1689 exec/s 0 oom/timeout/crash: 0/9/0 time: 3891s job: 74 dft_time: 0
+#1686: cov: 13895 ft: 18909 corp: 1704 exec/s 0 oom/timeout/crash: 0/9/0 time: 3928s job: 75 dft_time: 0
+#1727: cov: 13895 ft: 18911 corp: 1706 exec/s 0 oom/timeout/crash: 0/9/0 time: 4596s job: 73 dft_time: 0
+#1727: cov: 13895 ft: 18911 corp: 1706 exec/s 0 oom/timeout/crash: 0/9/0 time: 4889s job: 78 dft_time: 0
+#1727: cov: 13895 ft: 18911 corp: 1706 exec/s 0 oom/timeout/crash: 0/9/0 time: 4912s job: 66 dft_time: 0
+#1727: cov: 13895 ft: 18911 corp: 1706 exec/s 0 oom/timeout/crash: 0/10/0 time: 4930s job: 67 dft_time: 0
+#1727: cov: 13895 ft: 18916 corp: 1709 exec/s 0 oom/timeout/crash: 0/11/0 time: 5014s job: 81 dft_time: 0
+#1727: cov: 13897 ft: 18957 corp: 1728 exec/s 0 oom/timeout/crash: 0/11/0 time: 5038s job: 79 dft_time: 0
+#1727: cov: 13897 ft: 18971 corp: 1734 exec/s 0 oom/timeout/crash: 0/11/0 time: 5085s job: 69 dft_time: 0
+#1727: cov: 13897 ft: 18975 corp: 1737 exec/s 0 oom/timeout/crash: 0/12/0 time: 5102s job: 82 dft_time: 0
+#1727: cov: 13898 ft: 19005 corp: 1752 exec/s 0 oom/timeout/crash: 0/12/0 time: 5124s job: 83 dft_time: 0
+#1727: cov: 13898 ft: 19019 corp: 1762 exec/s 0 oom/timeout/crash: 0/12/0 time: 5171s job: 84 dft_time: 0
+#1727: cov: 13900 ft: 19053 corp: 1780 exec/s 0 oom/timeout/crash: 0/12/0 time: 5204s job: 85 dft_time: 0
+#1727: cov: 13900 ft: 19064 corp: 1784 exec/s 0 oom/timeout/crash: 0/12/0 time: 5214s job: 86 dft_time: 0
+#2000: cov: 13900 ft: 19085 corp: 1799 exec/s 3 oom/timeout/crash: 0/12/0 time: 5276s job: 87 dft_time: 0
+#2000: cov: 13900 ft: 19091 corp: 1802 exec/s 0 oom/timeout/crash: 0/12/0 time: 5306s job: 88 dft_time: 0
+#2000: cov: 13900 ft: 19094 corp: 1805 exec/s 0 oom/timeout/crash: 0/12/0 time: 5322s job: 89 dft_time: 0
+#2000: cov: 13900 ft: 19100 corp: 1809 exec/s 0 oom/timeout/crash: 0/12/0 time: 5398s job: 90 dft_time: 0
+#2000: cov: 13900 ft: 19102 corp: 1811 exec/s 0 oom/timeout/crash: 0/12/0 time: 5431s job: 92 dft_time: 0
+#2000: cov: 13902 ft: 19125 corp: 1822 exec/s 0 oom/timeout/crash: 0/12/0 time: 5484s job: 91 dft_time: 0
+#2000: cov: 13905 ft: 19138 corp: 1830 exec/s 0 oom/timeout/crash: 0/12/0 time: 5526s job: 93 dft_time: 0
+#2000: cov: 13906 ft: 19174 corp: 1843 exec/s 0 oom/timeout/crash: 0/12/0 time: 5608s job: 94 dft_time: 0
+#2000: cov: 13906 ft: 19178 corp: 1844 exec/s 0 oom/timeout/crash: 0/12/0 time: 5626s job: 96 dft_time: 0
+#2000: cov: 13909 ft: 19200 corp: 1859 exec/s 0 oom/timeout/crash: 0/12/0 time: 5647s job: 95 dft_time: 0
+#2000: cov: 13917 ft: 19211 corp: 1863 exec/s 0 oom/timeout/crash: 0/12/0 time: 5728s job: 98 dft_time: 0
+#2000: cov: 13919 ft: 19226 corp: 1872 exec/s 0 oom/timeout/crash: 0/12/0 time: 5731s job: 76 dft_time: 0
+#2000: cov: 13919 ft: 19227 corp: 1873 exec/s 0 oom/timeout/crash: 0/13/0 time: 5732s job: 77 dft_time: 0
+#2000: cov: 13922 ft: 19243 corp: 1880 exec/s 0 oom/timeout/crash: 0/14/0 time: 5749s job: 99 dft_time: 0
+#2000: cov: 13922 ft: 19244 corp: 1881 exec/s 0 oom/timeout/crash: 0/14/0 time: 5836s job: 101 dft_time: 0
+#2000: cov: 13922 ft: 19258 corp: 1886 exec/s 0 oom/timeout/crash: 0/14/0 time: 5854s job: 102 dft_time: 0
+#2044: cov: 13922 ft: 19261 corp: 1888 exec/s 0 oom/timeout/crash: 0/14/0 time: 5890s job: 100 dft_time: 0
+#2044: cov: 13922 ft: 19261 corp: 1888 exec/s 0 oom/timeout/crash: 0/14/0 time: 5922s job: 103 dft_time: 0
+#2044: cov: 13922 ft: 19261 corp: 1888 exec/s 0 oom/timeout/crash: 0/14/0 time: 5954s job: 104 dft_time: 0
+#2044: cov: 13922 ft: 19278 corp: 1896 exec/s 0 oom/timeout/crash: 0/14/0 time: 5960s job: 105 dft_time: 0
+#2044: cov: 13922 ft: 19280 corp: 1898 exec/s 0 oom/timeout/crash: 0/14/0 time: 6066s job: 108 dft_time: 0
+#2044: cov: 13922 ft: 19292 corp: 1908 exec/s 0 oom/timeout/crash: 0/14/0 time: 6081s job: 109 dft_time: 0
+#2044: cov: 13923 ft: 19295 corp: 1911 exec/s 0 oom/timeout/crash: 0/14/0 time: 6175s job: 106 dft_time: 0
+#2044: cov: 13924 ft: 19325 corp: 1928 exec/s 0 oom/timeout/crash: 0/14/0 time: 6362s job: 110 dft_time: 0
+#2044: cov: 13924 ft: 19327 corp: 1929 exec/s 0 oom/timeout/crash: 0/14/0 time: 6396s job: 111 dft_time: 0
+#2044: cov: 13924 ft: 19327 corp: 1929 exec/s 0 oom/timeout/crash: 0/14/0 time: 6487s job: 112 dft_time: 0
+#2044: cov: 13924 ft: 19329 corp: 1930 exec/s 0 oom/timeout/crash: 0/14/0 time: 6511s job: 113 dft_time: 0
+#2044: cov: 13924 ft: 19329 corp: 1930 exec/s 0 oom/timeout/crash: 0/14/0 time: 6631s job: 116 dft_time: 0
+#2044: cov: 13924 ft: 19330 corp: 1931 exec/s 0 oom/timeout/crash: 0/14/0 time: 6668s job: 115 dft_time: 0
+#2044: cov: 13924 ft: 19339 corp: 1936 exec/s 0 oom/timeout/crash: 0/14/0 time: 6690s job: 107 dft_time: 0
+#2044: cov: 13924 ft: 19339 corp: 1936 exec/s 0 oom/timeout/crash: 0/14/0 time: 6715s job: 80 dft_time: 0
+#2044: cov: 13928 ft: 19348 corp: 1944 exec/s 0 oom/timeout/crash: 0/15/0 time: 6762s job: 117 dft_time: 0
+#2044: cov: 13933 ft: 19357 corp: 1951 exec/s 0 oom/timeout/crash: 0/15/0 time: 6796s job: 118 dft_time: 0
+#2044: cov: 13934 ft: 19374 corp: 1963 exec/s 0 oom/timeout/crash: 0/15/0 time: 6811s job: 119 dft_time: 0
+#2044: cov: 13934 ft: 19375 corp: 1964 exec/s 0 oom/timeout/crash: 0/15/0 time: 6887s job: 121 dft_time: 0
+#2136: cov: 13934 ft: 19394 corp: 1975 exec/s 0 oom/timeout/crash: 0/15/0 time: 6923s job: 122 dft_time: 0
+#2136: cov: 13934 ft: 19395 corp: 1976 exec/s 0 oom/timeout/crash: 0/15/0 time: 6936s job: 123 dft_time: 0
+#2136: cov: 13935 ft: 19420 corp: 1984 exec/s 0 oom/timeout/crash: 0/15/0 time: 6951s job: 114 dft_time: 0
+#2136: cov: 13935 ft: 19420 corp: 1984 exec/s 0 oom/timeout/crash: 0/15/0 time: 7018s job: 124 dft_time: 0
+#2136: cov: 13938 ft: 19453 corp: 2006 exec/s 0 oom/timeout/crash: 0/15/0 time: 7050s job: 125 dft_time: 0
+#2136: cov: 13938 ft: 19455 corp: 2008 exec/s 0 oom/timeout/crash: 0/15/0 time: 7069s job: 126 dft_time: 0
+#2136: cov: 13938 ft: 19455 corp: 2008 exec/s 0 oom/timeout/crash: 0/15/0 time: 7151s job: 127 dft_time: 0
+#2136: cov: 13938 ft: 19455 corp: 2008 exec/s 0 oom/timeout/crash: 0/15/0 time: 7186s job: 129 dft_time: 0
+#2136: cov: 13938 ft: 19465 corp: 2012 exec/s 0 oom/timeout/crash: 0/15/0 time: 7197s job: 128 dft_time: 0
+#2136: cov: 13939 ft: 19479 corp: 2022 exec/s 0 oom/timeout/crash: 0/15/0 time: 7206s job: 130 dft_time: 0
+#2136: cov: 13939 ft: 19486 corp: 2027 exec/s 0 oom/timeout/crash: 0/15/0 time: 7285s job: 131 dft_time: 0
+#2136: cov: 13945 ft: 19505 corp: 2036 exec/s 0 oom/timeout/crash: 0/15/0 time: 7337s job: 133 dft_time: 0
+#2136: cov: 13948 ft: 19539 corp: 2047 exec/s 0 oom/timeout/crash: 0/15/0 time: 7412s job: 97 dft_time: 0
+#2136: cov: 13948 ft: 19539 corp: 2047 exec/s 0 oom/timeout/crash: 0/16/0 time: 7437s job: 132 dft_time: 0
+#2136: cov: 13948 ft: 19539 corp: 2047 exec/s 0 oom/timeout/crash: 0/16/0 time: 7479s job: 135 dft_time: 0
+#2136: cov: 13948 ft: 19553 corp: 2055 exec/s 0 oom/timeout/crash: 0/16/0 time: 7503s job: 136 dft_time: 0
+#2136: cov: 13948 ft: 19561 corp: 2057 exec/s 0 oom/timeout/crash: 0/16/0 time: 7550s job: 137 dft_time: 0
+#2136: cov: 13954 ft: 19586 corp: 2075 exec/s 0 oom/timeout/crash: 0/16/0 time: 7577s job: 138 dft_time: 0
+#2136: cov: 13955 ft: 19594 corp: 2081 exec/s 0 oom/timeout/crash: 0/16/0 time: 7659s job: 140 dft_time: 0
+#2136: cov: 13955 ft: 19622 corp: 2098 exec/s 0 oom/timeout/crash: 0/16/0 time: 7696s job: 141 dft_time: 0
+#2136: cov: 13955 ft: 19637 corp: 2108 exec/s 0 oom/timeout/crash: 0/16/0 time: 7723s job: 142 dft_time: 0
+#2136: cov: 13957 ft: 19642 corp: 2112 exec/s 0 oom/timeout/crash: 0/16/0 time: 7916s job: 144 dft_time: 0
+#2136: cov: 13957 ft: 19643 corp: 2113 exec/s 0 oom/timeout/crash: 0/16/0 time: 8016s job: 143 dft_time: 0
+#2136: cov: 13957 ft: 19650 corp: 2119 exec/s 0 oom/timeout/crash: 0/16/0 time: 8101s job: 120 dft_time: 0
+#2136: cov: 13959 ft: 19653 corp: 2122 exec/s 0 oom/timeout/crash: 0/16/0 time: 8166s job: 146 dft_time: 0
+#2136: cov: 13959 ft: 19656 corp: 2125 exec/s 0 oom/timeout/crash: 0/16/0 time: 8257s job: 148 dft_time: 0
+#2136: cov: 13959 ft: 19659 corp: 2126 exec/s 0 oom/timeout/crash: 0/16/0 time: 8309s job: 147 dft_time: 0
+#2136: cov: 13959 ft: 19659 corp: 2126 exec/s 0 oom/timeout/crash: 0/16/0 time: 8320s job: 139 dft_time: 0
+#2136: cov: 13959 ft: 19659 corp: 2126 exec/s 0 oom/timeout/crash: 0/16/0 time: 8322s job: 149 dft_time: 0
+#2136: cov: 13959 ft: 19660 corp: 2127 exec/s 0 oom/timeout/crash: 0/16/0 time: 8419s job: 150 dft_time: 0
+#2136: cov: 13959 ft: 19660 corp: 2127 exec/s 0 oom/timeout/crash: 0/16/0 time: 8461s job: 151 dft_time: 0
+#2136: cov: 13964 ft: 19726 corp: 2157 exec/s 0 oom/timeout/crash: 0/16/0 time: 8478s job: 153 dft_time: 0
+#2136: cov: 13964 ft: 19732 corp: 2162 exec/s 0 oom/timeout/crash: 0/16/0 time: 8659s job: 155 dft_time: 0
+#2136: cov: 13964 ft: 19734 corp: 2163 exec/s 0 oom/timeout/crash: 0/16/0 time: 8782s job: 152 dft_time: 0
+#2136: cov: 13965 ft: 19739 corp: 2167 exec/s 0 oom/timeout/crash: 0/16/0 time: 8847s job: 157 dft_time: 0
+#2136: cov: 13965 ft: 19742 corp: 2169 exec/s 0 oom/timeout/crash: 0/16/0 time: 8945s job: 158 dft_time: 0
+#2136: cov: 13965 ft: 19754 corp: 2175 exec/s 0 oom/timeout/crash: 0/16/0 time: 9010s job: 159 dft_time: 0
+#2136: cov: 13965 ft: 19773 corp: 2189 exec/s 0 oom/timeout/crash: 0/16/0 time: 9197s job: 161 dft_time: 0
+#2136: cov: 13965 ft: 19776 corp: 2191 exec/s 0 oom/timeout/crash: 0/16/0 time: 9362s job: 162 dft_time: 0
+#2136: cov: 13965 ft: 19784 corp: 2195 exec/s 0 oom/timeout/crash: 0/16/0 time: 9526s job: 145 dft_time: 0
+#2136: cov: 13965 ft: 19798 corp: 2197 exec/s 0 oom/timeout/crash: 0/17/0 time: 9529s job: 163 dft_time: 0
+#2136: cov: 13966 ft: 19811 corp: 2207 exec/s 0 oom/timeout/crash: 0/17/0 time: 9541s job: 160 dft_time: 0
+#2136: cov: 13966 ft: 19814 corp: 2209 exec/s 0 oom/timeout/crash: 0/17/0 time: 9617s job: 134 dft_time: 0
+#2136: cov: 13966 ft: 19820 corp: 2210 exec/s 0 oom/timeout/crash: 0/17/0 time: 9703s job: 165 dft_time: 0
+#2136: cov: 13966 ft: 19825 corp: 2215 exec/s 0 oom/timeout/crash: 0/17/0 time: 9942s job: 168 dft_time: 0
+#2136: cov: 13966 ft: 19826 corp: 2216 exec/s 0 oom/timeout/crash: 0/17/0 time: 10116s job: 169 dft_time: 0
+#2136: cov: 13969 ft: 19836 corp: 2224 exec/s 0 oom/timeout/crash: 0/17/0 time: 10222s job: 154 dft_time: 0
+#2136: cov: 13969 ft: 19836 corp: 2224 exec/s 0 oom/timeout/crash: 0/18/0 time: 10282s job: 156 dft_time: 0
+#2136: cov: 13969 ft: 19837 corp: 2225 exec/s 0 oom/timeout/crash: 0/19/0 time: 10314s job: 170 dft_time: 0
+#2136: cov: 13969 ft: 19837 corp: 2225 exec/s 0 oom/timeout/crash: 0/19/0 time: 10395s job: 171 dft_time: 0
+#2136: cov: 13969 ft: 19848 corp: 2234 exec/s 0 oom/timeout/crash: 0/19/0 time: 10492s job: 172 dft_time: 0
+#2136: cov: 13969 ft: 19849 corp: 2235 exec/s 0 oom/timeout/crash: 0/19/0 time: 10586s job: 166 dft_time: 0
+#2136: cov: 13969 ft: 19849 corp: 2235 exec/s 0 oom/timeout/crash: 0/19/0 time: 10675s job: 175 dft_time: 0
+#2136: cov: 13969 ft: 19861 corp: 2245 exec/s 0 oom/timeout/crash: 0/19/0 time: 10900s job: 174 dft_time: 0
+#2136: cov: 13969 ft: 19861 corp: 2245 exec/s 0 oom/timeout/crash: 0/19/0 time: 10930s job: 177 dft_time: 0
+#2136: cov: 13969 ft: 19861 corp: 2245 exec/s 0 oom/timeout/crash: 0/19/0 time: 11070s job: 173 dft_time: 0
+#2136: cov: 13971 ft: 19875 corp: 2249 exec/s 0 oom/timeout/crash: 0/19/0 time: 11738s job: 179 dft_time: 0
+#2136: cov: 13971 ft: 19876 corp: 2250 exec/s 0 oom/timeout/crash: 0/19/0 time: 11739s job: 167 dft_time: 0
+#2136: cov: 13971 ft: 19876 corp: 2250 exec/s 0 oom/timeout/crash: 0/20/0 time: 11923s job: 180 dft_time: 0
+#2136: cov: 13971 ft: 19886 corp: 2260 exec/s 0 oom/timeout/crash: 0/20/0 time: 11936s job: 181 dft_time: 0
+#2136: cov: 13976 ft: 19893 corp: 2262 exec/s 0 oom/timeout/crash: 0/20/0 time: 11995s job: 164 dft_time: 0
+#2136: cov: 13976 ft: 19894 corp: 2263 exec/s 0 oom/timeout/crash: 0/20/0 time: 12125s job: 184 dft_time: 0
+#2136: cov: 13976 ft: 19895 corp: 2264 exec/s 0 oom/timeout/crash: 0/20/0 time: 12328s job: 186 dft_time: 0
+#2136: cov: 13978 ft: 19905 corp: 2270 exec/s 0 oom/timeout/crash: 0/20/0 time: 12389s job: 176 dft_time: 0
+#2136: cov: 13979 ft: 19915 corp: 2275 exec/s 0 oom/timeout/crash: 0/21/0 time: 12529s job: 182 dft_time: 0
+#2136: cov: 13979 ft: 19915 corp: 2275 exec/s 0 oom/timeout/crash: 0/21/0 time: 12534s job: 183 dft_time: 0
+#2136: cov: 13979 ft: 19917 corp: 2277 exec/s 0 oom/timeout/crash: 0/21/0 time: 12585s job: 188 dft_time: 0
+#2136: cov: 13982 ft: 19923 corp: 2281 exec/s 0 oom/timeout/crash: 0/21/0 time: 12593s job: 187 dft_time: 0
+#2187: cov: 13982 ft: 19923 corp: 2281 exec/s 0 oom/timeout/crash: 0/21/0 time: 12703s job: 178 dft_time: 0
+#2187: cov: 13982 ft: 19923 corp: 2281 exec/s 0 oom/timeout/crash: 0/22/0 time: 12822s job: 192 dft_time: 0
+#2187: cov: 13982 ft: 19924 corp: 2282 exec/s 0 oom/timeout/crash: 0/22/0 time: 13051s job: 194 dft_time: 0
+#2187: cov: 13982 ft: 19924 corp: 2282 exec/s 0 oom/timeout/crash: 0/22/0 time: 13136s job: 189 dft_time: 0
+#2187: cov: 13982 ft: 19924 corp: 2282 exec/s 0 oom/timeout/crash: 0/22/0 time: 13247s job: 195 dft_time: 0
+#2187: cov: 13982 ft: 19926 corp: 2284 exec/s 0 oom/timeout/crash: 0/22/0 time: 13285s job: 191 dft_time: 0
+#2187: cov: 13982 ft: 19929 corp: 2286 exec/s 0 oom/timeout/crash: 0/22/0 time: 13915s job: 193 dft_time: 0
+#2187: cov: 13982 ft: 19935 corp: 2288 exec/s 0 oom/timeout/crash: 0/22/0 time: 13916s job: 185 dft_time: 0
+#2187: cov: 13982 ft: 19935 corp: 2288 exec/s 0 oom/timeout/crash: 0/23/0 time: 13916s job: 196 dft_time: 0
+#2187: cov: 13982 ft: 19940 corp: 2293 exec/s 0 oom/timeout/crash: 0/23/0 time: 14138s job: 200 dft_time: 0
+#2187: cov: 13982 ft: 19940 corp: 2293 exec/s 0 oom/timeout/crash: 0/23/0 time: 14143s job: 198 dft_time: 0
+#2187: cov: 13982 ft: 19944 corp: 2297 exec/s 0 oom/timeout/crash: 0/23/0 time: 14174s job: 199 dft_time: 0
+#2187: cov: 13982 ft: 19949 corp: 2300 exec/s 0 oom/timeout/crash: 0/23/0 time: 14340s job: 190 dft_time: 0
+#2187: cov: 13982 ft: 19950 corp: 2301 exec/s 0 oom/timeout/crash: 0/24/0 time: 14356s job: 202 dft_time: 0
+#2187: cov: 13982 ft: 19950 corp: 2301 exec/s 0 oom/timeout/crash: 0/24/0 time: 14579s job: 206 dft_time: 0
+#2187: cov: 13982 ft: 19951 corp: 2302 exec/s 0 oom/timeout/crash: 0/24/0 time: 14593s job: 205 dft_time: 0
+#2187: cov: 13982 ft: 19965 corp: 2305 exec/s 0 oom/timeout/crash: 0/24/0 time: 14693s job: 201 dft_time: 0
+#2187: cov: 13982 ft: 19965 corp: 2305 exec/s 0 oom/timeout/crash: 0/24/0 time: 14810s job: 207 dft_time: 0
+#2187: cov: 13982 ft: 19966 corp: 2306 exec/s 0 oom/timeout/crash: 0/24/0 time: 14848s job: 208 dft_time: 0
+#2187: cov: 13982 ft: 19966 corp: 2306 exec/s 0 oom/timeout/crash: 0/24/0 time: 15051s job: 197 dft_time: 0
+#2187: cov: 13982 ft: 19972 corp: 2311 exec/s 0 oom/timeout/crash: 0/25/0 time: 15061s job: 211 dft_time: 0
+#2187: cov: 13982 ft: 19980 corp: 2319 exec/s 0 oom/timeout/crash: 0/25/0 time: 15265s job: 212 dft_time: 0
+#2187: cov: 13982 ft: 19982 corp: 2321 exec/s 0 oom/timeout/crash: 0/25/0 time: 15279s job: 210 dft_time: 0
+#2187: cov: 13983 ft: 19993 corp: 2329 exec/s 0 oom/timeout/crash: 0/25/0 time: 15340s job: 213 dft_time: 0
+#2187: cov: 13983 ft: 19993 corp: 2329 exec/s 0 oom/timeout/crash: 0/25/0 time: 15519s job: 215 dft_time: 0
+#2187: cov: 13983 ft: 19993 corp: 2329 exec/s 0 oom/timeout/crash: 0/25/0 time: 15569s job: 216 dft_time: 0
+#2187: cov: 13983 ft: 20001 corp: 2332 exec/s 0 oom/timeout/crash: 0/25/0 time: 15951s job: 203 dft_time: 0
+#2187: cov: 13983 ft: 20003 corp: 2334 exec/s 0 oom/timeout/crash: 0/26/0 time: 15980s job: 204 dft_time: 0
+#2187: cov: 13983 ft: 20007 corp: 2337 exec/s 0 oom/timeout/crash: 0/27/0 time: 16239s job: 209 dft_time: 0
+#2187: cov: 13983 ft: 20007 corp: 2337 exec/s 0 oom/timeout/crash: 0/27/0 time: 16264s job: 214 dft_time: 0
+#2187: cov: 13983 ft: 20007 corp: 2337 exec/s 0 oom/timeout/crash: 0/27/0 time: 16464s job: 221 dft_time: 0
+#2187: cov: 13984 ft: 20028 corp: 2348 exec/s 0 oom/timeout/crash: 0/27/0 time: 16672s job: 219 dft_time: 0
+#2187: cov: 13984 ft: 20028 corp: 2348 exec/s 0 oom/timeout/crash: 0/27/0 time: 16743s job: 220 dft_time: 0
+#2187: cov: 13984 ft: 20028 corp: 2348 exec/s 0 oom/timeout/crash: 0/27/0 time: 17164s job: 224 dft_time: 0
+#2187: cov: 13984 ft: 20029 corp: 2349 exec/s 0 oom/timeout/crash: 0/27/0 time: 17290s job: 223 dft_time: 0
+#2187: cov: 13984 ft: 20029 corp: 2349 exec/s 0 oom/timeout/crash: 0/27/0 time: 17323s job: 217 dft_time: 0
+#2187: cov: 13984 ft: 20031 corp: 2350 exec/s 0 oom/timeout/crash: 0/28/0 time: 17373s job: 218 dft_time: 0
+#2187: cov: 13984 ft: 20031 corp: 2350 exec/s 0 oom/timeout/crash: 0/29/0 time: 17558s job: 228 dft_time: 0
+#2187: cov: 13984 ft: 20035 corp: 2353 exec/s 0 oom/timeout/crash: 0/29/0 time: 17773s job: 227 dft_time: 0
+#2187: cov: 13984 ft: 20040 corp: 2356 exec/s 0 oom/timeout/crash: 0/29/0 time: 17846s job: 230 dft_time: 0
+#2187: cov: 13984 ft: 20047 corp: 2361 exec/s 0 oom/timeout/crash: 0/29/0 time: 17886s job: 226 dft_time: 0
+#2187: cov: 13984 ft: 20047 corp: 2361 exec/s 0 oom/timeout/crash: 0/29/0 time: 18068s job: 222 dft_time: 0
+#2187: cov: 13984 ft: 20047 corp: 2361 exec/s 0 oom/timeout/crash: 0/30/0 time: 18096s job: 232 dft_time: 0
+#2187: cov: 13984 ft: 20047 corp: 2361 exec/s 0 oom/timeout/crash: 0/30/0 time: 18303s job: 234 dft_time: 0
+#2187: cov: 13984 ft: 20048 corp: 2362 exec/s 0 oom/timeout/crash: 0/30/0 time: 18333s job: 235 dft_time: 0
+#2187: cov: 13984 ft: 20049 corp: 2363 exec/s 0 oom/timeout/crash: 0/30/0 time: 18547s job: 225 dft_time: 0
+#2187: cov: 13984 ft: 20049 corp: 2363 exec/s 0 oom/timeout/crash: 0/31/0 time: 18572s job: 237 dft_time: 0
+#2187: cov: 13984 ft: 20062 corp: 2370 exec/s 0 oom/timeout/crash: 0/31/0 time: 18630s job: 233 dft_time: 0
+#2187: cov: 13984 ft: 20062 corp: 2370 exec/s 0 oom/timeout/crash: 0/31/0 time: 18789s job: 238 dft_time: 0
+#2187: cov: 13984 ft: 20066 corp: 2372 exec/s 0 oom/timeout/crash: 0/31/0 time: 18818s job: 239 dft_time: 0
+#2187: cov: 13984 ft: 20089 corp: 2385 exec/s 0 oom/timeout/crash: 0/31/0 time: 18966s job: 236 dft_time: 0
+#2187: cov: 13985 ft: 20090 corp: 2386 exec/s 0 oom/timeout/crash: 0/31/0 time: 19114s job: 231 dft_time: 0
+#2187: cov: 13985 ft: 20090 corp: 2386 exec/s 0 oom/timeout/crash: 0/31/0 time: 19125s job: 240 dft_time: 0
+#2187: cov: 13985 ft: 20093 corp: 2389 exec/s 0 oom/timeout/crash: 0/31/0 time: 19177s job: 229 dft_time: 0
+#2187: cov: 13985 ft: 20093 corp: 2389 exec/s 0 oom/timeout/crash: 0/32/0 time: 19186s job: 242 dft_time: 0
+#2187: cov: 13985 ft: 20093 corp: 2389 exec/s 0 oom/timeout/crash: 0/32/0 time: 19211s job: 243 dft_time: 0
+#2187: cov: 13987 ft: 20097 corp: 2392 exec/s 0 oom/timeout/crash: 0/32/0 time: 19290s job: 241 dft_time: 0
+#2187: cov: 13987 ft: 20097 corp: 2392 exec/s 0 oom/timeout/crash: 0/32/0 time: 19415s job: 245 dft_time: 0
+#2187: cov: 13987 ft: 20098 corp: 2393 exec/s 0 oom/timeout/crash: 0/32/0 time: 19461s job: 248 dft_time: 0
+#2187: cov: 13987 ft: 20099 corp: 2394 exec/s 0 oom/timeout/crash: 0/32/0 time: 19565s job: 249 dft_time: 0
+#2187: cov: 13987 ft: 20101 corp: 2395 exec/s 0 oom/timeout/crash: 0/32/0 time: 19623s job: 246 dft_time: 0
+#2187: cov: 13987 ft: 20105 corp: 2397 exec/s 0 oom/timeout/crash: 0/32/0 time: 19670s job: 250 dft_time: 0
+#2187: cov: 13988 ft: 20115 corp: 2404 exec/s 0 oom/timeout/crash: 0/32/0 time: 19720s job: 251 dft_time: 0
+#2187: cov: 13989 ft: 20120 corp: 2408 exec/s 0 oom/timeout/crash: 0/32/0 time: 19902s job: 252 dft_time: 0
+#2295: cov: 13989 ft: 20121 corp: 2409 exec/s 0 oom/timeout/crash: 0/32/0 time: 19912s job: 247 dft_time: 0
+#2295: cov: 13989 ft: 20121 corp: 2409 exec/s 0 oom/timeout/crash: 0/32/0 time: 19928s job: 254 dft_time: 0
+#2295: cov: 13989 ft: 20124 corp: 2412 exec/s 0 oom/timeout/crash: 0/32/0 time: 19962s job: 244 dft_time: 0
+#2295: cov: 13989 ft: 20124 corp: 2412 exec/s 0 oom/timeout/crash: 0/32/0 time: 19980s job: 255 dft_time: 0
+#2295: cov: 13989 ft: 20127 corp: 2415 exec/s 0 oom/timeout/crash: 0/32/0 time: 20134s job: 253 dft_time: 0
+#2295: cov: 13989 ft: 20138 corp: 2423 exec/s 0 oom/timeout/crash: 0/32/0 time: 20193s job: 258 dft_time: 0
+#2295: cov: 13989 ft: 20141 corp: 2425 exec/s 0 oom/timeout/crash: 0/32/0 time: 20195s job: 257 dft_time: 0
+#2295: cov: 13989 ft: 20142 corp: 2426 exec/s 0 oom/timeout/crash: 0/32/0 time: 20413s job: 259 dft_time: 0
+#2295: cov: 13989 ft: 20144 corp: 2427 exec/s 0 oom/timeout/crash: 0/32/0 time: 20510s job: 262 dft_time: 0
+#2295: cov: 13989 ft: 20149 corp: 2432 exec/s 0 oom/timeout/crash: 0/32/0 time: 20552s job: 256 dft_time: 0
+#2295: cov: 13989 ft: 20149 corp: 2432 exec/s 0 oom/timeout/crash: 0/32/0 time: 20802s job: 265 dft_time: 0
+#2295: cov: 13989 ft: 20149 corp: 2432 exec/s 0 oom/timeout/crash: 0/32/0 time: 20820s job: 266 dft_time: 0
+#2295: cov: 13989 ft: 20170 corp: 2438 exec/s 0 oom/timeout/crash: 0/32/0 time: 21098s job: 268 dft_time: 0
+#2295: cov: 13989 ft: 20174 corp: 2441 exec/s 0 oom/timeout/crash: 0/32/0 time: 21223s job: 264 dft_time: 0
+#2295: cov: 13989 ft: 20174 corp: 2441 exec/s 0 oom/timeout/crash: 0/32/0 time: 21560s job: 270 dft_time: 0
+#2295: cov: 13989 ft: 20175 corp: 2442 exec/s 0 oom/timeout/crash: 0/32/0 time: 21784s job: 260 dft_time: 0
+#2295: cov: 13990 ft: 20181 corp: 2445 exec/s 0 oom/timeout/crash: 0/33/0 time: 21795s job: 269 dft_time: 0
+#2295: cov: 13990 ft: 20181 corp: 2445 exec/s 0 oom/timeout/crash: 0/33/0 time: 21939s job: 261 dft_time: 0
+#2295: cov: 13990 ft: 20199 corp: 2451 exec/s 0 oom/timeout/crash: 0/34/0 time: 21985s job: 271 dft_time: 0
+#2295: cov: 13990 ft: 20215 corp: 2460 exec/s 0 oom/timeout/crash: 0/34/0 time: 21999s job: 263 dft_time: 0
+#2295: cov: 13990 ft: 20215 corp: 2460 exec/s 0 oom/timeout/crash: 0/35/0 time: 22225s job: 274 dft_time: 0
+#2295: cov: 13990 ft: 20218 corp: 2462 exec/s 0 oom/timeout/crash: 0/35/0 time: 22263s job: 267 dft_time: 0
+#2295: cov: 13990 ft: 20218 corp: 2462 exec/s 0 oom/timeout/crash: 0/35/0 time: 22276s job: 276 dft_time: 0
+#2295: cov: 13991 ft: 20229 corp: 2469 exec/s 0 oom/timeout/crash: 0/35/0 time: 22430s job: 275 dft_time: 0
+#2295: cov: 13991 ft: 20229 corp: 2469 exec/s 0 oom/timeout/crash: 0/35/0 time: 22575s job: 279 dft_time: 0
+#2295: cov: 13991 ft: 20230 corp: 2470 exec/s 0 oom/timeout/crash: 0/35/0 time: 22690s job: 278 dft_time: 0
+#2295: cov: 13991 ft: 20233 corp: 2472 exec/s 0 oom/timeout/crash: 0/35/0 time: 22787s job: 280 dft_time: 0
+#2295: cov: 13991 ft: 20238 corp: 2476 exec/s 0 oom/timeout/crash: 0/35/0 time: 23384s job: 283 dft_time: 0
+#2295: cov: 13991 ft: 20246 corp: 2479 exec/s 0 oom/timeout/crash: 0/35/0 time: 23588s job: 272 dft_time: 0
+#2295: cov: 13991 ft: 20247 corp: 2480 exec/s 0 oom/timeout/crash: 0/36/0 time: 23598s job: 273 dft_time: 0
+#2295: cov: 13991 ft: 20247 corp: 2480 exec/s 0 oom/timeout/crash: 0/37/0 time: 23680s job: 282 dft_time: 0
+#2295: cov: 13991 ft: 20248 corp: 2481 exec/s 0 oom/timeout/crash: 0/37/0 time: 24029s job: 277 dft_time: 0
+#2295: cov: 13991 ft: 20259 corp: 2486 exec/s 0 oom/timeout/crash: 0/38/0 time: 24098s job: 285 dft_time: 0
+#2295: cov: 13991 ft: 20259 corp: 2486 exec/s 0 oom/timeout/crash: 0/38/0 time: 24379s job: 281 dft_time: 0
+#2295: cov: 13991 ft: 20259 corp: 2486 exec/s 0 oom/timeout/crash: 0/39/0 time: 24386s job: 287 dft_time: 0
+#2295: cov: 13991 ft: 20259 corp: 2486 exec/s 0 oom/timeout/crash: 0/39/0 time: 24414s job: 286 dft_time: 0
+#2295: cov: 13991 ft: 20259 corp: 2486 exec/s 0 oom/timeout/crash: 0/39/0 time: 24767s job: 288 dft_time: 0
+#2295: cov: 13991 ft: 20259 corp: 2486 exec/s 0 oom/timeout/crash: 0/39/0 time: 24839s job: 292 dft_time: 0
+#2295: cov: 13991 ft: 20261 corp: 2488 exec/s 0 oom/timeout/crash: 0/39/0 time: 25008s job: 289 dft_time: 0
+#2295: cov: 13991 ft: 20261 corp: 2488 exec/s 0 oom/timeout/crash: 0/39/0 time: 25090s job: 290 dft_time: 0
+#2295: cov: 13991 ft: 20261 corp: 2488 exec/s 0 oom/timeout/crash: 0/39/0 time: 25189s job: 284 dft_time: 0
+#2295: cov: 13991 ft: 20261 corp: 2488 exec/s 0 oom/timeout/crash: 0/40/0 time: 25272s job: 294 dft_time: 0
+#2295: cov: 13991 ft: 20261 corp: 2488 exec/s 0 oom/timeout/crash: 0/40/0 time: 25433s job: 295 dft_time: 0
+#2295: cov: 13991 ft: 20261 corp: 2488 exec/s 0 oom/timeout/crash: 0/40/0 time: 25437s job: 291 dft_time: 0
+#2295: cov: 13991 ft: 20262 corp: 2489 exec/s 0 oom/timeout/crash: 0/40/0 time: 25449s job: 293 dft_time: 0
+#2295: cov: 13991 ft: 20262 corp: 2489 exec/s 0 oom/timeout/crash: 0/40/0 time: 25574s job: 296 dft_time: 0
+#2295: cov: 13991 ft: 20263 corp: 2490 exec/s 0 oom/timeout/crash: 0/40/0 time: 25792s job: 300 dft_time: 0
+#2295: cov: 13991 ft: 20267 corp: 2492 exec/s 0 oom/timeout/crash: 0/40/0 time: 26455s job: 302 dft_time: 0
+#2295: cov: 13991 ft: 20267 corp: 2492 exec/s 0 oom/timeout/crash: 0/40/0 time: 26764s job: 304 dft_time: 0
+#2295: cov: 13992 ft: 20273 corp: 2498 exec/s 0 oom/timeout/crash: 0/40/0 time: 26992s job: 297 dft_time: 0
+#2295: cov: 13992 ft: 20275 corp: 2500 exec/s 0 oom/timeout/crash: 0/41/0 time: 27075s job: 298 dft_time: 0
+#2295: cov: 13992 ft: 20275 corp: 2500 exec/s 0 oom/timeout/crash: 0/42/0 time: 27218s job: 305 dft_time: 0
+#2295: cov: 13992 ft: 20277 corp: 2502 exec/s 0 oom/timeout/crash: 0/42/0 time: 27236s job: 299 dft_time: 0
+#2295: cov: 13992 ft: 20277 corp: 2502 exec/s 0 oom/timeout/crash: 0/43/0 time: 27252s job: 301 dft_time: 0
+#2295: cov: 13992 ft: 20279 corp: 2504 exec/s 0 oom/timeout/crash: 0/44/0 time: 27596s job: 303 dft_time: 0
+#2295: cov: 13993 ft: 20282 corp: 2506 exec/s 0 oom/timeout/crash: 0/45/0 time: 27682s job: 306 dft_time: 0
+#2295: cov: 13993 ft: 20282 corp: 2506 exec/s 0 oom/timeout/crash: 0/45/0 time: 27861s job: 307 dft_time: 0
+#2295: cov: 13993 ft: 20282 corp: 2506 exec/s 0 oom/timeout/crash: 0/45/0 time: 27982s job: 311 dft_time: 0
+#2295: cov: 13993 ft: 20284 corp: 2508 exec/s 0 oom/timeout/crash: 0/45/0 time: 28382s job: 313 dft_time: 0
+#2295: cov: 13995 ft: 20286 corp: 2509 exec/s 0 oom/timeout/crash: 0/45/0 time: 28493s job: 314 dft_time: 0
+#2295: cov: 13997 ft: 20291 corp: 2512 exec/s 0 oom/timeout/crash: 0/45/0 time: 28562s job: 310 dft_time: 0
+#2295: cov: 13997 ft: 20291 corp: 2512 exec/s 0 oom/timeout/crash: 0/45/0 time: 28685s job: 315 dft_time: 0
+#2295: cov: 13997 ft: 20301 corp: 2516 exec/s 0 oom/timeout/crash: 0/45/0 time: 28865s job: 316 dft_time: 0
+#2295: cov: 13997 ft: 20305 corp: 2518 exec/s 0 oom/timeout/crash: 0/45/0 time: 28991s job: 318 dft_time: 0
+#2295: cov: 13998 ft: 20314 corp: 2524 exec/s 0 oom/timeout/crash: 0/45/0 time: 29022s job: 308 dft_time: 0
+#2295: cov: 13998 ft: 20315 corp: 2525 exec/s 0 oom/timeout/crash: 0/46/0 time: 29027s job: 317 dft_time: 0
+#2295: cov: 13999 ft: 20327 corp: 2530 exec/s 0 oom/timeout/crash: 0/46/0 time: 29040s job: 309 dft_time: 0
+#2295: cov: 13999 ft: 20334 corp: 2535 exec/s 0 oom/timeout/crash: 0/47/0 time: 29301s job: 320 dft_time: 0
+#2295: cov: 14000 ft: 20339 corp: 2540 exec/s 0 oom/timeout/crash: 0/47/0 time: 29362s job: 321 dft_time: 0
+#2295: cov: 14000 ft: 20340 corp: 2541 exec/s 0 oom/timeout/crash: 0/47/0 time: 29395s job: 323 dft_time: 0
+#2295: cov: 14002 ft: 20350 corp: 2547 exec/s 0 oom/timeout/crash: 0/47/0 time: 29486s job: 312 dft_time: 0
+#2295: cov: 14002 ft: 20352 corp: 2549 exec/s 0 oom/timeout/crash: 0/48/0 time: 29556s job: 319 dft_time: 0
+#2295: cov: 14002 ft: 20355 corp: 2550 exec/s 0 oom/timeout/crash: 0/48/0 time: 29735s job: 325 dft_time: 0
+#2295: cov: 14002 ft: 20356 corp: 2551 exec/s 0 oom/timeout/crash: 0/48/0 time: 29790s job: 327 dft_time: 0
+#2295: cov: 14002 ft: 20361 corp: 2554 exec/s 0 oom/timeout/crash: 0/48/0 time: 29831s job: 322 dft_time: 0
+#2295: cov: 14002 ft: 20361 corp: 2554 exec/s 0 oom/timeout/crash: 0/48/0 time: 29992s job: 324 dft_time: 0
+#2295: cov: 14002 ft: 20361 corp: 2554 exec/s 0 oom/timeout/crash: 0/48/0 time: 30102s job: 330 dft_time: 0
+#2295: cov: 14002 ft: 20362 corp: 2555 exec/s 0 oom/timeout/crash: 0/48/0 time: 30114s job: 329 dft_time: 0
+#2295: cov: 14003 ft: 20364 corp: 2557 exec/s 0 oom/timeout/crash: 0/48/0 time: 30138s job: 331 dft_time: 0
+#2295: cov: 14004 ft: 20367 corp: 2560 exec/s 0 oom/timeout/crash: 0/48/0 time: 30319s job: 332 dft_time: 0
+#2295: cov: 14004 ft: 20373 corp: 2565 exec/s 0 oom/timeout/crash: 0/48/0 time: 30404s job: 333 dft_time: 0
+#2295: cov: 14004 ft: 20374 corp: 2566 exec/s 0 oom/timeout/crash: 0/48/0 time: 30427s job: 334 dft_time: 0
+#2295: cov: 14004 ft: 20375 corp: 2567 exec/s 0 oom/timeout/crash: 0/48/0 time: 30616s job: 335 dft_time: 0
+#2295: cov: 14004 ft: 20375 corp: 2567 exec/s 0 oom/timeout/crash: 0/48/0 time: 30787s job: 338 dft_time: 0
+#2295: cov: 14005 ft: 20393 corp: 2576 exec/s 0 oom/timeout/crash: 0/48/0 time: 30861s job: 337 dft_time: 0
+#2295: cov: 14005 ft: 20396 corp: 2577 exec/s 0 oom/timeout/crash: 0/48/0 time: 31171s job: 339 dft_time: 0
+#2295: cov: 14007 ft: 20404 corp: 2580 exec/s 0 oom/timeout/crash: 0/48/0 time: 31239s job: 326 dft_time: 0
+#2295: cov: 14007 ft: 20405 corp: 2581 exec/s 0 oom/timeout/crash: 0/49/0 time: 31359s job: 328 dft_time: 0
+#2295: cov: 14007 ft: 20405 corp: 2581 exec/s 0 oom/timeout/crash: 0/50/0 time: 31370s job: 340 dft_time: 0
+#2295: cov: 14009 ft: 20407 corp: 2582 exec/s 0 oom/timeout/crash: 0/50/0 time: 31530s job: 341 dft_time: 0
+#2295: cov: 14009 ft: 20408 corp: 2583 exec/s 0 oom/timeout/crash: 0/50/0 time: 31613s job: 343 dft_time: 0
+#2295: cov: 14009 ft: 20408 corp: 2583 exec/s 0 oom/timeout/crash: 0/50/0 time: 31824s job: 336 dft_time: 0
+#2295: cov: 14009 ft: 20408 corp: 2583 exec/s 0 oom/timeout/crash: 0/50/0 time: 31879s job: 346 dft_time: 0
+#2295: cov: 14009 ft: 20408 corp: 2583 exec/s 0 oom/timeout/crash: 0/50/0 time: 31910s job: 344 dft_time: 0
+#2295: cov: 14009 ft: 20411 corp: 2584 exec/s 0 oom/timeout/crash: 0/50/0 time: 31930s job: 347 dft_time: 0
+#2295: cov: 14009 ft: 20414 corp: 2587 exec/s 0 oom/timeout/crash: 0/50/0 time: 32050s job: 342 dft_time: 0
+#2295: cov: 14009 ft: 20414 corp: 2587 exec/s 0 oom/timeout/crash: 0/50/0 time: 32254s job: 350 dft_time: 0
+#2295: cov: 14009 ft: 20415 corp: 2588 exec/s 0 oom/timeout/crash: 0/50/0 time: 32484s job: 352 dft_time: 0
+#2295: cov: 14009 ft: 20420 corp: 2593 exec/s 0 oom/timeout/crash: 0/50/0 time: 32706s job: 349 dft_time: 0
+#2295: cov: 14009 ft: 20420 corp: 2593 exec/s 0 oom/timeout/crash: 0/50/0 time: 32706s job: 351 dft_time: 0
+#2295: cov: 14009 ft: 20420 corp: 2593 exec/s 0 oom/timeout/crash: 0/50/0 time: 33008s job: 355 dft_time: 0
+#2295: cov: 14009 ft: 20420 corp: 2593 exec/s 0 oom/timeout/crash: 0/50/0 time: 33008s job: 354 dft_time: 0
+#2295: cov: 14009 ft: 20434 corp: 2597 exec/s 0 oom/timeout/crash: 0/50/0 time: 33174s job: 345 dft_time: 0
+#2295: cov: 14009 ft: 20434 corp: 2597 exec/s 0 oom/timeout/crash: 0/51/0 time: 33279s job: 353 dft_time: 0
+#2295: cov: 14009 ft: 20435 corp: 2598 exec/s 0 oom/timeout/crash: 0/51/0 time: 33466s job: 358 dft_time: 0
+#2295: cov: 14009 ft: 20442 corp: 2601 exec/s 0 oom/timeout/crash: 0/51/0 time: 33534s job: 359 dft_time: 0
+#2295: cov: 14009 ft: 20442 corp: 2601 exec/s 0 oom/timeout/crash: 0/51/0 time: 33627s job: 348 dft_time: 0
+#2295: cov: 14009 ft: 20443 corp: 2602 exec/s 0 oom/timeout/crash: 0/52/0 time: 33907s job: 361 dft_time: 0
+#2295: cov: 14009 ft: 20443 corp: 2602 exec/s 0 oom/timeout/crash: 0/52/0 time: 34124s job: 363 dft_time: 0
+#2295: cov: 14009 ft: 20445 corp: 2603 exec/s 0 oom/timeout/crash: 0/52/0 time: 34208s job: 362 dft_time: 0
+#2295: cov: 14009 ft: 20445 corp: 2603 exec/s 0 oom/timeout/crash: 0/52/0 time: 34428s job: 365 dft_time: 0
+#2295: cov: 14009 ft: 20453 corp: 2607 exec/s 0 oom/timeout/crash: 0/52/0 time: 34509s job: 356 dft_time: 0
+#2295: cov: 14009 ft: 20457 corp: 2609 exec/s 0 oom/timeout/crash: 0/53/0 time: 34616s job: 364 dft_time: 0
+#2295: cov: 14009 ft: 20458 corp: 2610 exec/s 0 oom/timeout/crash: 0/53/0 time: 34752s job: 367 dft_time: 0
+#2295: cov: 14009 ft: 20459 corp: 2611 exec/s 0 oom/timeout/crash: 0/53/0 time: 34811s job: 357 dft_time: 0
+#2295: cov: 14009 ft: 20460 corp: 2612 exec/s 0 oom/timeout/crash: 0/54/0 time: 34951s job: 369 dft_time: 0
+#2295: cov: 14009 ft: 20466 corp: 2616 exec/s 0 oom/timeout/crash: 0/54/0 time: 35083s job: 360 dft_time: 0
+#2295: cov: 14009 ft: 20466 corp: 2616 exec/s 0 oom/timeout/crash: 0/55/0 time: 35139s job: 371 dft_time: 0
+#2295: cov: 14009 ft: 20473 corp: 2620 exec/s 0 oom/timeout/crash: 0/55/0 time: 35307s job: 368 dft_time: 0
+#2295: cov: 14009 ft: 20473 corp: 2620 exec/s 0 oom/timeout/crash: 0/55/0 time: 35369s job: 372 dft_time: 0
+#2295: cov: 14009 ft: 20481 corp: 2622 exec/s 0 oom/timeout/crash: 0/55/0 time: 35652s job: 375 dft_time: 0
+#2295: cov: 14010 ft: 20483 corp: 2624 exec/s 0 oom/timeout/crash: 0/55/0 time: 35737s job: 373 dft_time: 0
+#2295: cov: 14010 ft: 20483 corp: 2624 exec/s 0 oom/timeout/crash: 0/55/0 time: 35797s job: 376 dft_time: 0
+#2295: cov: 14010 ft: 20483 corp: 2624 exec/s 0 oom/timeout/crash: 0/55/0 time: 36012s job: 366 dft_time: 0
+#2295: cov: 14010 ft: 20485 corp: 2626 exec/s 0 oom/timeout/crash: 0/56/0 time: 36088s job: 378 dft_time: 0
+#2295: cov: 14010 ft: 20487 corp: 2627 exec/s 0 oom/timeout/crash: 0/56/0 time: 36124s job: 379 dft_time: 0
+#2295: cov: 14010 ft: 20496 corp: 2636 exec/s 0 oom/timeout/crash: 0/56/0 time: 36223s job: 377 dft_time: 0
+#2295: cov: 14010 ft: 20497 corp: 2637 exec/s 0 oom/timeout/crash: 0/56/0 time: 36443s job: 380 dft_time: 0
+#2295: cov: 14010 ft: 20498 corp: 2638 exec/s 0 oom/timeout/crash: 0/56/0 time: 36623s job: 370 dft_time: 0
+#2295: cov: 14010 ft: 20499 corp: 2639 exec/s 0 oom/timeout/crash: 0/57/0 time: 36902s job: 383 dft_time: 0
+#2295: cov: 14010 ft: 20499 corp: 2639 exec/s 0 oom/timeout/crash: 0/57/0 time: 36944s job: 374 dft_time: 0
+#2295: cov: 14010 ft: 20507 corp: 2641 exec/s 0 oom/timeout/crash: 0/58/0 time: 36990s job: 384 dft_time: 0
+#2295: cov: 14010 ft: 20507 corp: 2641 exec/s 0 oom/timeout/crash: 0/58/0 time: 37236s job: 386 dft_time: 0
+#2295: cov: 14010 ft: 20507 corp: 2641 exec/s 0 oom/timeout/crash: 0/58/0 time: 37247s job: 387 dft_time: 0
+#2295: cov: 14010 ft: 20510 corp: 2644 exec/s 0 oom/timeout/crash: 0/58/0 time: 37307s job: 388 dft_time: 0
+#2295: cov: 14010 ft: 20520 corp: 2649 exec/s 0 oom/timeout/crash: 0/58/0 time: 37632s job: 385 dft_time: 0
+#2295: cov: 14010 ft: 20520 corp: 2649 exec/s 0 oom/timeout/crash: 0/58/0 time: 37825s job: 390 dft_time: 0
+#2295: cov: 14010 ft: 20523 corp: 2652 exec/s 0 oom/timeout/crash: 0/58/0 time: 37892s job: 381 dft_time: 0
+#2295: cov: 14010 ft: 20523 corp: 2652 exec/s 0 oom/timeout/crash: 0/59/0 time: 37932s job: 382 dft_time: 0
+#2295: cov: 14010 ft: 20532 corp: 2655 exec/s 0 oom/timeout/crash: 0/60/0 time: 37985s job: 389 dft_time: 0
+#2295: cov: 14010 ft: 20532 corp: 2655 exec/s 0 oom/timeout/crash: 0/60/0 time: 38297s job: 396 dft_time: 0
+#2295: cov: 14010 ft: 20533 corp: 2656 exec/s 0 oom/timeout/crash: 0/60/0 time: 38306s job: 394 dft_time: 0
+#2295: cov: 14010 ft: 20534 corp: 2657 exec/s 0 oom/timeout/crash: 0/60/0 time: 38568s job: 395 dft_time: 0
+#2295: cov: 14010 ft: 20534 corp: 2657 exec/s 0 oom/timeout/crash: 0/60/0 time: 38820s job: 398 dft_time: 0
+#2295: cov: 14010 ft: 20534 corp: 2657 exec/s 0 oom/timeout/crash: 0/60/0 time: 38849s job: 397 dft_time: 0
+#2295: cov: 14010 ft: 20534 corp: 2657 exec/s 0 oom/timeout/crash: 0/60/0 time: 38857s job: 393 dft_time: 0
+#2295: cov: 14010 ft: 20536 corp: 2659 exec/s 0 oom/timeout/crash: 0/60/0 time: 38971s job: 399 dft_time: 0
+#2295: cov: 14010 ft: 20536 corp: 2659 exec/s 0 oom/timeout/crash: 0/60/0 time: 39130s job: 391 dft_time: 0
+#2295: cov: 14010 ft: 20538 corp: 2661 exec/s 0 oom/timeout/crash: 0/61/0 time: 39253s job: 400 dft_time: 0
+#2295: cov: 14010 ft: 20539 corp: 2662 exec/s 0 oom/timeout/crash: 0/61/0 time: 39436s job: 392 dft_time: 0
+#2295: cov: 14010 ft: 20542 corp: 2665 exec/s 0 oom/timeout/crash: 0/62/0 time: 39567s job: 405 dft_time: 0
+#2295: cov: 14010 ft: 20545 corp: 2667 exec/s 0 oom/timeout/crash: 0/62/0 time: 39626s job: 403 dft_time: 0
+#2347: cov: 14010 ft: 20545 corp: 2667 exec/s 0 oom/timeout/crash: 0/62/0 time: 39719s job: 402 dft_time: 0
+#2347: cov: 14010 ft: 20545 corp: 2667 exec/s 0 oom/timeout/crash: 0/62/0 time: 39741s job: 406 dft_time: 0
+#2347: cov: 14010 ft: 20545 corp: 2667 exec/s 0 oom/timeout/crash: 0/62/0 time: 39922s job: 401 dft_time: 0
+#2347: cov: 14010 ft: 20546 corp: 2668 exec/s 0 oom/timeout/crash: 0/62/0 time: 39990s job: 408 dft_time: 0
+#2347: cov: 14010 ft: 20546 corp: 2668 exec/s 0 oom/timeout/crash: 0/62/0 time: 40046s job: 410 dft_time: 0
+#2347: cov: 14010 ft: 20550 corp: 2671 exec/s 0 oom/timeout/crash: 0/62/0 time: 40060s job: 407 dft_time: 0
+#2347: cov: 14010 ft: 20552 corp: 2673 exec/s 0 oom/timeout/crash: 0/62/0 time: 40237s job: 411 dft_time: 0
+#2347: cov: 14010 ft: 20553 corp: 2674 exec/s 0 oom/timeout/crash: 0/62/0 time: 40308s job: 412 dft_time: 0
+#2347: cov: 14010 ft: 20554 corp: 2675 exec/s 0 oom/timeout/crash: 0/62/0 time: 40380s job: 413 dft_time: 0
+#2347: cov: 14011 ft: 20557 corp: 2678 exec/s 0 oom/timeout/crash: 0/62/0 time: 40527s job: 414 dft_time: 0
+#2347: cov: 14011 ft: 20558 corp: 2679 exec/s 0 oom/timeout/crash: 0/62/0 time: 40576s job: 415 dft_time: 0
+#2347: cov: 14011 ft: 20558 corp: 2679 exec/s 0 oom/timeout/crash: 0/62/0 time: 40765s job: 404 dft_time: 0
+#2676: cov: 14011 ft: 20560 corp: 2680 exec/s 0 oom/timeout/crash: 0/62/0 time: 40771s job: 417 dft_time: 0
+#2676: cov: 14011 ft: 20560 corp: 2680 exec/s 0 oom/timeout/crash: 0/62/0 time: 40861s job: 418 dft_time: 0
+#2676: cov: 14011 ft: 20563 corp: 2682 exec/s 0 oom/timeout/crash: 0/62/0 time: 41142s job: 420 dft_time: 0
+#2676: cov: 14011 ft: 20563 corp: 2682 exec/s 0 oom/timeout/crash: 0/62/0 time: 41225s job: 421 dft_time: 0
+#2676: cov: 14011 ft: 20563 corp: 2682 exec/s 0 oom/timeout/crash: 0/62/0 time: 41257s job: 419 dft_time: 0
+#2676: cov: 14011 ft: 20563 corp: 2682 exec/s 0 oom/timeout/crash: 0/62/0 time: 41291s job: 422 dft_time: 0
+#2676: cov: 14011 ft: 20563 corp: 2682 exec/s 0 oom/timeout/crash: 0/62/0 time: 41522s job: 409 dft_time: 0
+#2676: cov: 14011 ft: 20563 corp: 2682 exec/s 0 oom/timeout/crash: 0/63/0 time: 41586s job: 424 dft_time: 0
+#2676: cov: 14011 ft: 20565 corp: 2684 exec/s 0 oom/timeout/crash: 0/63/0 time: 41630s job: 425 dft_time: 0
+#2676: cov: 14011 ft: 20565 corp: 2684 exec/s 0 oom/timeout/crash: 0/63/0 time: 41667s job: 426 dft_time: 0
+#2676: cov: 14011 ft: 20565 corp: 2684 exec/s 0 oom/timeout/crash: 0/63/0 time: 41896s job: 427 dft_time: 0
+#2676: cov: 14011 ft: 20565 corp: 2684 exec/s 0 oom/timeout/crash: 0/63/0 time: 41951s job: 429 dft_time: 0
+#2676: cov: 14011 ft: 20566 corp: 2685 exec/s 0 oom/timeout/crash: 0/63/0 time: 42049s job: 428 dft_time: 0
+#2676: cov: 14011 ft: 20566 corp: 2685 exec/s 0 oom/timeout/crash: 0/63/0 time: 42112s job: 416 dft_time: 0
+#2676: cov: 14011 ft: 20567 corp: 2686 exec/s 0 oom/timeout/crash: 0/64/0 time: 42259s job: 432 dft_time: 0
+#2676: cov: 14011 ft: 20567 corp: 2686 exec/s 0 oom/timeout/crash: 0/64/0 time: 42457s job: 433 dft_time: 0
+#2676: cov: 14011 ft: 20567 corp: 2686 exec/s 0 oom/timeout/crash: 0/64/0 time: 42930s job: 434 dft_time: 0
+#2676: cov: 14011 ft: 20567 corp: 2686 exec/s 0 oom/timeout/crash: 0/64/0 time: 42946s job: 423 dft_time: 0
+#2676: cov: 14011 ft: 20568 corp: 2687 exec/s 0 oom/timeout/crash: 0/65/0 time: 43140s job: 436 dft_time: 0
+#2676: cov: 14011 ft: 20568 corp: 2687 exec/s 0 oom/timeout/crash: 0/65/0 time: 43470s job: 430 dft_time: 0
+#2676: cov: 14011 ft: 20569 corp: 2688 exec/s 0 oom/timeout/crash: 0/66/0 time: 43492s job: 438 dft_time: 0
+#2676: cov: 14011 ft: 20571 corp: 2689 exec/s 0 oom/timeout/crash: 0/66/0 time: 43607s job: 437 dft_time: 0
+#2676: cov: 14011 ft: 20571 corp: 2689 exec/s 0 oom/timeout/crash: 0/66/0 time: 43666s job: 439 dft_time: 0
+#2676: cov: 14012 ft: 20577 corp: 2694 exec/s 0 oom/timeout/crash: 0/66/0 time: 44071s job: 431 dft_time: 0
+#2676: cov: 14012 ft: 20577 corp: 2694 exec/s 0 oom/timeout/crash: 0/67/0 time: 44072s job: 440 dft_time: 0
+#2676: cov: 14012 ft: 20577 corp: 2694 exec/s 0 oom/timeout/crash: 1/67/0 time: 44072s job: 442 dft_time: 0
+#2676: cov: 14012 ft: 20581 corp: 2697 exec/s 0 oom/timeout/crash: 1/67/0 time: 44074s job: 441 dft_time: 0
+#2676: cov: 14012 ft: 20581 corp: 2697 exec/s 0 oom/timeout/crash: 1/67/0 time: 44074s job: 435 dft_time: 0
+#2676: cov: 14012 ft: 20585 corp: 2699 exec/s 0 oom/timeout/crash: 1/68/0 time: 44380s job: 445 dft_time: 0
+#2676: cov: 14012 ft: 20585 corp: 2699 exec/s 0 oom/timeout/crash: 1/68/0 time: 44384s job: 446 dft_time: 0
+#2676: cov: 14012 ft: 20597 corp: 2707 exec/s 0 oom/timeout/crash: 1/68/0 time: 44494s job: 448 dft_time: 0
+#2676: cov: 14012 ft: 20597 corp: 2707 exec/s 0 oom/timeout/crash: 1/68/0 time: 44539s job: 444 dft_time: 0
+#2676: cov: 14012 ft: 20603 corp: 2710 exec/s 0 oom/timeout/crash: 1/68/0 time: 44812s job: 443 dft_time: 0
+#2676: cov: 14012 ft: 20603 corp: 2710 exec/s 0 oom/timeout/crash: 1/68/0 time: 44889s job: 451 dft_time: 0
+#2676: cov: 14012 ft: 20606 corp: 2712 exec/s 0 oom/timeout/crash: 1/68/0 time: 45153s job: 453 dft_time: 0
+#2676: cov: 14012 ft: 20608 corp: 2713 exec/s 0 oom/timeout/crash: 1/68/0 time: 45158s job: 450 dft_time: 0
+#2676: cov: 14012 ft: 20608 corp: 2713 exec/s 0 oom/timeout/crash: 1/68/0 time: 45220s job: 449 dft_time: 0
+#2676: cov: 14012 ft: 20608 corp: 2713 exec/s 0 oom/timeout/crash: 1/68/0 time: 45324s job: 452 dft_time: 0
+#2676: cov: 14012 ft: 20608 corp: 2713 exec/s 0 oom/timeout/crash: 1/68/0 time: 45468s job: 456 dft_time: 0
+#2676: cov: 14012 ft: 20612 corp: 2717 exec/s 0 oom/timeout/crash: 1/68/0 time: 45639s job: 458 dft_time: 0
+#2676: cov: 14012 ft: 20612 corp: 2717 exec/s 0 oom/timeout/crash: 1/68/0 time: 45771s job: 459 dft_time: 0
+#2676: cov: 14012 ft: 20618 corp: 2720 exec/s 0 oom/timeout/crash: 1/68/0 time: 45877s job: 447 dft_time: 0
+#2676: cov: 14012 ft: 20618 corp: 2720 exec/s 0 oom/timeout/crash: 1/69/0 time: 46293s job: 455 dft_time: 0
+#2676: cov: 14012 ft: 20619 corp: 2721 exec/s 0 oom/timeout/crash: 1/69/0 time: 46503s job: 461 dft_time: 0
+#2676: cov: 14012 ft: 20619 corp: 2721 exec/s 0 oom/timeout/crash: 1/69/0 time: 46603s job: 463 dft_time: 0
+#2676: cov: 14012 ft: 20623 corp: 2723 exec/s 0 oom/timeout/crash: 1/69/0 time: 46726s job: 454 dft_time: 0
+#2676: cov: 14012 ft: 20623 corp: 2723 exec/s 0 oom/timeout/crash: 1/70/0 time: 47024s job: 457 dft_time: 0
+#2676: cov: 14012 ft: 20623 corp: 2723 exec/s 0 oom/timeout/crash: 1/71/0 time: 47188s job: 464 dft_time: 0
+#2676: cov: 14012 ft: 20623 corp: 2723 exec/s 0 oom/timeout/crash: 1/71/0 time: 47359s job: 466 dft_time: 0
+#2676: cov: 14012 ft: 20623 corp: 2723 exec/s 0 oom/timeout/crash: 1/71/0 time: 47443s job: 460 dft_time: 0
+#2676: cov: 14012 ft: 20624 corp: 2724 exec/s 0 oom/timeout/crash: 1/72/0 time: 47681s job: 462 dft_time: 0
+#2676: cov: 14012 ft: 20624 corp: 2724 exec/s 0 oom/timeout/crash: 1/73/0 time: 47805s job: 469 dft_time: 0
+#2676: cov: 14013 ft: 20626 corp: 2726 exec/s 0 oom/timeout/crash: 1/73/0 time: 47921s job: 468 dft_time: 0
+#2676: cov: 14013 ft: 20626 corp: 2726 exec/s 0 oom/timeout/crash: 1/73/0 time: 48056s job: 471 dft_time: 0
+#2676: cov: 14013 ft: 20629 corp: 2729 exec/s 0 oom/timeout/crash: 1/73/0 time: 48408s job: 465 dft_time: 0
+#2676: cov: 14013 ft: 20630 corp: 2730 exec/s 0 oom/timeout/crash: 1/74/0 time: 48472s job: 472 dft_time: 0
+#2676: cov: 14013 ft: 20630 corp: 2730 exec/s 0 oom/timeout/crash: 1/74/0 time: 48827s job: 467 dft_time: 0
+#2676: cov: 14013 ft: 20630 corp: 2730 exec/s 0 oom/timeout/crash: 1/75/0 time: 49058s job: 475 dft_time: 0
+#2676: cov: 14013 ft: 20630 corp: 2730 exec/s 0 oom/timeout/crash: 1/75/0 time: 49247s job: 470 dft_time: 0
+#2676: cov: 14013 ft: 20630 corp: 2730 exec/s 0 oom/timeout/crash: 1/76/0 time: 49260s job: 477 dft_time: 0
+#2676: cov: 14013 ft: 20630 corp: 2730 exec/s 0 oom/timeout/crash: 1/76/0 time: 49724s job: 473 dft_time: 0
+#2676: cov: 14013 ft: 20630 corp: 2730 exec/s 0 oom/timeout/crash: 1/77/0 time: 49860s job: 474 dft_time: 0
+#2676: cov: 14013 ft: 20632 corp: 2732 exec/s 0 oom/timeout/crash: 1/78/0 time: 49973s job: 480 dft_time: 0
+#2676: cov: 14013 ft: 20632 corp: 2732 exec/s 0 oom/timeout/crash: 1/78/0 time: 50001s job: 478 dft_time: 0
+#2676: cov: 14013 ft: 20632 corp: 2732 exec/s 0 oom/timeout/crash: 1/78/0 time: 50122s job: 481 dft_time: 0
+#2676: cov: 14013 ft: 20632 corp: 2732 exec/s 0 oom/timeout/crash: 1/78/0 time: 50162s job: 482 dft_time: 0
+#2676: cov: 14016 ft: 20635 corp: 2733 exec/s 0 oom/timeout/crash: 1/78/0 time: 50228s job: 479 dft_time: 0
+#2676: cov: 14016 ft: 20640 corp: 2735 exec/s 0 oom/timeout/crash: 1/78/0 time: 50275s job: 476 dft_time: 0
+#2676: cov: 14016 ft: 20640 corp: 2735 exec/s 0 oom/timeout/crash: 1/79/0 time: 50586s job: 488 dft_time: 0
+#2676: cov: 14016 ft: 20640 corp: 2735 exec/s 0 oom/timeout/crash: 1/79/0 time: 50667s job: 486 dft_time: 0
+#2676: cov: 14016 ft: 20640 corp: 2735 exec/s 0 oom/timeout/crash: 1/79/0 time: 50825s job: 487 dft_time: 0
+#2676: cov: 14016 ft: 20640 corp: 2735 exec/s 0 oom/timeout/crash: 1/79/0 time: 50905s job: 484 dft_time: 0
+#2676: cov: 14016 ft: 20641 corp: 2736 exec/s 0 oom/timeout/crash: 1/79/0 time: 51018s job: 490 dft_time: 0
+#2676: cov: 14016 ft: 20641 corp: 2736 exec/s 0 oom/timeout/crash: 1/79/0 time: 51228s job: 491 dft_time: 0
+#2676: cov: 14016 ft: 20641 corp: 2736 exec/s 0 oom/timeout/crash: 1/79/0 time: 51444s job: 493 dft_time: 0
+#2676: cov: 14016 ft: 20641 corp: 2736 exec/s 0 oom/timeout/crash: 1/79/0 time: 51578s job: 494 dft_time: 0
+#2676: cov: 14016 ft: 20641 corp: 2736 exec/s 0 oom/timeout/crash: 1/79/0 time: 51746s job: 495 dft_time: 0
+#2676: cov: 14016 ft: 20645 corp: 2740 exec/s 0 oom/timeout/crash: 1/79/0 time: 51776s job: 483 dft_time: 0
+#2676: cov: 14016 ft: 20648 corp: 2742 exec/s 0 oom/timeout/crash: 1/80/0 time: 51864s job: 489 dft_time: 0
+#2676: cov: 14016 ft: 20648 corp: 2742 exec/s 0 oom/timeout/crash: 1/80/0 time: 51921s job: 496 dft_time: 0
+#2676: cov: 14017 ft: 20650 corp: 2743 exec/s 0 oom/timeout/crash: 1/80/0 time: 51926s job: 485 dft_time: 0
+#2676: cov: 14017 ft: 20650 corp: 2743 exec/s 0 oom/timeout/crash: 1/81/0 time: 52078s job: 498 dft_time: 0
+#2676: cov: 14017 ft: 20650 corp: 2743 exec/s 0 oom/timeout/crash: 1/81/0 time: 52267s job: 501 dft_time: 0
+#2676: cov: 14017 ft: 20650 corp: 2743 exec/s 0 oom/timeout/crash: 1/81/0 time: 52323s job: 499 dft_time: 0
+#2676: cov: 14017 ft: 20655 corp: 2745 exec/s 0 oom/timeout/crash: 1/81/0 time: 52421s job: 502 dft_time: 0
+#2676: cov: 14017 ft: 20655 corp: 2745 exec/s 0 oom/timeout/crash: 1/81/0 time: 52505s job: 500 dft_time: 0
+#2676: cov: 14017 ft: 20655 corp: 2745 exec/s 0 oom/timeout/crash: 1/81/0 time: 52584s job: 503 dft_time: 0
+#2676: cov: 14017 ft: 20660 corp: 2750 exec/s 0 oom/timeout/crash: 1/81/0 time: 52700s job: 497 dft_time: 0
+#2676: cov: 14017 ft: 20660 corp: 2750 exec/s 0 oom/timeout/crash: 1/81/0 time: 52710s job: 492 dft_time: 0
+#2676: cov: 14019 ft: 20663 corp: 2753 exec/s 0 oom/timeout/crash: 1/82/0 time: 52727s job: 505 dft_time: 0
+#2676: cov: 14019 ft: 20664 corp: 2754 exec/s 0 oom/timeout/crash: 1/82/0 time: 52858s job: 506 dft_time: 0
+#2676: cov: 14019 ft: 20664 corp: 2754 exec/s 0 oom/timeout/crash: 1/82/0 time: 52887s job: 507 dft_time: 0
+#2676: cov: 14019 ft: 20664 corp: 2754 exec/s 0 oom/timeout/crash: 1/82/0 time: 53002s job: 508 dft_time: 0
+#2676: cov: 14019 ft: 20665 corp: 2755 exec/s 0 oom/timeout/crash: 1/82/0 time: 53030s job: 509 dft_time: 0
+#2676: cov: 14019 ft: 20666 corp: 2756 exec/s 0 oom/timeout/crash: 1/82/0 time: 53370s job: 513 dft_time: 0
+#2676: cov: 14019 ft: 20668 corp: 2758 exec/s 0 oom/timeout/crash: 1/82/0 time: 53378s job: 504 dft_time: 0
+#2676: cov: 14019 ft: 20668 corp: 2758 exec/s 0 oom/timeout/crash: 1/82/0 time: 53546s job: 514 dft_time: 0
+#2676: cov: 14019 ft: 20668 corp: 2758 exec/s 0 oom/timeout/crash: 1/82/0 time: 53626s job: 510 dft_time: 0
+#2676: cov: 14019 ft: 20668 corp: 2758 exec/s 0 oom/timeout/crash: 1/82/0 time: 53675s job: 511 dft_time: 0
+#2676: cov: 14019 ft: 20668 corp: 2758 exec/s 0 oom/timeout/crash: 1/82/0 time: 53717s job: 515 dft_time: 0
+#2676: cov: 14022 ft: 20678 corp: 2762 exec/s 0 oom/timeout/crash: 1/82/0 time: 53975s job: 518 dft_time: 0
+#2676: cov: 14022 ft: 20678 corp: 2762 exec/s 0 oom/timeout/crash: 1/82/0 time: 54193s job: 520 dft_time: 0
+#2676: cov: 14022 ft: 20678 corp: 2762 exec/s 0 oom/timeout/crash: 1/82/0 time: 54228s job: 512 dft_time: 0
+#2676: cov: 14022 ft: 20678 corp: 2762 exec/s 0 oom/timeout/crash: 1/82/0 time: 54277s job: 521 dft_time: 0
+#2676: cov: 14022 ft: 20678 corp: 2762 exec/s 0 oom/timeout/crash: 1/82/0 time: 54489s job: 516 dft_time: 0
+#2676: cov: 14022 ft: 20678 corp: 2762 exec/s 0 oom/timeout/crash: 1/82/0 time: 54543s job: 523 dft_time: 0
+#2676: cov: 14022 ft: 20678 corp: 2762 exec/s 0 oom/timeout/crash: 1/82/0 time: 54864s job: 526 dft_time: 0
+#2676: cov: 14022 ft: 20687 corp: 2763 exec/s 0 oom/timeout/crash: 1/82/0 time: 54913s job: 525 dft_time: 0
+#2676: cov: 14022 ft: 20687 corp: 2763 exec/s 0 oom/timeout/crash: 1/82/0 time: 55068s job: 522 dft_time: 0
+#2676: cov: 14022 ft: 20687 corp: 2763 exec/s 0 oom/timeout/crash: 1/82/0 time: 55349s job: 517 dft_time: 0
+#2676: cov: 14022 ft: 20687 corp: 2763 exec/s 0 oom/timeout/crash: 1/83/0 time: 55479s job: 519 dft_time: 0
+#2676: cov: 14022 ft: 20690 corp: 2764 exec/s 0 oom/timeout/crash: 1/84/0 time: 55541s job: 529 dft_time: 0
+#2676: cov: 14022 ft: 20690 corp: 2764 exec/s 0 oom/timeout/crash: 1/84/0 time: 55694s job: 528 dft_time: 0
+#2676: cov: 14022 ft: 20690 corp: 2764 exec/s 0 oom/timeout/crash: 1/84/0 time: 55996s job: 531 dft_time: 0
+#2676: cov: 14022 ft: 20696 corp: 2769 exec/s 0 oom/timeout/crash: 1/84/0 time: 56081s job: 524 dft_time: 0
+#2676: cov: 14022 ft: 20696 corp: 2769 exec/s 0 oom/timeout/crash: 1/85/0 time: 56245s job: 530 dft_time: 0
+#2676: cov: 14022 ft: 20696 corp: 2769 exec/s 0 oom/timeout/crash: 1/85/0 time: 56363s job: 534 dft_time: 0
+#2676: cov: 14023 ft: 20700 corp: 2773 exec/s 0 oom/timeout/crash: 1/85/0 time: 56544s job: 527 dft_time: 0
+#2676: cov: 14023 ft: 20700 corp: 2773 exec/s 0 oom/timeout/crash: 1/85/0 time: 56558s job: 536 dft_time: 0
+#2676: cov: 14023 ft: 20700 corp: 2773 exec/s 0 oom/timeout/crash: 1/85/0 time: 56762s job: 532 dft_time: 0
+#2676: cov: 14023 ft: 20700 corp: 2773 exec/s 0 oom/timeout/crash: 1/85/0 time: 57106s job: 540 dft_time: 0
+#2676: cov: 14023 ft: 20702 corp: 2775 exec/s 0 oom/timeout/crash: 1/85/0 time: 57325s job: 539 dft_time: 0
+#2676: cov: 14023 ft: 20702 corp: 2775 exec/s 0 oom/timeout/crash: 1/85/0 time: 57417s job: 541 dft_time: 0
+#2676: cov: 14031 ft: 20728 corp: 2780 exec/s 0 oom/timeout/crash: 1/85/0 time: 57498s job: 533 dft_time: 0
+==29400== libFuzzer: run interrupted; exiting
+==29400== libFuzzer: a child was interrupted; exiting
+RemoveDirectoryA failed for C:\Temp\\libFuzzerTemp.FuzzWithFork29400.dir\F538 (Error code: 2).
+RemoveDirectoryA failed for C:\Temp\\libFuzzerTemp.FuzzWithFork29400.dir (Error code: 145).
+error: process didn't exit successfully: `target\x86_64-pc-windows-msvc\release\parse.exe '-artifact_prefix=C:\Users\zad\Documents\Code\pasfmt\fuzz\artifacts\parse\' 'C:\Users\zad\Documents\Code\pasfmt\fuzz\corpus\parse' -fork=6` (exit code: 72)

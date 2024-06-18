@@ -5,9 +5,13 @@ members = [
     "orchestrator",
     "front-end",
     "core/datatests",
+    "fuzz",
 ]
 
 resolver = "2"
+
+[profile.release]
+overflow-checks = false
 
 [workspace.dependencies]
 anstyle = "1.0.7"

@@ -31,6 +31,7 @@ struct LexedToken<'a> {
 }
 
 fn lex_complete(input: &str) -> Vec<RawToken> {
+    eprintln!("=============================================================\n{input}");
     let (remaining, tokens) = lex(input);
 
     // Remaining input is always a programming error; invalid input should turn into 'Unknown' tokens.
