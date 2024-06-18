@@ -860,6 +860,9 @@ fn asm_text_literal(mut args: LexArgs) -> OffsetAndTokenType {
         match args.next_byte() {
             Some(b'\\') => {
                 args.offset += 1;
+                if args.next_byte().is_some() {
+                    args.offset += 1;
+                }
             }
             Some(b'\"') => {
                 return (args.offset + 1, TT::TextLiteral(TLK::Asm));
@@ -867,9 +870,10 @@ fn asm_text_literal(mut args: LexArgs) -> OffsetAndTokenType {
             None | Some(b'\n' | b'\r') => {
                 break;
             }
-            _ => {}
+            _ => {
+                args.offset += 1;
+            }
         }
-        args.offset += 1;
     }
 
     warn_unterminated("asm text literal", args.input, start_offset);
@@ -2394,6 +2398,17 @@ mod tests {
                 (",", TT::Op(OK::Comma)),
                 ("\"a", TT::TextLiteral(TLK::Unterminated)),
                 ("end", TT::Keyword(KK::End)),
+            ],
+        );
+    }
+
+    #[test]
+    fn unterminated_asm_text_literal_at_eof() {
+        run_test(
+            r#"asm"\"#,
+            &[
+                ("asm", TT::Keyword(KK::Asm)),
+                ("\"\\", TT::TextLiteral(TLK::Unterminated)),
             ],
         );
     }
