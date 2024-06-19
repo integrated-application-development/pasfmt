@@ -998,7 +998,14 @@ fn conditional_directive_type(
     input: &str,
     offset: usize,
 ) -> (usize, Option<ConditionalDirectiveKind>) {
-    let end_offset = offset + count_matching(input, offset, |b| b.is_ascii_alphabetic());
+    let end_offset = offset
+        + count_matching(
+            input,
+            offset,
+            // Compiler directive names are ASCII only.
+            // They can't start with '_' or a number, but there's no harm in including them.
+            |b| matches!(b, b'0'..=b'9' | b'a'..=b'z' | b'A'..=b'Z' | b'_'),
+        );
 
     let directive = &input[offset..end_offset];
 
@@ -1509,11 +1516,21 @@ mod tests {
     #[test]
     fn lex_compiler_directives() {
         run_test(
-            "(*$message*) {$foo *) } (*$bar aa {}*)",
+            "
+            (*$message*)
+            {$foo *) }
+            (*$bar aa {}*)
+            {$if1}
+            {$if9}
+            {$if_}
+            ",
             &[
                 ("(*$message*)", TT::CompilerDirective),
                 ("{$foo *) }", TT::CompilerDirective),
                 ("(*$bar aa {}*)", TT::CompilerDirective),
+                ("{$if1}", TT::CompilerDirective),
+                ("{$if9}", TT::CompilerDirective),
+                ("{$if_}", TT::CompilerDirective),
             ],
         );
         [
