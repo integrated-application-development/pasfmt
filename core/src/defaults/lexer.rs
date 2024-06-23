@@ -567,7 +567,9 @@ unsafe fn find_identifier_end_avx2(input: &str, mut offset: usize) -> usize {
     use core::mem::size_of;
     use std::arch::x86_64::*;
 
-    unsafe fn range_mask(x: __m256i, range: RangeInclusive<u8>) -> __m256i {
+    type Chunk = __m256i;
+
+    unsafe fn range_mask(x: Chunk, range: RangeInclusive<u8>) -> Chunk {
         unsafe {
             let lower = _mm256_cmpgt_epi8(_mm256_set1_epi8(*range.end() as i8 + 1), x);
             let upper = _mm256_cmpgt_epi8(x, _mm256_set1_epi8(*range.start() as i8 - 1));
@@ -575,18 +577,18 @@ unsafe fn find_identifier_end_avx2(input: &str, mut offset: usize) -> usize {
         }
     }
 
-    unsafe fn any_non_ascii(chunk: std::arch::x86_64::__m256i) -> bool {
+    unsafe fn any_non_ascii(chunk: Chunk) -> bool {
         unsafe { _mm256_testz_si256(_mm256_set1_epi8(i8::MIN), chunk) == 0 }
     }
 
-    while (offset + size_of::<__m256>()) <= input.len() {
+    while (offset + size_of::<Chunk>()) <= input.len() {
         // SAFETY: requires that a 32-byte load from `input.as_ptr() + offset` does not touch uninitialised memory.
         // The above length check guarantees this.
         let ident_mask = unsafe {
             let chunk = _mm256_loadu_si256(
                 // the `loadu` variant of this intrinsic doesn't require aligned addresses
                 #[allow(clippy::cast_ptr_alignment)]
-                input.as_ptr().add(offset).cast(),
+                input.as_ptr().add(offset).cast::<Chunk>(),
             );
             if any_non_ascii(chunk) {
                 break;
@@ -609,7 +611,7 @@ unsafe fn find_identifier_end_avx2(input: &str, mut offset: usize) -> usize {
             offset += ident_mask.trailing_ones() as usize;
             return offset;
         }
-        offset += size_of::<__m256>();
+        offset += size_of::<Chunk>();
     }
 
     find_identifier_end_generic(input, offset)
