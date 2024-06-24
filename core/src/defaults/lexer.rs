@@ -569,6 +569,7 @@ unsafe fn find_identifier_end_avx2(input: &str, mut offset: usize) -> usize {
 
     type Chunk = __m256i;
 
+    // SAFETY: callers must ensure avx2 intrinsics are supported.
     unsafe fn range_mask(x: Chunk, range: RangeInclusive<u8>) -> Chunk {
         unsafe {
             let lower = _mm256_cmpgt_epi8(_mm256_set1_epi8(*range.end() as i8 + 1), x);
@@ -577,19 +578,36 @@ unsafe fn find_identifier_end_avx2(input: &str, mut offset: usize) -> usize {
         }
     }
 
+    // SAFETY: callers must ensure avx2 intrinsics are supported.
     unsafe fn any_non_ascii(chunk: Chunk) -> bool {
         unsafe { _mm256_testz_si256(_mm256_set1_epi8(i8::MIN), chunk) == 0 }
     }
 
     while (offset + size_of::<Chunk>()) <= input.len() {
-        // SAFETY: requires that a 32-byte load from `input.as_ptr() + offset` does not touch uninitialised memory.
-        // The above length check guarantees this.
+        // SAFETY: `ptr::const_ptr::add` requires that
+        // * the input ptr and the offset ptr are in-bounds for the same object.
+        // * the resulting ptr doesn't overflow an isize
+        //
+        // The input ptr is valid by because it comes from a rust reference, and the length check
+        // above guarantees that the offset ptr is in bounds and points into the same allocation.
+        let chunk_ptr: *const Chunk = unsafe {
+            // the `loadu` variant of this intrinsic doesn't require aligned addresses
+            #[allow(clippy::cast_ptr_alignment)]
+            input.as_ptr().add(offset).cast::<Chunk>()
+        };
+
+        // SAFETY: this load intrinsic requires that
+        // * `chunk_ptr` can be safely dereferenced
+        // * avx2 intrinsics are supported
+        //
+        // The above length check guarantees that the ptr produced by the above offset is no more
+        // than `size_of::<Chunk>` from the end of the allocation, and requirement for avx2 is
+        // forwarded to the caller.
+        let chunk: Chunk = unsafe { _mm256_loadu_si256(chunk_ptr) };
+
+        // SAFETY: requires that avx2 intrinsics are supported
+        // Requirement forwarded to the caller.
         let ident_mask = unsafe {
-            let chunk = _mm256_loadu_si256(
-                // the `loadu` variant of this intrinsic doesn't require aligned addresses
-                #[allow(clippy::cast_ptr_alignment)]
-                input.as_ptr().add(offset).cast::<Chunk>(),
-            );
             if any_non_ascii(chunk) {
                 break;
             };
@@ -647,13 +665,23 @@ fn find_identifier_end_x86_64(input: &str, offset: usize) -> usize {
             }
         };
         FN.store(fun as Fn, Ordering::Relaxed);
+        // SAFETY: we just checked that the required intrinsics are supported.
         unsafe { fun(input, offset) }
     }
 
-    unsafe {
-        let fun = FN.load(Ordering::Relaxed);
-        core::mem::transmute::<Fn, RealFn>(fun)(input, offset)
-    }
+    let fun = FN.load(Ordering::Relaxed);
+
+    // SAFETY: requires that
+    // * `fun` is a valid instance of both types
+    // * the safety requirements of the unsafe `fun` instance to be upheld
+    //
+    // We only ever store instances of `RealFn` inside the `FN` atomic, so it is valid to
+    // interpret it as a `RealFn`, and any `RealFn` (i.e. a valid function pointer) is safe to
+    // interpret as `*mut ()` (indeed a safe `as` cast above is enough).
+    //
+    // The safety requirements of `fun` are checked above before the store in `FN`, and the
+    // initial value inside `FN` has no safety requirements.
+    unsafe { core::mem::transmute::<Fn, RealFn>(fun)(input, offset) }
 }
 
 fn find_identifier_end(input: &str, offset: usize) -> usize {
