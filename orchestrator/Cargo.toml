@@ -19,6 +19,10 @@ anstyle = { workspace = true }
 
 [dev-dependencies]
 yare = { workspace = true }
+assert_fs = { workspace = true }
+indoc = { workspace = true }
+serde_derive = { workspace = true }
+spectral = { workspace = true }
 
 [lib]
 bench = false

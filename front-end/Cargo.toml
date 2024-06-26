@@ -3,6 +3,9 @@ name = "pasfmt"
 version = "0.3.0+dev"
 edition = "2021"
 
+# To allow splitting integration tests into separate files without creating multiple test binaries
+autotests = false
+
 [dependencies]
 encoding_rs = { workspace = true, features = ["serde"] }
 pasfmt-core = { path = "../core" }
@@ -14,16 +17,24 @@ log = { workspace = true }
 anyhow = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { workspace = true, features = ["Win32_Globalization"] }
+windows-sys = { workspace = true, features = ["Win32_Globalization", "Win32_System_IO"] }
 codepage = { workspace = true }
 
 [dev-dependencies]
 criterion = { workspace = true, features = ["html_reports"] }
 walkdir = { workspace = true }
+assert_cmd = { workspace = true }
+assert_fs = { workspace = true }
+predicates = { workspace = true }
+glob = { workspace = true }
 
 [[bench]]
 name = "benchmark_submodules"
 harness = false
+
+[[test]]
+name = "integration"
+path = "tests/tests.rs"
 
 [lib]
 bench = false

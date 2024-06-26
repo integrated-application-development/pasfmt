@@ -1,0 +1,40 @@
+[1m[4m[37mUsage:[0m [96mpasfmt[0m [37m[OPTIONS][0m [37m[PATHS]...[0m
+
+[1m[4m[37mArguments:[0m
+  [37m[PATHS]...[0m
+          Paths that will be formatted. Can be a path/dir/glob. If no paths are specified, stdin is read
+
+[1m[4m[37mOptions:[0m
+  [96m-f[0m, [96m--files-from[0m[37m [0m[37m<FILES_FROM>[0m
+          A file containing paths to operate on. Newline separated list of path/dir/glob
+
+      [96m--config-file[0m[37m [0m[37m<CONFIG_FILE>[0m
+          Override the configuration file. By default working directory will be traversed until a `pasfmt.toml` file is found
+
+  [96m-C[0m[37m [0m[37m<KEY=VALUE>[0m
+          Override one configuration option using KEY=VALUE. This takes precedence over `--config-file`
+
+  [96m-m[0m, [96m--mode[0m[37m [0m[37m<MODE>[0m
+          The mode of operation
+          
+          The default is `files`, unless data is being read from stdin, in which case the default is `stdout`.
+
+          Possible values:
+          - [96mfiles[0m:  format files in-place
+          - [96mstdout[0m: print formatted files to stdout
+          - [96mcheck[0m:  exit zero if input is formatted correctly, otherwise exit non-zero and list the erroneous files
+
+  [96m-v[0m, [96m--verbose[0m[37m...[0m
+          Increase logging verbosity (can be repeated)
+
+  [96m-l[0m, [96m--log-level[0m[37m [0m[37m<LOG_LEVEL>[0m
+          Only show log messages at least this severe
+          
+          [default: WARN]
+          [possible values: OFF, ERROR, WARN, INFO, DEBUG, TRACE]
+
+  [96m-h[0m, [96m--help[0m
+          Print help (see a summary with '-h')
+
+  [96m-V[0m, [96m--version[0m
+          Print version

@@ -2,7 +2,10 @@ use pasfmt::format_with_settings;
 use pasfmt::FormattingSettings;
 use pasfmt_orchestrator::predule::*;
 
-pasfmt_config!(Config);
+pasfmt_config!(
+    #[command(bin_name = "pasfmt")]
+    Config
+);
 
 fn main() -> anyhow::Result<()> {
     let config = Config::create();

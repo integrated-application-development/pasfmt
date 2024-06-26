@@ -1,0 +1,14 @@
+Usage: pasfmt [OPTIONS] [PATHS]...
+
+Arguments:
+  [PATHS]...  Paths that will be formatted. Can be a path/dir/glob. If no paths are specified, stdin is read
+
+Options:
+  -f, --files-from <FILES_FROM>    A file containing paths to operate on. Newline separated list of path/dir/glob
+      --config-file <CONFIG_FILE>  Override the configuration file. By default working directory will be traversed until a `pasfmt.toml` file is found
+  -C <KEY=VALUE>                   Override one configuration option using KEY=VALUE. This takes precedence over `--config-file`
+  -m, --mode <MODE>                The mode of operation [possible values: files, stdout, check]
+  -v, --verbose...                 Increase logging verbosity (can be repeated)
+  -l, --log-level <LOG_LEVEL>      Only show log messages at least this severe [default: WARN] [possible values: OFF, ERROR, WARN, INFO, DEBUG, TRACE]
+  -h, --help                       Print help (see more with '--help')
+  -V, --version                    Print version
