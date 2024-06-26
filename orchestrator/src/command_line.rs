@@ -9,7 +9,7 @@ use clap::{
 
 use figment::{
     providers::{Format, Serialized, Toml},
-    value::{Dict, Map},
+    value::{Dict, Map, Value},
     Figment, Metadata, Profile, Provider,
 };
 use log::{debug, warn, LevelFilter};
@@ -217,8 +217,11 @@ impl PasFmtConfiguration {
                 warn!("Ingoring unknown configuration key '{key}'");
                 config
             } else {
-                config
-                    .merge(Serialized::default(key, val).erase_with_name("command-line overrides"))
+                let value: Result<_, std::convert::Infallible> = Value::from_str(val);
+                let value = value.unwrap(); // unwrapping is fine because the Err is Infallible
+                config.merge(
+                    Serialized::default(key, value).erase_with_name("command-line overrides"),
+                )
             }
         });
 
