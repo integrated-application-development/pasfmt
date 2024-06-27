@@ -1,7 +1,7 @@
 use std::{borrow::Cow, error::Error, fs::read_to_string, path::PathBuf, str::FromStr};
 
 use anstyle::AnsiColor;
-use anyhow::Context;
+use anyhow::{bail, Context};
 pub use clap::{self, error::ErrorKind, CommandFactory, Parser};
 use clap::{
     builder::PossibleValuesParser, builder::Styles, builder::TypedValueParser, Args, ValueEnum,
@@ -212,9 +212,17 @@ impl PasFmtConfiguration {
         // canonicalize it. We do want the default config path to be searched for in parent
         // directories, so that path is left relative.
         let config_file = match &self.config_file {
-            Some(file) => file.canonicalize().with_context(|| {
-                format!("Failed to resolve config file path: '{}'", file.display())
-            })?,
+            Some(file) => {
+                if file.is_dir() {
+                    bail!(
+                        "Config file path cannot be a directory: '{}'",
+                        file.display()
+                    );
+                }
+                file.canonicalize().with_context(|| {
+                    format!("Failed to resolve config file path: '{}'", file.display())
+                })?
+            }
             None => PathBuf::from(DEFAULT_CONFIG_FILE_NAME),
         };
         debug!("Using config file: {}", config_file.display());

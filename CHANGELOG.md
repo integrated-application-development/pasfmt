@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lexing of conditional directive expressions containing compiler directives, comments, or strings.
 - Lexing of compiler directives similar to conditional directives (e.g. `{$if_}`).
 - Lexing of unterminated asm text literals at EOF.
+- `--config-file` no longer erroneously accepts a path to a directory and searches from it for a
+  `pasfmt.toml` file. It is now an error to provide a path to a directory.
 
 ## [0.3.0] - 2024-05-29
 
