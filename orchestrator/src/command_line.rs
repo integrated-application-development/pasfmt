@@ -30,18 +30,29 @@ macro_rules! pasfmt_config {
             config: PasFmtConfiguration,
         }
         impl $type_name {
-            pub fn create() -> PasFmtConfiguration {
-                let parsed = Self::parse();
-                let mut cmd = Self::command();
-                if matches!(parsed.config.mode(), FormatMode::Files) && parsed.config.is_stdin() {
-                    cmd.error(
+            #[allow(unused)]
+            pub fn validate(self) -> Result<PasFmtConfiguration, clap::Error> {
+                if matches!(self.config.mode(), FormatMode::Files) && self.config.is_stdin() {
+                    return Err(Self::command().error(
                         ErrorKind::ArgumentConflict,
                         "Files mode not supported when reading from stdin.",
-                    )
-                    .exit();
+                    ));
                 }
 
-                parsed.config
+                Ok(self.config)
+            }
+
+            #[allow(unused)]
+            pub fn try_create() -> Result<PasFmtConfiguration, clap::Error> {
+                Self::try_parse()?.validate()
+            }
+
+            #[allow(unused)]
+            pub fn create() -> PasFmtConfiguration {
+                match Self::try_create() {
+                    Ok(config) => config,
+                    Err(err) => err.exit(),
+                }
             }
         }
     };
