@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use crate::{command_line::FormatMode, file_formatter::FileFormatter};
-use anyhow::anyhow;
+use anyhow::{anyhow, bail};
 use log::LevelFilter;
 
 pub trait FormatterConfiguration {
@@ -30,21 +30,26 @@ fn check<T: FormatterConfiguration>(
     config: &T,
     file_formatter: &FileFormatter,
 ) -> anyhow::Result<()> {
-    let check_results = if config.is_stdin() {
-        vec![file_formatter.check_stdin()]
+    if config.is_stdin() {
+        if file_formatter.check_stdin().is_err() {
+            bail!("<stdin> is incorrectly formatted");
+        }
     } else {
-        file_formatter.check_files(&config.get_paths()?)
-    };
+        let fail_count = file_formatter
+            .check_files(&config.get_paths()?)
+            .iter()
+            .filter(|r| r.is_err())
+            .count();
 
-    let fail_count = check_results.iter().filter(|r| r.is_err()).count();
-    if fail_count > 0 {
-        Err(anyhow!(
-            "{fail_count} {} incorrectly formatted",
-            plural(fail_count, "file is", "files are")
-        ))
-    } else {
-        Ok(())
+        if fail_count > 0 {
+            bail!(
+                "{fail_count} {} incorrectly formatted",
+                plural(fail_count, "file is", "files are")
+            )
+        }
     }
+
+    Ok(())
 }
 
 pub struct FormattingOrchestrator;
