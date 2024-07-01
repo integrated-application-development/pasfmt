@@ -40,7 +40,7 @@ impl FileFormatter {
         warn!("'{}' is not a valid file path/glob", path);
     }
 
-    fn get_valid_files<S: AsRef<str>>(&self, paths: &[S]) -> Vec<PathBuf> {
+    fn find_files<S: AsRef<str>>(&self, paths: &[S]) -> Vec<PathBuf> {
         let mut valid_paths = vec![];
         paths.iter().map(AsRef::as_ref).for_each(|path_str| {
             let path = Path::new(path_str);
@@ -55,16 +55,16 @@ impl FileFormatter {
                         }
                     }));
                 }
-                Ok(metadata) if metadata.is_file() => {
-                    valid_paths.push(path.to_path_buf());
-                }
-                _ => match glob(path_str) {
+                _ if path_str.contains('*') => match glob(path_str) {
                     Err(_) => self.warn_invalid_glob(path_str),
                     Ok(glob) => glob.for_each(|entry| match entry {
                         Err(_) => self.warn_invalid_file(path_str),
                         Ok(path) => valid_paths.push(path),
                     }),
                 },
+                _ => {
+                    valid_paths.push(path.to_path_buf());
+                }
             }
         });
 
@@ -116,9 +116,7 @@ impl FileFormatter {
     {
         open_options.read(true);
 
-        let valid_paths: Vec<_> = self.get_valid_files(paths);
-
-        valid_paths
+        self.find_files(paths)
             .into_par_iter()
             .map_init(
                 || (Vec::<u8>::new(), String::new()),

@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--config-file` no longer erroneously accepts a path to a directory and searches from it for a
   `pasfmt.toml` file. It is now an error to provide a path to a directory.
 - Detection of decoding errors when reading from stdin.
+- Silent ignoral of non-existent paths (were being treated as globs matching no files).
 
 ## [0.3.0] - 2024-05-29
 
