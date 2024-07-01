@@ -18,7 +18,6 @@ struct DecodedFile<'a> {
     bom: Option<&'a [u8]>,
     contents: Cow<'a, str>,
     encoding: &'static Encoding,
-    replacements: bool,
 }
 
 pub struct FileFormatter {
@@ -75,8 +74,9 @@ impl FileFormatter {
     fn decode_file<'a>(
         &self,
         file: &mut impl Read,
+        name: impl Display,
         buf: &'a mut Vec<u8>,
-    ) -> std::io::Result<DecodedFile<'a>> {
+    ) -> anyhow::Result<DecodedFile<'a>> {
         file.read_to_end(buf)?;
 
         let (encoding, (bom, contents)) = match Encoding::for_bom(buf) {
@@ -87,11 +87,19 @@ impl FileFormatter {
         };
         let (contents, replacements) = encoding.decode_without_bom_handling(contents);
 
+        if replacements {
+            bail!(
+                "File '{}' has malformed sequences (in encoding '{}'{})",
+                name,
+                encoding.name(),
+                bom.map(|_| " - inferred from BOM").unwrap_or(""),
+            );
+        }
+
         Ok(DecodedFile {
             bom,
             contents,
             encoding,
-            replacements,
         })
     }
 
@@ -123,16 +131,8 @@ impl FileFormatter {
                         .with_context(|| format!("Failed to open '{}'", file_path.display()))?;
 
                     let decoded_file = self
-                        .decode_file(&mut file, input_buf)
+                        .decode_file(&mut file, file_path.display(), input_buf)
                         .with_context(|| format!("Failed to read '{}'", file_path.display()))?;
-
-                    if decoded_file.replacements {
-                        bail!(
-                            "File '{}' had malformed sequences (in encoding '{}')",
-                            file_path.display(),
-                            decoded_file.encoding.name()
-                        );
-                    }
 
                     self.formatter
                         .format_into_buf(&decoded_file.contents, output_buf);
@@ -239,7 +239,7 @@ impl FileFormatter {
         }
         let mut stdin = std::io::stdin().lock();
 
-        self.decode_file(&mut stdin, buf)
+        self.decode_file(&mut stdin, "<stdin>", buf)
             .context("Failed to read from stdin")
     }
 
