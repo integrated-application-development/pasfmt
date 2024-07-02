@@ -157,20 +157,6 @@ fn get_styles() -> Styles {
         .placeholder(AnsiColor::White.on_default())
 }
 
-impl Default for PasFmtConfiguration {
-    fn default() -> Self {
-        Self {
-            paths: Default::default(),
-            files_from: Default::default(),
-            config_file: Default::default(),
-            verbose: Default::default(),
-            config: Default::default(),
-            log_level: LevelFilter::Warn,
-            mode: None,
-        }
-    }
-}
-
 // By default, some providers save the source code location as their 'source'.
 // This struct and corresponding trait provide a way to erase that while also
 // providing a new name for the metadata.
