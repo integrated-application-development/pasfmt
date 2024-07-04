@@ -1,17 +1,18 @@
 use assert_fs::{prelude::*, TempDir};
 use predicates::prelude::*;
 use std::path::Path;
-use std::{path::PathBuf, time::SystemTime};
+use std::path::PathBuf;
 
 use crate::utils::*;
 
-fn file_timestamps(glob: &str) -> DynResult<Vec<(PathBuf, SystemTime)>> {
+fn file_contents(glob: &str) -> DynResult<Vec<(PathBuf, String)>> {
     let mut out = vec![];
     for f in glob::glob(glob)? {
         let f = f?;
         let metadata = f.metadata()?;
         if metadata.is_file() {
-            out.push((f, metadata.modified()?))
+            let contents = std::fs::read_to_string(&f)?;
+            out.push((f, contents))
         }
     }
 
@@ -20,22 +21,19 @@ fn file_timestamps(glob: &str) -> DynResult<Vec<(PathBuf, SystemTime)>> {
     Ok(out)
 }
 
-fn file_timestamps_in_dir(dir: &Path) -> DynResult<Vec<(PathBuf, SystemTime)>> {
-    file_timestamps(&(dir.to_string_lossy() + "/**/*"))
+fn file_contents_in_dir(dir: &Path) -> DynResult<Vec<(PathBuf, String)>> {
+    file_contents(&(dir.to_string_lossy() + "/**/*"))
 }
 
-fn assert_all_timestamps_changed(
-    glob: &str,
-    orig_timestamps: &[(PathBuf, SystemTime)],
-) -> TestResult {
-    for (before, after) in orig_timestamps.iter().zip(file_timestamps(glob)?) {
+fn assert_all_contents_changed(glob: &str, orig_contents: &[(PathBuf, String)]) -> TestResult {
+    for (before, after) in orig_contents.iter().zip(file_contents(glob)?) {
         assert_eq!(
             before.0, after.0,
             "File paths should be unchanged after formatting"
         );
         assert_ne!(
             before.1, after.1,
-            "File {:?} is expected to be included in formatting, but the last modified time didn't change",
+            "File {:?} is expected to be included in formatting, but its contents didn't change",
             before.0
         );
     }
@@ -43,11 +41,8 @@ fn assert_all_timestamps_changed(
     Ok(())
 }
 
-fn assert_no_timestamps_changed(
-    glob: &str,
-    orig_timestamps: &[(PathBuf, SystemTime)],
-) -> TestResult {
-    assert_eq!(orig_timestamps, file_timestamps(glob)?);
+fn assert_no_contents_changed(glob: &str, orig_contents: &[(PathBuf, String)]) -> TestResult {
+    assert_eq!(orig_contents, file_contents(glob)?);
 
     Ok(())
 }
@@ -58,30 +53,30 @@ fn recursive_directory_search() -> TestResult {
 
     tmp.copy_from(TESTS_DIR.to_string() + "/data/ext", &["**/*"])?;
 
-    let included_files_timestamps = file_timestamps_in_dir(&tmp.child("included"))?;
-    let excluded_files_timestamps = file_timestamps_in_dir(&tmp.child("excluded"))?;
+    let included_files_contents = file_contents_in_dir(&tmp.child("included"))?;
+    let excluded_files_contents = file_contents_in_dir(&tmp.child("excluded"))?;
 
     assert_eq!(
-        included_files_timestamps.len(),
+        included_files_contents.len(),
         6,
         "Unexpected number of files copied from tests/data/ext/included"
     );
     assert_eq!(
-        excluded_files_timestamps.len(),
+        excluded_files_contents.len(),
         6,
         "Unexpected number of files copied from tests/data/ext/excluded"
     );
 
     fmt(&*tmp)?;
 
-    assert_no_timestamps_changed(
+    assert_no_contents_changed(
         &(tmp.to_string_lossy() + "/excluded/**/*"),
-        &excluded_files_timestamps,
+        &excluded_files_contents,
     )?;
 
-    assert_all_timestamps_changed(
+    assert_all_contents_changed(
         &(tmp.to_string_lossy() + "/included/**/*"),
-        &included_files_timestamps,
+        &included_files_contents,
     )?;
 
     Ok(())
@@ -94,29 +89,29 @@ fn glob() -> TestResult {
     tmp.copy_from(TESTS_DIR.to_string() + "/data/ext/included", &["**/*"])?;
 
     let pas_glob = tmp.to_string_lossy() + "/**/*.pas";
-    let pas_timestamps = file_timestamps(&pas_glob)?;
-    assert_eq!(pas_timestamps.len(), 1);
+    let pas_contents = file_contents(&pas_glob)?;
+    assert_eq!(pas_contents.len(), 1);
 
     let dpr_glob = tmp.to_string_lossy() + "/**/*.dpr";
-    let dpr_timestamps = file_timestamps(&dpr_glob)?;
-    assert_eq!(dpr_timestamps.len(), 1);
+    let dpr_contents = file_contents(&dpr_glob)?;
+    assert_eq!(dpr_contents.len(), 1);
 
     pasfmt()?
         .current_dir(&tmp)
         .arg("**/*.pas")
         .assert()
         .success();
-    assert_all_timestamps_changed(&pas_glob, &pas_timestamps)?;
-    assert_no_timestamps_changed(&dpr_glob, &dpr_timestamps)?;
+    assert_all_contents_changed(&pas_glob, &pas_contents)?;
+    assert_no_contents_changed(&dpr_glob, &dpr_contents)?;
 
-    let pas_timestamps = file_timestamps(&pas_glob)?;
+    let pas_contents = file_contents(&pas_glob)?;
     pasfmt()?
         .current_dir(&tmp)
         .arg("**/*.dpr")
         .assert()
         .success();
-    assert_all_timestamps_changed(&dpr_glob, &dpr_timestamps)?;
-    assert_no_timestamps_changed(&pas_glob, &pas_timestamps)?;
+    assert_all_contents_changed(&dpr_glob, &dpr_contents)?;
+    assert_no_contents_changed(&pas_glob, &pas_contents)?;
 
     Ok(())
 }
@@ -128,11 +123,11 @@ fn classic_glob_does_not_recurse() -> TestResult {
     tmp.copy_from(TESTS_DIR.to_string() + "/data/ext/included", &["**/*"])?;
 
     let pas_glob = tmp.to_string_lossy() + "/**/*.pas";
-    let pas_timestamps = file_timestamps(&pas_glob)?;
-    assert_eq!(pas_timestamps.len(), 1);
+    let pas_contents = file_contents(&pas_glob)?;
+    assert_eq!(pas_contents.len(), 1);
 
     pasfmt()?.current_dir(&tmp).arg("*.pas").assert().success();
-    assert_no_timestamps_changed(&pas_glob, &pas_timestamps)?;
+    assert_no_contents_changed(&pas_glob, &pas_contents)?;
 
     Ok(())
 }
@@ -144,15 +139,15 @@ fn glob_can_include_any_ext() -> TestResult {
     tmp.copy_from(TESTS_DIR, &["data/ext/excluded/*"])?;
 
     let excluded_glob = tmp.to_string_lossy() + "/data/ext/excluded/*";
-    let excluded_files_timestamps = file_timestamps(&excluded_glob)?;
-    assert_eq!(excluded_files_timestamps.len(), 6);
+    let excluded_files_contents = file_contents(&excluded_glob)?;
+    assert_eq!(excluded_files_contents.len(), 6);
 
     pasfmt()?
         .current_dir(&tmp)
         .args(["**/*.*pas*", "**/*.*dpr*", "**/*.*dpk*"])
         .assert()
         .success();
-    assert_all_timestamps_changed(&excluded_glob, &excluded_files_timestamps)?;
+    assert_all_contents_changed(&excluded_glob, &excluded_files_contents)?;
 
     Ok(())
 }
