@@ -564,6 +564,11 @@ casing_token_consolidation_test!(
     identifier = { "function OPERATOR(OPERATOR: OPERATOR): OPERATOR;" }
 );
 casing_token_consolidation_test!(
+    class_op_in,
+    // In this case, and this case only, the reserved word `in` can be used as in identifier.
+    class_in = { "class operator IN(a: boolean = true in [false]): a;" },
+);
+casing_token_consolidation_test!(
     package,
     package = { "package foo; requires bar; contains baz;" },
     identifier = { "package PACKAGE; requires PACKAGE; contains PACKAGE;" },

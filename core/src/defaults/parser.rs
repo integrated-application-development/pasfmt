@@ -560,6 +560,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.next_token();
                     if let Some(KK::Operator) = self.get_current_keyword_kind() {
                         self.consolidate_current_keyword();
+                        self.consolidate_class_op_in();
                     }
                 }
                 TT::Keyword(KK::Strict) | TT::IdentifierOrKeyword(KK::Strict) => {
@@ -671,6 +672,19 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     }
                 }
                 _ => self.parse_statement(),
+            }
+        }
+    }
+
+    fn consolidate_class_op_in(&mut self) {
+        // Special case for `class operator In`. In only this case the keyword
+        // `in` can be an identifier.
+        if let Some(TT::Keyword(KK::In)) = self.get_next_token_type() {
+            if let Some(token) = self
+                .get_next_token_index()
+                .and_then(|token_index| self.tokens.get_mut(token_index))
+            {
+                token.set_token_type(TT::Identifier);
             }
         }
     }
@@ -1568,12 +1582,15 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             self.get_next_token_type(),
         )
     }
+    fn get_keyword_kind(token_type: TT) -> Option<KeywordKind> {
+        match token_type {
+            TT::IdentifierOrKeyword(kind) | TT::Keyword(kind) => Some(kind),
+            _ => None,
+        }
+    }
     fn get_current_keyword_kind(&self) -> Option<KeywordKind> {
         self.get_current_token_type()
-            .and_then(|token_type| match token_type {
-                TT::IdentifierOrKeyword(kind) | TT::Keyword(kind) => Some(kind),
-                _ => None,
-            })
+            .and_then(Self::get_keyword_kind)
     }
     fn consolidate_current_ident(&mut self) {
         if let Some(token) = self
@@ -1595,11 +1612,16 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             }
         }
     }
-    fn get_next_token(&self) -> Option<&RawToken> {
+    fn get_next_token_index(&self) -> Option<usize> {
         self.pass_indices
             .iter()
             .skip(self.pass_index + 1)
-            .find_map(|&index| self.tokens.get(index).filter(token_type_filter))
+            .find(|&&index| self.tokens.get(index).filter(token_type_filter).is_some())
+            .cloned()
+    }
+    fn get_next_token(&self) -> Option<&RawToken> {
+        self.get_next_token_index()
+            .and_then(|index| self.tokens.get(index).filter(token_type_filter))
     }
     fn is_directive_before_next_token(&self) -> bool {
         let mut last_index = self.pass_index;

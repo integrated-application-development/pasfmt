@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Detection of decoding errors when reading from stdin.
 - Silent ignoral of non-existent paths (were being treated as globs matching no files).
 - Parsing of repeated label definitions.
+- Consolidation of `in` as identifier in `class operator In` construct.
 
 ## [0.3.0] - 2024-05-29
 
