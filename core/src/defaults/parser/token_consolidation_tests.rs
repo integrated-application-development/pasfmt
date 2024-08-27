@@ -4,7 +4,22 @@ use indoc::indoc;
 use spectral::prelude::*;
 
 use super::*;
+use crate::lang::KeywordKindDiscriminants;
 use crate::{defaults::lexer::DelphiLexer, traits::Lexer};
+
+#[derive(Debug, PartialEq, Eq)]
+enum AssertionTokenType {
+    Identifier,
+    Keyword(KeywordKindDiscriminants),
+}
+impl From<TokenType> for AssertionTokenType {
+    fn from(value: TokenType) -> Self {
+        match value {
+            TokenType::Keyword(kk) => Self::Keyword(kk.into()),
+            _ => Self::Identifier,
+        }
+    }
+}
 
 fn run_casing_token_consolidation_test(input: &str) {
     let lexer = &DelphiLexer {};
@@ -18,7 +33,7 @@ fn run_casing_token_consolidation_test(input: &str) {
         .enumerate()
         .filter_map(|(index, token)| {
             match (
-                KeywordKind::from_str(token.get_content()),
+                KeywordKindDiscriminants::from_str(token.get_content()),
                 token.get_token_type(),
             ) {
                 (Ok(keyword_kind), TokenType::Keyword(_) | TokenType::Identifier) => Some((
@@ -31,9 +46,9 @@ fn run_casing_token_consolidation_test(input: &str) {
             }
         })
         .collect_vec();
-    let actual_kks = test_data
+    let actual_kks: Vec<(usize, AssertionTokenType)> = test_data
         .iter()
-        .map(|(index, _, token_type, _)| (*index, *token_type))
+        .map(|(index, _, token_type, _)| (*index, AssertionTokenType::from(*token_type)))
         .collect_vec();
     let expected_kks = test_data
         .iter()
@@ -41,8 +56,8 @@ fn run_casing_token_consolidation_test(input: &str) {
             (
                 *index,
                 match token.chars().all(char::is_uppercase) {
-                    true => TokenType::Identifier,
-                    false => TokenType::Keyword(*expected_token_type),
+                    true => AssertionTokenType::Identifier,
+                    false => AssertionTokenType::Keyword(*expected_token_type),
                 },
             )
         })

@@ -5,8 +5,9 @@ use crate::prelude::*;
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(
     feature = "_lang_types_from_str",
-    derive(strum_macros::EnumString),
-    strum(ascii_case_insensitive)
+    derive(strum_macros::EnumDiscriminants),
+    strum_discriminants(derive(strum_macros::EnumString)),
+    strum_discriminants(strum(ascii_case_insensitive))
 )]
 pub enum KeywordKind {
     // Pure keywords
