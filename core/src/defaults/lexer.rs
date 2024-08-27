@@ -1329,14 +1329,14 @@ fn l_angle(args: LexArgs) -> OffsetAndTokenType {
     match args.next_byte() {
         Some(b'=') => (args.offset + 1, TT::Op(OK::LessEqual)),
         Some(b'>') => (args.offset + 1, TT::Op(OK::NotEqual)),
-        _ => (args.offset, TT::Op(OK::LessThan)),
+        _ => (args.offset, TT::Op(OK::LessThan(ChevronKind::Comp))),
     }
 }
 
 fn r_angle(args: LexArgs) -> OffsetAndTokenType {
     match args.next_byte() {
         Some(b'=') => (args.offset + 1, TT::Op(OK::GreaterEqual)),
-        _ => (args.offset, TT::Op(OK::GreaterThan)),
+        _ => (args.offset, TT::Op(OK::GreaterThan(ChevronKind::Comp))),
     }
 }
 
@@ -2010,10 +2010,10 @@ mod tests {
                 ("=", TT::Op(OK::Equal)),
                 (":", TT::Op(OK::Colon)),
                 ("<>", TT::Op(OK::NotEqual)),
-                ("<", TT::Op(OK::LessThan)),
+                ("<", TT::Op(OK::LessThan(ChevronKind::Comp))),
                 ("<=", TT::Op(OK::LessEqual)),
                 (">=", TT::Op(OK::GreaterEqual)),
-                (">", TT::Op(OK::GreaterThan)),
+                (">", TT::Op(OK::GreaterThan(ChevronKind::Comp))),
                 ("[", TT::Op(OK::LBrack)),
                 ("]", TT::Op(OK::RBrack)),
                 ("(.", TT::Op(OK::LBrack)),

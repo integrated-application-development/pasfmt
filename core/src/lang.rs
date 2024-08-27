@@ -189,6 +189,19 @@ impl KeywordKind {
     }
 }
 
+/// Used to distinguish the semantic meanings of `<` and `>`
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+pub enum ChevronKind {
+    /// As used in generic parameters
+    ///
+    /// E.g., ```Foo<Bar>()```
+    Generic,
+    /// As used in boolean expressions
+    ///
+    /// E.g., ```if A < B then```
+    Comp,
+}
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum OperatorKind {
     Plus,
@@ -201,9 +214,9 @@ pub enum OperatorKind {
     Colon,
     Equal,
     NotEqual,
-    LessThan,
+    LessThan(ChevronKind),
     LessEqual,
-    GreaterThan,
+    GreaterThan(ChevronKind),
     GreaterEqual,
     LBrack,
     RBrack,
@@ -213,8 +226,6 @@ pub enum OperatorKind {
     AddressOf,
     Dot,
     DotDot,
-    LGeneric,
-    RGeneric,
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]

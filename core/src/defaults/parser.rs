@@ -835,7 +835,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.finish_logical_line();
                     return;
                 }
-                TT::Op(OK::LessThan)
+                TT::Op(OK::LessThan(_))
                     if matches!(self.get_last_context_type(), Some(ContextType::TypeBlock)) =>
                 {
                     self.skip_pair();
@@ -1347,13 +1347,13 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     TT::Identifier
                         | TT::NumberLiteral(_)
                         | TT::Keyword(KK::Type)
-                        | TT::Op(OK::RBrack | OK::RParen | OK::RGeneric | OK::Semicolon)
+                        | TT::Op(OK::RBrack | OK::RParen | OK::Semicolon)
                 )
             ) {
                 break;
             }
             match prev_token_type {
-                Some(TT::Op(OK::RBrack | OK::RGeneric | OK::RParen)) => {}
+                Some(TT::Op(OK::RBrack | OK::RParen)) => {}
                 Some(TT::Keyword(KK::Type | KK::Of)) => break,
                 Some(token_type) if is_operator(token_type) => break,
                 _ => {}
@@ -1497,8 +1497,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 Some(TT::Op(OK::RParen)) => self.paren_level = self.paren_level.saturating_sub(1),
                 Some(TT::Op(OK::LBrack)) => self.brack_level += 1,
                 Some(TT::Op(OK::RBrack)) => self.brack_level = self.brack_level.saturating_sub(1),
-                Some(TT::Op(OK::LessThan)) => self.generic_level += 1,
-                Some(TT::Op(OK::GreaterThan)) => {
+                Some(TT::Op(OK::LessThan(_))) => self.generic_level += 1,
+                Some(TT::Op(OK::GreaterThan(_))) => {
                     self.generic_level = self.generic_level.saturating_sub(1)
                 }
                 _ => {}

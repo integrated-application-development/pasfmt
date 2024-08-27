@@ -62,7 +62,7 @@ fn max_one_either_side(
 fn spaces_before(token_type: Option<TokenType>, spaces: usize) -> Option<usize> {
     match token_type {
         None => None,
-        Some(TT::Op(OK::LBrack | OK::LParen | OK::LGeneric)) => Some(0),
+        Some(TT::Op(OK::LBrack | OK::LParen | OK::LessThan(ChevronKind::Generic))) => Some(0),
         _ => Some(spaces),
     }
 }
@@ -70,7 +70,7 @@ fn spaces_before(token_type: Option<TokenType>, spaces: usize) -> Option<usize> 
 fn spaces_after(token_type: Option<TokenType>, spaces: usize) -> Option<usize> {
     match token_type {
         None => None,
-        Some(TT::Op(OK::RBrack | OK::RParen | OK::RGeneric)) => Some(0),
+        Some(TT::Op(OK::RBrack | OK::RParen | OK::GreaterThan(ChevronKind::Generic))) => Some(0),
         _ => Some(spaces),
     }
 }
@@ -132,8 +132,8 @@ fn space_operator(
         | OK::NotEqual
         | OK::LessEqual
         | OK::GreaterEqual
-        | OK::LessThan
-        | OK::GreaterThan => binary_op_spacing,
+        | OK::LessThan(ChevronKind::Comp)
+        | OK::GreaterThan(ChevronKind::Comp) => binary_op_spacing,
 
         // maybe unary operators
         OK::Plus | OK::Minus => {
@@ -141,7 +141,7 @@ fn space_operator(
             match prev {
                 // binary after closing bracket or closing generics or special keywords
                 Some(
-                    TT::Op(OK::RBrack | OK::RParen | OK::RGeneric)
+                    TT::Op(OK::RBrack | OK::RParen | OK::GreaterThan(ChevronKind::Generic))
                     | TT::Keyword(KeywordKind::Inherited | KeywordKind::Nil),
                 ) => binary_op_spacing,
                 /*
@@ -215,8 +215,8 @@ fn space_operator(
             }
         }
         OK::Dot | OK::DotDot => (Some(0), Some(0)),
-        OK::LGeneric => (Some(0), Some(0)),
-        OK::RGeneric => (
+        OK::LessThan(ChevronKind::Generic) => (Some(0), Some(0)),
+        OK::GreaterThan(ChevronKind::Generic) => (
             Some(0),
             match token_type_by_idx(token_index + 1) {
                 Some(TT::Op(_)) => Some(0),

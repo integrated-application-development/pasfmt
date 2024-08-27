@@ -1,5 +1,5 @@
 use crate::{
-    lang::{KeywordKind, OperatorKind, Token, TokenData, TokenType},
+    lang::{ChevronKind, KeywordKind, OperatorKind, Token, TokenData, TokenType},
     traits::TokenConsolidator,
 };
 
@@ -11,7 +11,7 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
         while token_idx < tokens.len() {
             if !matches!(
                 tokens.get(token_idx).map(TokenData::get_token_type),
-                Some(TokenType::Op(OperatorKind::LessThan))
+                Some(TokenType::Op(OperatorKind::LessThan(_)))
             ) {
                 token_idx += 1;
                 continue;
@@ -23,7 +23,7 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
             opening_idxs.push(token_idx);
             while !opening_idxs.is_empty() {
                 match tokens.get(next_idx).map(TokenData::get_token_type) {
-                    Some(TokenType::Op(OperatorKind::LessThan)) => {
+                    Some(TokenType::Op(OperatorKind::LessThan(_))) => {
                         opening_idxs.push(next_idx);
                     }
                     Some(TokenType::Op(OperatorKind::Comma)) => {
@@ -45,7 +45,7 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                             | KeywordKind::String,
                         ),
                     ) => {}
-                    Some(TokenType::Op(OperatorKind::GreaterThan)) => {
+                    Some(TokenType::Op(OperatorKind::GreaterThan(_))) => {
                         if comma_found {
                             if let Some(
                                 TokenType::Identifier
@@ -71,9 +71,12 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                         }
 
                         let old_idx = opening_idxs.pop().unwrap();
-                        tokens[old_idx].set_token_type(TokenType::Op(OperatorKind::LGeneric));
+                        use ChevronKind as CK;
+                        tokens[old_idx]
+                            .set_token_type(TokenType::Op(OperatorKind::LessThan(CK::Generic)));
 
-                        tokens[next_idx].set_token_type(TokenType::Op(OperatorKind::RGeneric));
+                        tokens[next_idx]
+                            .set_token_type(TokenType::Op(OperatorKind::GreaterThan(CK::Generic)));
                     }
                     _ => break,
                 }
@@ -120,11 +123,11 @@ mod tests {
     const SEMI: TokenType = TT::Op(OperatorKind::Semicolon);
     const COL: TokenType = TT::Op(OperatorKind::Colon);
     const COM: TokenType = TT::Op(OperatorKind::Comma);
-    const LT: TokenType = TT::Op(OperatorKind::LessThan);
-    const GT: TokenType = TT::Op(OperatorKind::GreaterThan);
+    const LT: TokenType = TT::Op(OperatorKind::LessThan(ChevronKind::Comp));
+    const GT: TokenType = TT::Op(OperatorKind::GreaterThan(ChevronKind::Comp));
     const GE: TokenType = TT::Op(OperatorKind::GreaterEqual);
-    const LG: TokenType = TT::Op(OperatorKind::LGeneric);
-    const RG: TokenType = TT::Op(OperatorKind::RGeneric);
+    const LG: TokenType = TT::Op(OperatorKind::LessThan(ChevronKind::Generic));
+    const RG: TokenType = TT::Op(OperatorKind::GreaterThan(ChevronKind::Generic));
     const AND: TokenType = TT::Keyword(KeywordKind::And);
     const DOT: TokenType = TT::Op(OperatorKind::Dot);
     const ADDR: TokenType = TT::Op(OperatorKind::AddressOf);
