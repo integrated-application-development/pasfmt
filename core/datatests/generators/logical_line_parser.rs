@@ -33,6 +33,9 @@ macro_rules! generate_test_cases {
                 std::fs::create_dir_all(&dir)
                     .expect(&format!("failed to create all directories: {}", &dir.display()));
                 let file_name = dir.join(stringify!($name));
+                if file_name.exists() {
+                    panic!("Test with name {} already exists at {}", stringify!($name), file_name.display());
+                }
                 std::fs::write(&file_name, $input)
                     .expect(&format!("failed to write file `{}` for test", &file_name.display()));
             }
@@ -2509,8 +2512,70 @@ mod statements {
                 root_dir,
                 test_group,
                 goto_i = "goto Foo",
-                goto_n = "goto 1",
-                label = "Foo:"
+                goto_d = "goto 1",
+                goto_h = "goto $1",
+                goto_b = "goto %1",
+                label_i = "Foo:",
+                label_d = "1111:",
+                label_h = "$1111:",
+                label_b = "%1111:",
+            );
+            generate_test_cases!(
+                root_dir,
+                multi_label = "
+                    _|begin
+                    _|  Foo:
+                    _|  111:
+                    _|  $111:
+                    _|  %111:
+                    _|end
+                ",
+                i_label_statement = "
+                    _|begin
+                    _|  Foo:
+                    _|  Bar();
+                    _|end
+                ",
+                d_label_statement = "
+                    _|begin
+                    _|  111:
+                    _|  Bar();
+                    _|end
+                ",
+                b_label_statement = "
+                    _|begin
+                    _|  $111:
+                    _|  Bar();
+                    _|end
+                ",
+                h_label_statement = "
+                    _|begin
+                    _|  %111:
+                    _|  Bar();
+                    _|end
+                ",
+                other_contexts = "
+                    _|begin
+                    _|  repeat
+                    _|    111:
+                    _|  until True;
+                    _|  try
+                    _|    111:
+                    _|  except
+                    _|    111:
+                    _|  end;
+                    _|end;
+                    _|initialization
+                    _|  Foo:
+                    _|  111:
+                    _|  $111:
+                    _|  %111:
+                    _|finalization
+                    _|  Foo:
+                    _|  111:
+                    _|  $111:
+                    _|  %111:
+                ",
             );
         }
     }

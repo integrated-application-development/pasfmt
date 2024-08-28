@@ -309,7 +309,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     );
                     self.finish_logical_line();
                 }
-                TT::Op(OK::LBrack) if self.get_current_logical_line().tokens.is_empty() => {
+                TT::Op(OK::LBrack) if self.is_at_start_of_line() => {
                     // If there is a `[` at the start of a line, it must be an attribute
                     self.skip_pair();
                     self.set_logical_line_type(LogicalLineType::Attribute);
@@ -911,6 +911,25 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.take_until(no_more_separators());
                     self.finish_logical_line();
                 }
+                TT::Identifier | TT::NumberLiteral(_) | TT::IdentifierOrKeyword(_)
+                    if self.is_at_start_of_line()
+                        && self.get_next_token_type() == Some(TT::Op(OK::Colon))
+                        && !matches!(
+                            self.get_last_context_type(),
+                            Some(
+                                ContextType::DeclarationBlock
+                                    | ContextType::VisibilityBlock
+                                    | ContextType::CaseStatement
+                                    | ContextType::TypeDeclaration
+                            )
+                        ) =>
+                {
+                    // Labels can only occur at the start of a line within a compound statement
+                    self.next_token(); // Label specifier
+                    self.next_token(); // Colon
+                    self.take_until(no_more_separators());
+                    self.finish_logical_line();
+                }
                 _ => self.next_token(),
             }
         }
@@ -1364,8 +1383,12 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         {}
     }
 
+    fn is_at_start_of_line(&self) -> bool {
+        self.get_current_logical_line().tokens.is_empty()
+    }
+
     fn finish_logical_line(&mut self) {
-        if self.get_current_logical_line().tokens.is_empty() {
+        if self.is_at_start_of_line() {
             self.get_current_logical_line_mut().line_type = LLT::Unknown;
             return;
         }

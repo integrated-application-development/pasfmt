@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `pasfmt.toml` file. It is now an error to provide a path to a directory.
 - Detection of decoding errors when reading from stdin.
 - Silent ignoral of non-existent paths (were being treated as globs matching no files).
+- Parsing of repeated label definitions.
 
 ## [0.3.0] - 2024-05-29
 
