@@ -83,7 +83,7 @@ impl LogicalLineFormatter for UsesClauseFormatter {
             } else if matches!(
                 formatted_tokens.get_token_type_for_index(token_index),
                 Some(
-                    TokenType::Keyword(KeywordKind::In)
+                    TokenType::Keyword(KeywordKind::In(InKind::Import))
                         | TokenType::TextLiteral(_)
                         | TokenType::Comment(_)
                 )

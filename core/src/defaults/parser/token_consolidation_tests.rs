@@ -677,3 +677,22 @@ fn equals(input: &str, expected_token_types: &[TokenType]) {
         expected_token_types,
     );
 }
+
+const IIN: TokenType = TokenType::Keyword(KK::In(InKind::Import));
+const FIN: TokenType = TokenType::Keyword(KK::In(InKind::ForLoop));
+const OIN: TokenType = TokenType::Keyword(KK::In(InKind::Op));
+
+#[yare::parameterized(
+    uses_in = { "program foo; uses a in '', b in '';", &[IIN, IIN] },
+    contains_in = { "package foo; contains a in '', b in '';", &[IIN, IIN] },
+    requires_in = { "package foo; requires a in '', b in '';", &[IIN, IIN] },
+    for_in = { "for A in [B in [C in D]] do", &[FIN, OIN, OIN] },
+    expr_in = { "A := (B in C) and (D in [E in F])", &[OIN, OIN, OIN] },
+)]
+fn kk_in(input: &str, expected_token_types: &[TokenType]) {
+    run_test(
+        input,
+        |tt| matches!(tt, TokenType::Keyword(KK::In(_))),
+        expected_token_types,
+    );
+}

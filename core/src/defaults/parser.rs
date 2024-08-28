@@ -530,22 +530,13 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     }
                 }
                 TT::Keyword(KK::Uses) => {
-                    self.finish_logical_line();
-                    self.next_token();
-                    self.set_logical_line_type(LLT::ImportClause);
-                    self.take_until(after_semicolon());
-                    self.finish_logical_line();
+                    self.parse_import_clause();
                 }
                 TT::Keyword(KK::Contains | KK::Requires)
                 | TT::IdentifierOrKeyword(KK::Contains | KK::Requires)
                     if matches!(self.get_last_context_type(), Some(ContextType::Package)) =>
                 {
-                    self.finish_logical_line();
-                    self.consolidate_current_keyword();
-                    self.set_logical_line_type(LLT::ImportClause);
-                    self.next_token();
-                    self.take_until(after_semicolon());
-                    self.finish_logical_line();
+                    self.parse_import_clause();
                 }
                 TT::Keyword(KK::Exports) => {
                     self.finish_logical_line();
@@ -676,10 +667,24 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         }
     }
 
+    fn parse_import_clause(&mut self) {
+        self.finish_logical_line();
+        self.consolidate_current_keyword();
+        self.set_logical_line_type(LLT::ImportClause);
+        self.next_token();
+        self.simple_op_until(after_semicolon(), |parser| {
+            if let Some(TT::Keyword(KK::In(_))) = parser.get_current_token_type() {
+                parser.set_current_token_type(TT::Keyword(KK::In(InKind::Import)));
+            }
+            parser.next_token();
+        });
+        self.finish_logical_line();
+    }
+
     fn consolidate_class_op_in(&mut self) {
         // Special case for `class operator In`. In only this case the keyword
         // `in` can be an identifier.
-        if let Some(TT::Keyword(KK::In)) = self.get_next_token_type() {
+        if let Some(TT::Keyword(KK::In(_))) = self.get_next_token_type() {
             if let Some(token) = self
                 .get_next_token_index()
                 .and_then(|token_index| self.tokens.get_mut(token_index))
@@ -911,6 +916,16 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 TT::IdentifierOrKeyword(KK::Reference) => {
                     if let Some(TT::Keyword(KK::To)) = self.get_next_token_type() {
                         self.consolidate_current_keyword();
+                    }
+                    self.next_token();
+                }
+                TT::Keyword(KK::In(InKind::Op)) => {
+                    if matches!(self.get_current_logical_line().line_type, LLT::ForLoop)
+                        && !self
+                            .get_current_logical_line_token_types()
+                            .any(|tt| matches!(tt, TT::Keyword(KK::In(InKind::ForLoop))))
+                    {
+                        self.set_current_token_type(TT::Keyword(KK::In(InKind::ForLoop)));
                     }
                     self.next_token();
                 }
@@ -2024,7 +2039,7 @@ fn is_operator(token_type: RawTokenType) -> bool {
                 KK::And
                     | KK::As
                     | KK::Div
-                    | KK::In
+                    | KK::In(InKind::Op)
                     | KK::Is
                     | KK::Mod
                     | KK::Not

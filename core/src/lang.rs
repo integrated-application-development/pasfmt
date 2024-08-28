@@ -2,6 +2,23 @@ use std::{borrow::Cow, error::Error, fmt::Display, vec::Drain};
 
 use crate::prelude::*;
 
+/// Used to distinguish the semantic meaning of `in` keywords
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+pub enum InKind {
+    /// As used in a `for` loop
+    ///
+    /// E.g., ```for A in B do```
+    ForLoop,
+    /// As used in an expression
+    ///
+    /// E.g., ```if A in B then```
+    Op,
+    /// As used in an import clause
+    ///
+    /// E.g., ```uses A in 'A.pas';```
+    Import,
+}
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(
     feature = "_lang_types_from_str",
@@ -37,7 +54,7 @@ pub enum KeywordKind {
     Goto,
     If,
     Implementation,
-    In,
+    In(InKind),
     Inherited,
     Initialization,
     Inline,
