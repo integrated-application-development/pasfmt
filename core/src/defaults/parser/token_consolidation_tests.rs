@@ -199,6 +199,16 @@ casing_token_consolidation_test!(
 );
 
 casing_token_consolidation_test!(
+    method_identifiers,
+    function = { "type foo = class function READ: WRITE; end;" },
+    procedure = { "type foo = class procedure READ; end;" },
+    // These are `method resolution clauses`
+    // https://docwiki.embarcadero.com/RADStudio/en/Implementing_Interfaces#Method_Resolution_Clause
+    function_resolution = { "type foo = class function READ.WRITE = OPERATOR; end;" },
+    procedure_resolution = { "type foo = class procedure READ.WRITE = OPERATOR; end;" },
+);
+
+casing_token_consolidation_test!(
     visibility,
     alone = {
         indoc! {"
