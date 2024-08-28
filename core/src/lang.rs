@@ -189,6 +189,19 @@ impl KeywordKind {
     }
 }
 
+/// Used to distinguish the semantic meanings of `=`
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+pub enum EqKind {
+    /// As used in const, type, etc. declarations
+    ///
+    /// E.g., ```const A = 1;```
+    Decl,
+    /// As used in boolean expressions
+    ///
+    /// E.g., ```if A = B then```
+    Comp,
+}
+
 /// Used to distinguish the semantic meanings of `<` and `>`
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum ChevronKind {
@@ -212,7 +225,7 @@ pub enum OperatorKind {
     Comma,
     Semicolon,
     Colon,
-    Equal,
+    Equal(EqKind),
     NotEqual,
     LessThan(ChevronKind),
     LessEqual,

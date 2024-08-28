@@ -5,7 +5,7 @@ use spectral::prelude::*;
 
 use super::*;
 use crate::lang::KeywordKindDiscriminants;
-use crate::{defaults::lexer::DelphiLexer, traits::Lexer};
+use crate::prelude::*;
 
 #[derive(Debug, PartialEq, Eq)]
 enum AssertionTokenType {
@@ -633,3 +633,47 @@ casing_token_consolidation_test!(
     kk_helper =
         { "type HELPER = class helper {$ifdef A} for tobject {$else} : integer {$endif} end;" },
 );
+
+fn run_test(
+    input: &str,
+    token_selector: fn(&TokenType) -> bool,
+    expected_token_types: &[TokenType],
+) {
+    let lexer = &DelphiLexer {};
+    let parser = &DelphiLogicalLineParser {};
+    eprintln!("input: {input}");
+    let tokens = lexer.lex(input);
+    let (_, mut tokens) = parser.parse(tokens);
+
+    DistinguishGenericTypeParamsConsolidator {}.consolidate(&mut tokens);
+
+    let actual_token_types = tokens
+        .iter()
+        .map(|t| t.get_token_type())
+        .filter(token_selector)
+        .collect_vec();
+
+    assert_that(&&actual_token_types[..]).is_equal_to(expected_token_types);
+}
+
+const BEQ: TokenType = TokenType::Op(OK::Equal(EqKind::Comp));
+const DEQ: TokenType = TokenType::Op(OK::Equal(EqKind::Decl));
+
+#[yare::parameterized(
+    type_class = { "type A = class end;", &[DEQ] },
+    type_record = {"type A = record end;", &[DEQ] },
+    type_proc = { "type A = procedure(B: {$if foo}Boolean{$else}Boolean{$endif} = 1 = 1);", &[DEQ, DEQ, BEQ] },
+    anonymous_arg_value = { "A(procedure(B: Boolean = 1 = 1));", &[DEQ, BEQ] },
+    method_resolution_clause = { "type A = class procedure B = C; end;", &[DEQ, DEQ] },
+    type_enum = { "type A = (B = 1, C = 2);", &[DEQ, DEQ, DEQ] },
+    const_def = { "const A = 1 = 1;", &[DEQ, BEQ] },
+    inline_const_def = { "begin const A = 1 = 1; end;", &[DEQ, BEQ] },
+    inline_var_def = { "begin var A := 1 = 1; end;", &[BEQ] },
+)]
+fn equals(input: &str, expected_token_types: &[TokenType]) {
+    run_test(
+        input,
+        |tt| matches!(tt, TokenType::Op(OK::Equal(_))),
+        expected_token_types,
+    );
+}

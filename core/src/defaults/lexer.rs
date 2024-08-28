@@ -1278,7 +1278,7 @@ fn ampersand(mut args: LexArgs) -> OffsetAndTokenType {
 // region: operators
 
 macro_rules! basic_op {
-    ($name: ident, $typ: path) => {
+    ($name: ident, $typ: expr) => {
         fn $name(args: LexArgs) -> OffsetAndTokenType {
             (args.offset, RawTokenType::Op($typ))
         }
@@ -1292,7 +1292,7 @@ basic_op!(minus, OK::Minus);
 basic_op!(star, OK::Star);
 basic_op!(comma, OK::Comma);
 basic_op!(semicolon, OK::Semicolon);
-basic_op!(equal, OK::Equal);
+basic_op!(equal, OK::Equal(EqKind::Comp));
 basic_op!(pointer, OK::Pointer);
 basic_op!(address_of, OK::AddressOf);
 basic_op!(l_brack, OK::LBrack);
@@ -2007,7 +2007,7 @@ mod tests {
                 (":=", TT::Op(OK::Assign)),
                 (",", TT::Op(OK::Comma)),
                 (";", TT::Op(OK::Semicolon)),
-                ("=", TT::Op(OK::Equal)),
+                ("=", TT::Op(OK::Equal(EqKind::Comp))),
                 (":", TT::Op(OK::Colon)),
                 ("<>", TT::Op(OK::NotEqual)),
                 ("<", TT::Op(OK::LessThan(ChevronKind::Comp))),

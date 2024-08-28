@@ -859,7 +859,20 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         }
                     }
                 }
-                TT::Op(OK::Equal) => {
+                TT::Op(OK::Equal(_)) => {
+                    if matches!(
+                        self.get_last_context_type(),
+                        Some(
+                            ContextType::DeclarationBlock
+                                | ContextType::TypeBlock
+                                | ContextType::CompoundStatement
+                        )
+                    ) && !self
+                        .get_current_logical_line_token_types()
+                        .any(|tt| matches!(tt, TT::Op(OK::Equal(EqKind::Decl) | OK::Assign)))
+                    {
+                        self.set_current_token_type(TT::Op(OK::Equal(EqKind::Decl)));
+                    }
                     self.next_token();
                     if let Some(ContextType::TypeBlock) = self.get_last_context_type() {
                         match self.get_current_token_type() {
@@ -874,6 +887,22 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                                 self.parse_routine_header();
                                 self.finish_logical_line();
                                 return;
+                            }
+                            Some(TT::Op(OK::LParen)) => {
+                                // Enum definition
+                                let paren_level = self.paren_level;
+                                self.next_token(); // (
+                                self.simple_op_until(outside_parens(paren_level), |parser| {
+                                    if let Some(TT::Op(OK::Equal(EqKind::Comp))) =
+                                        parser.get_current_token_type()
+                                    {
+                                        // For `type Enum = (A = 0, B = 1);`
+                                        parser.set_current_token_type(TT::Op(OK::Equal(
+                                            EqKind::Decl,
+                                        )));
+                                    }
+                                    parser.next_token();
+                                });
                             }
                             _ => {}
                         }
@@ -1073,6 +1102,11 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     parser.consolidate_current_ident();
                     parser.next_token();
                 }
+                Some(TT::Op(OK::Equal(_))) => {
+                    // For `procedure Interface.Method = Method`
+                    parser.set_current_token_type(TT::Op(OK::Equal(EqKind::Decl)));
+                    parser.next_token();
+                }
                 Some(TT::Op(OK::LParen)) => parser.parse_parameter_list(),
                 Some(TT::Keyword(keyword_kind) | TT::IdentifierOrKeyword(keyword_kind))
                     if is_directive(&keyword_kind) && parser.paren_level == 0 =>
@@ -1110,9 +1144,30 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         self.take_until(no_more_separators());
     }
     fn parse_parameter_list(&mut self) {
+        fn fix_next_eq(parser: &mut InternalDelphiLogicalLineParser) {
+            let mut index = parser.pass_index;
+            while let Some(token_type) = parser.get_token_type_for_index(index) {
+                match token_type {
+                    TT::Op(OK::Equal(EqKind::Decl) | OK::Semicolon | OK::RParen) => return,
+                    TT::Op(OK::Equal(EqKind::Comp)) => {
+                        parser.tokens[parser.pass_indices[index]]
+                            .set_token_type(TT::Op(OK::Equal(EqKind::Decl)));
+                        return;
+                    }
+                    _ => index += 1,
+                }
+            }
+        }
+
         self.simple_op_until(
             predicate_and(after_rparen(), outside_parens(self.paren_level)),
             |parser| {
+                if matches!(
+                    parser.get_current_token_type(),
+                    Some(TT::Op(OK::Semicolon | OK::LParen))
+                ) {
+                    fix_next_eq(parser);
+                }
                 match parser.get_current_token_type_window() {
                     (Some(TT::Op(OK::Colon | OK::Dot)), Some(TT::IdentifierOrKeyword(_)), _) => {
                         parser.consolidate_current_ident()
@@ -1307,7 +1362,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         */
         if !self
             .get_current_logical_line_token_types()
-            .any(|token_type| matches!(token_type, TT::Op(OK::Equal | OK::Colon)))
+            .any(|token_type| matches!(token_type, TT::Op(OK::Equal(_) | OK::Colon)))
         {
             return;
         }
@@ -1557,6 +1612,12 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             }
         }
     }
+    fn get_token_type_for_index(&self, index: usize) -> Option<RawTokenType> {
+        self.pass_indices
+            .get(index)
+            .and_then(|&index| self.tokens.get(index))
+            .map(RawToken::get_token_type)
+    }
     fn get_current_token_index(&self) -> Option<usize> {
         self.pass_indices.get(self.pass_index).cloned()
     }
@@ -1612,6 +1673,15 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             }
         }
     }
+    fn set_current_token_type(&mut self, token_type: RawTokenType) {
+        if let Some(token) = self
+            .get_current_token_index()
+            .and_then(|token_index| self.tokens.get_mut(token_index))
+        {
+            token.set_token_type(token_type);
+        }
+    }
+
     fn get_next_token_index(&self) -> Option<usize> {
         self.pass_indices
             .iter()
@@ -1736,7 +1806,7 @@ fn section_headings(parser: &LLP) -> bool {
     match parser.get_current_token_type() {
         Some(TT::Keyword(KK::Implementation | KK::Initialization | KK::Finalization)) => true,
         Some(TT::Keyword(KK::Interface)) => {
-            !matches!(parser.get_prev_token_type(), Some(TT::Op(OK::Equal)))
+            !matches!(parser.get_prev_token_type(), Some(TT::Op(OK::Equal(_))))
         }
         _ => false,
     }
@@ -1804,7 +1874,9 @@ fn declaration_section(parser: &LLP) -> bool {
             consuming the `type` after consuming the `=`. `class` is not given
             the same treatment due to the rest of the struct type parsing.
         */
-        (Some(TT::Op(OK::Equal) | TT::Keyword(KK::Packed)), Some(TT::Keyword(KK::Class))) => false,
+        (Some(TT::Op(OK::Equal(_)) | TT::Keyword(KK::Packed)), Some(TT::Keyword(KK::Class))) => {
+            false
+        }
         (
             _,
             Some(

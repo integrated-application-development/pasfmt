@@ -128,7 +128,7 @@ fn space_operator(
         OK::Star
         | OK::Slash
         | OK::Assign
-        | OK::Equal
+        | OK::Equal(_)
         | OK::NotEqual
         | OK::LessEqual
         | OK::GreaterEqual
