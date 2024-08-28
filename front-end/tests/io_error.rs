@@ -36,37 +36,9 @@ fn io_error_does_not_stop_formatting_other_files() -> TestResult {
 mod windows {
     use super::*;
 
-    use std::os::windows::io::AsRawHandle;
-    use std::path::Path;
-    use windows_sys::Win32::{
-        Storage::FileSystem::{LockFileEx, LOCKFILE_EXCLUSIVE_LOCK, LOCK_FILE_FLAGS},
-        System::IO::OVERLAPPED,
-    };
+    use windows_sys::Win32::Storage::FileSystem::LOCKFILE_EXCLUSIVE_LOCK;
 
-    fn fmt_with_lock(path: &Path, flags: LOCK_FILE_FLAGS) -> AssertResult {
-        let handle = std::fs::OpenOptions::new().write(true).open(path)?;
-        unsafe {
-            let mut overlapped: OVERLAPPED = std::mem::zeroed();
-            let ret = LockFileEx(
-                handle.as_raw_handle() as isize,
-                flags,
-                0,
-                !0,
-                !0,
-                &mut overlapped,
-            );
-
-            if ret == 0 {
-                return Err(Box::new(std::io::Error::last_os_error()));
-            }
-        }
-        // I don't think a guard to unlock the file is necessary, because the Microsoft docs say
-        //   If a process terminates with a portion of a file locked or closes a file that has
-        //   outstanding locks, the locks are unlocked by the operating system.
-        // And the file handle is closed at the end of this function.
-
-        Ok(fmt(path)?)
-    }
+    use crate::utils::windows::fmt_with_lock;
 
     const LOCKED_FILE_ERR_MSG: &str = "The process cannot access the file because another process has locked a portion of the file.";
 
