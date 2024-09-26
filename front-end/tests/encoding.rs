@@ -146,7 +146,7 @@ mod malformed {
     ) -> TestResult {
         pasfmt()?
             .write_stdin(data)
-            .arg(&format!("-Cencoding={encoding}"))
+            .arg(format!("-Cencoding={encoding}"))
             .assert()
             .failure()
             .stderr(predicate::str::contains(format!(
