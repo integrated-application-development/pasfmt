@@ -290,3 +290,51 @@ fn no_eof() {
     assert_that(lines[0].get_tokens()).has_length(tokens_len);
     assert_that(&tokens_len).is_equal_to(consolidated_tokens.len());
 }
+
+#[yare::parameterized(
+    backward_2_from_real = { 6, -2, Some(0) },
+    backward_2_from_filtered = { 5, -2, Some(0) },
+    backward_2_to_none = { 3, -2, None },
+    backward_1_from_real = { 6, -1, Some(3) },
+    backward_1_from_filtered = { 5, -1, Some(3) },
+    backward_1_to_none = { 0, -1, None },
+
+
+    current_from_real = { 0, 0, Some(0) },
+    current_from_filtered = { 1, 0, Some(1) },
+    current_on_eof = { 7, 0, None },
+    current_on_oob = { 8, 0, None },
+
+    forward_1_from_real = { 0, 1, Some(3) },
+    forward_1_from_filtered = { 1, 1, Some(3) },
+    forward_1_to_none = { 6, 1, None },
+    forward_2_from_real = { 0, 2, Some(6) },
+    forward_2_from_filtered = { 1, 2, Some(6) },
+    forward_2_to_none = { 3, 2, None },
+)]
+fn run_get_token_test(pass_index: usize, offset: isize, expected_token_index: Option<usize>) {
+    let mut tokens = vec![
+        RawToken::new("A", 0, TT::Identifier),
+        RawToken::new("{1}", 0, TT::Comment(CK::InlineBlock)),
+        RawToken::new("{2}", 0, TT::Comment(CK::InlineBlock)),
+        RawToken::new("B", 0, TT::Identifier),
+        RawToken::new("{3}", 0, TT::Comment(CK::InlineBlock)),
+        RawToken::new("{4}", 0, TT::Comment(CK::InlineBlock)),
+        RawToken::new("C", 0, TT::Identifier),
+        RawToken::new("", 0, TT::Eof),
+    ];
+    let mut directives = Default::default();
+    let pass_indices = (0..tokens.len()).collect_vec();
+    let mut parser =
+        InternalDelphiLogicalLineParser::new(&mut tokens, &pass_indices, &mut directives);
+    parser.pass_index = pass_index;
+    let offset_index = match offset {
+        -2 => parser.get_token_index::<-2>(),
+        -1 => parser.get_token_index::<-1>(),
+        0 => parser.get_token_index::<0>(),
+        1 => parser.get_token_index::<1>(),
+        2 => parser.get_token_index::<2>(),
+        _ => panic!("Offset {offset} not mapped"),
+    };
+    assert_that(&offset_index).is_equal_to(expected_token_index);
+}

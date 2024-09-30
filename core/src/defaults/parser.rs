@@ -283,7 +283,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     keyword_kind @ (KK::Library | KK::Unit | KK::Program | KK::Package),
                 )
                 | TT::IdentifierOrKeyword(keyword_kind @ KK::Package) => {
-                    if self.get_prev_token_type().is_none() {
+                    if self.get_token_type::<-1>().is_none() {
                         self.consolidate_current_keyword();
                         let mut push_program_head_context = |context_type| {
                             self.context.push(ParserContext {
@@ -563,7 +563,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 | TT::IdentifierOrKeyword(
                     KK::Private | KK::Protected | KK::Public | KK::Published | KK::Automated,
                 ) => {
-                    if let Some(TT::IdentifierOrKeyword(KK::Strict)) = self.get_prev_token_type() {
+                    if let Some(TT::IdentifierOrKeyword(KK::Strict)) = self.get_token_type::<-1>() {
                         self.consolidate_prev_keyword();
                     }
                     self.consolidate_current_keyword();
@@ -684,13 +684,11 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     fn consolidate_class_op_in(&mut self) {
         // Special case for `class operator In`. In only this case the keyword
         // `in` can be an identifier.
-        if let Some(TT::Keyword(KK::In(_))) = self.get_next_token_type() {
-            if let Some(token) = self
-                .get_next_token_index()
-                .and_then(|token_index| self.tokens.get_mut(token_index))
-            {
-                token.set_token_type(TT::Identifier);
-            }
+        if let Some(token) = self
+            .get_token_mut::<1>()
+            .filter(|t| matches!(t.get_token_type(), TT::Keyword(KK::In(_))))
+        {
+            token.set_token_type(TT::Identifier);
         }
     }
 
@@ -708,13 +706,13 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 ) => {
                     self.next_token(); // Class/Interface/DispInterface/Record/Object
                     if let Some(KK::Abstract | KK::Sealed) = self.get_current_keyword_kind() {
-                        if self.get_next_token_type() != Some(TT::Op(OK::Colon)) {
+                        if self.get_token_type::<1>() != Some(TT::Op(OK::Colon)) {
                             self.consolidate_current_keyword();
                         }
                         self.next_token(); // Abstract/Sealed
                     }
                     if let Some(KK::Helper) = self.get_current_keyword_kind() {
-                        if self.get_next_token_type() == Some(TT::Keyword(KK::For)) {
+                        if self.get_token_type::<1>() == Some(TT::Keyword(KK::For)) {
                             self.consolidate_current_keyword();
                             self.next_token(); // Helper
                             self.next_token(); // For
@@ -750,7 +748,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     });
                     if let Some((TT::Op(OK::LBrack), TT::TextLiteral(_))) = self
                         .get_current_token_type()
-                        .zip(self.get_next_token_type())
+                        .zip(self.get_token_type::<1>())
                     {
                         // Guid block
                         self.next_token();
@@ -914,7 +912,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     }
                 }
                 TT::IdentifierOrKeyword(KK::Reference) => {
-                    if let Some(TT::Keyword(KK::To)) = self.get_next_token_type() {
+                    if let Some(TT::Keyword(KK::To)) = self.get_token_type::<1>() {
                         self.consolidate_current_keyword();
                     }
                     self.next_token();
@@ -941,7 +939,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 }
                 TT::IdentifierOrKeyword(KK::Absolute)
                     if matches!(
-                        self.get_prev_token_type(),
+                        self.get_token_type::<-1>(),
                         Some(TT::Identifier | TT::IdentifierOrKeyword(_))
                     ) =>
                 {
@@ -971,7 +969,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 }
                 TT::Identifier | TT::NumberLiteral(_) | TT::IdentifierOrKeyword(_)
                     if self.is_at_start_of_line()
-                        && self.get_next_token_type() == Some(TT::Op(OK::Colon))
+                        && self.get_token_type::<1>() == Some(TT::Op(OK::Colon))
                         && !matches!(
                             self.get_last_context_type(),
                             Some(
@@ -1105,7 +1103,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             match parser.get_current_token_type() {
                 Some(TT::IdentifierOrKeyword(_))
                     if matches!(
-                        parser.get_prev_token_type(),
+                        parser.get_token_type::<-1>(),
                         Some(
                             TT::Op(OK::Colon | OK::Dot)
                                 | TT::Keyword(
@@ -1321,7 +1319,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         };
 
         while let Some(token) = self
-            .get_current_token()
+            .get_token::<0>()
             .filter(|token| !matches!(token.get_token_type(), TT::Keyword(KK::End)))
         {
             if let TT::Op(OK::Semicolon) = token.get_token_type() {
@@ -1585,14 +1583,6 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         self.pass_index += 1;
     }
 
-    fn get_prev_token(&self) -> Option<&RawToken> {
-        let rev_skip = self.pass_indices.len().checked_sub(self.pass_index)?;
-        self.pass_indices
-            .iter()
-            .rev()
-            .skip(rev_skip)
-            .find_map(|&index| self.tokens.get(index).filter(token_type_filter))
-    }
     fn is_directive_after_prev_token(&self) -> bool {
         let Some(mut last_index) = self.get_current_token_index() else {
             return false;
@@ -1604,16 +1594,13 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             if last_index - index > 1 {
                 return true;
             }
-            if self.tokens.get(index).filter(token_type_filter).is_some() {
+            if self.tokens.get(index).filter(token_filter).is_some() {
                 return false;
             }
             last_index = index;
         }
         // If the first token in is a conditional directive that needs to be caught too
         self.pass_indices[0] != 0
-    }
-    fn get_prev_token_type(&self) -> Option<RawTokenType> {
-        self.get_prev_token().map(RawToken::get_token_type)
     }
     fn consolidate_prev_keyword(&mut self) {
         if let Some(token) = self
@@ -1636,14 +1623,57 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     fn get_current_token_index(&self) -> Option<usize> {
         self.pass_indices.get(self.pass_index).cloned()
     }
-    fn get_current_token(&self) -> Option<&RawToken> {
-        let token_index = self.get_current_token_index()?;
-        self.tokens
-            .get(token_index)
-            .filter(|token| token.get_token_type() != TT::Eof)
+
+    fn get_token_index<const OFFSET: isize>(&self) -> Option<usize> {
+        fn find_token_index<'elem, const OFFSET: isize, I: Iterator<Item = &'elem usize>>(
+            parser: &LLP,
+            iter: I,
+            skip_count: usize,
+        ) -> Option<usize> {
+            // The `+1` and `-1` pair ensure that the correct index is found
+            // when the current token is both filtered and not.
+            iter.skip(skip_count + 1)
+                .filter(|&&index| parser.tokens.get(index).filter(token_filter).is_some())
+                .nth(OFFSET.unsigned_abs() - 1)
+                .cloned()
+        }
+
+        match OFFSET {
+            0 => {
+                let token_index = *self.pass_indices.get(self.pass_index)?;
+                self.tokens
+                    .get(token_index)
+                    .filter(|tt: &&RawToken<'_>| tt.get_token_type() != TT::Eof)
+                    .map(|_| token_index)
+            }
+            ..0 => {
+                let last_index = self.pass_indices.len().checked_sub(1)?;
+                let skip_count = last_index.checked_sub(self.pass_index)?;
+                find_token_index::<OFFSET, _>(self, self.pass_indices.iter().rev(), skip_count)
+            }
+            1.. => {
+                let skip_count = self.pass_index;
+                find_token_index::<OFFSET, _>(self, self.pass_indices.iter(), skip_count)
+            }
+        }
     }
+
+    fn get_token<const OFFSET: isize>(&self) -> Option<&RawToken> {
+        let token_index = self.get_token_index::<OFFSET>()?;
+        self.tokens.get(token_index)
+    }
+
+    fn get_token_type<const OFFSET: isize>(&self) -> Option<RawTokenType> {
+        self.get_token::<OFFSET>().map(RawToken::get_token_type)
+    }
+
+    fn get_token_mut<const OFFSET: isize>(&mut self) -> Option<&mut RawToken<'b>> {
+        let token_index = self.get_token_index::<OFFSET>()?;
+        self.tokens.get_mut(token_index)
+    }
+
     fn get_current_token_type(&self) -> Option<RawTokenType> {
-        self.get_current_token().map(RawToken::get_token_type)
+        self.get_token::<0>().map(RawToken::get_token_type)
     }
     fn get_current_token_type_window(
         &self,
@@ -1653,9 +1683,9 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         Option<RawTokenType>,
     ) {
         (
-            self.get_prev_token_type(),
-            self.get_current_token_type(),
-            self.get_next_token_type(),
+            self.get_token_type::<-1>(),
+            self.get_token_type::<0>(),
+            self.get_token_type::<1>(),
         )
     }
     fn get_keyword_kind(token_type: TT) -> Option<KeywordKind> {
@@ -1669,60 +1699,37 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             .and_then(Self::get_keyword_kind)
     }
     fn consolidate_current_ident(&mut self) {
-        if let Some(token) = self
-            .get_current_token_index()
-            .and_then(|token_index| self.tokens.get_mut(token_index))
-        {
+        if let Some(token) = self.get_token_mut::<0>() {
             if let TT::IdentifierOrKeyword(_) = token.get_token_type() {
                 token.set_token_type(TT::Identifier);
             }
         }
     }
     fn consolidate_current_keyword(&mut self) {
-        if let Some(token) = self
-            .get_current_token_index()
-            .and_then(|token_index| self.tokens.get_mut(token_index))
-        {
+        if let Some(token) = self.get_token_mut::<0>() {
             if let TT::IdentifierOrKeyword(keyword_kind) = token.get_token_type() {
                 token.set_token_type(TT::Keyword(keyword_kind));
             }
         }
     }
     fn set_current_token_type(&mut self, token_type: RawTokenType) {
-        if let Some(token) = self
-            .get_current_token_index()
-            .and_then(|token_index| self.tokens.get_mut(token_index))
-        {
+        if let Some(token) = self.get_token_mut::<0>() {
             token.set_token_type(token_type);
         }
     }
 
-    fn get_next_token_index(&self) -> Option<usize> {
-        self.pass_indices
-            .iter()
-            .skip(self.pass_index + 1)
-            .find(|&&index| self.tokens.get(index).filter(token_type_filter).is_some())
-            .cloned()
-    }
-    fn get_next_token(&self) -> Option<&RawToken> {
-        self.get_next_token_index()
-            .and_then(|index| self.tokens.get(index).filter(token_type_filter))
-    }
     fn is_directive_before_next_token(&self) -> bool {
         let mut last_index = self.pass_index;
         for &index in self.pass_indices.iter().skip(self.pass_index + 1) {
             if index - last_index > 1 {
                 return true;
             }
-            if self.tokens.get(index).filter(token_type_filter).is_some() {
+            if self.tokens.get(index).filter(token_filter).is_some() {
                 return false;
             }
             last_index = index;
         }
         false
-    }
-    fn get_next_token_type(&self) -> Option<RawTokenType> {
-        self.get_next_token().map(RawToken::get_token_type)
     }
 
     fn get_last_context(&self) -> Option<&ParserContext> {
@@ -1752,7 +1759,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     .iter()
                     .rev()
                     .skip(rev_skip)
-                    .find(|&&index| self.tokens.get(index).filter(token_type_filter).is_some())
+                    .find(|&&index| self.tokens.get(index).filter(token_filter).is_some())
                     .unwrap_or(&0)
             } else {
                 self.pass_indices[self.pass_index.saturating_sub(1)]
@@ -1767,23 +1774,23 @@ enum OpResult {
     Break,
     Continue,
 }
-fn token_type_filter(token: &&RawToken) -> bool {
-    !matches!(
-        token.get_token_type(),
-        TT::Comment(_) | TT::CompilerDirective | TT::Eof
-    )
+fn token_filter(token: &&RawToken) -> bool {
+    token_type_filter(token.get_token_type())
+}
+fn token_type_filter(tt: RawTokenType) -> bool {
+    !matches!(tt, TT::Comment(_) | TT::CompilerDirective | TT::Eof)
 }
 
 // Parser predicates
 
 fn after_semicolon() -> impl Fn(&LLP) -> bool {
     |parser| {
-        matches!(parser.get_prev_token_type(), Some(TT::Op(OK::Semicolon)))
+        matches!(parser.get_token_type::<-1>(), Some(TT::Op(OK::Semicolon)))
             && !matches!(parser.get_current_token_type(), Some(TT::Op(OK::Semicolon)))
     }
 }
 fn after_rparen() -> impl Fn(&LLP) -> bool {
-    |parser| matches!(parser.get_prev_token_type(), Some(TT::Op(OK::RParen)))
+    |parser| matches!(parser.get_token_type::<-1>(), Some(TT::Op(OK::RParen)))
 }
 
 fn outside_parens(initial_level: u32) -> impl Fn(&LLP) -> bool {
@@ -1821,7 +1828,7 @@ fn section_headings(parser: &LLP) -> bool {
     match parser.get_current_token_type() {
         Some(TT::Keyword(KK::Implementation | KK::Initialization | KK::Finalization)) => true,
         Some(TT::Keyword(KK::Interface)) => {
-            !matches!(parser.get_prev_token_type(), Some(TT::Op(OK::Equal(_))))
+            !matches!(parser.get_token_type::<-1>(), Some(TT::Op(OK::Equal(_))))
         }
         _ => false,
     }
@@ -1852,7 +1859,7 @@ fn else_end(parser: &LLP) -> bool {
 }
 fn semicolon_else_or_parent(parser: &LLP) -> bool {
     matches!(parser.get_current_token_type(), Some(TT::Keyword(KK::Else)))
-        || matches!(parser.get_prev_token_type(), Some(TT::Op(OK::Semicolon)))
+        || matches!(parser.get_token_type::<-1>(), Some(TT::Op(OK::Semicolon)))
         || parser
             .context
             .iter()
@@ -1881,7 +1888,7 @@ fn except_finally(parser: &LLP) -> bool {
 
 fn declaration_section(parser: &LLP) -> bool {
     match (
-        parser.get_prev_token_type(),
+        parser.get_token_type::<-1>(),
         parser.get_current_token_type(),
     ) {
         /*
