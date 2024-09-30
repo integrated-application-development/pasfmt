@@ -507,7 +507,7 @@ fn get_word_token_type(input: &str) -> RawTokenType {
         244, 244, 244, 244, 244, 244, 244, 244, 244, 244,
     ];
 
-    #[allow(clippy::len_zero)]
+    #[expect(clippy::len_zero)]
     const fn hash_keyword(input: &str) -> u16 {
         let bytes = input.as_bytes();
         let mut sum = bytes.len() as u16;
@@ -592,7 +592,7 @@ unsafe fn find_identifier_end_avx2(input: &str, mut offset: usize) -> usize {
         // above guarantees that the offset ptr is in bounds and points into the same allocation.
         let chunk_ptr: *const Chunk = unsafe {
             // the `loadu` variant of this intrinsic doesn't require aligned addresses
-            #[allow(clippy::cast_ptr_alignment)]
+            #[expect(clippy::cast_ptr_alignment)]
             input.as_ptr().add(offset).cast::<Chunk>()
         };
 
