@@ -305,7 +305,6 @@ impl FormatterConfiguration for PasFmtConfiguration {
 mod tests {
     use super::*;
     use assert_fs::{prelude::*, TempDir};
-    use indoc::indoc;
     use serde_derive::{Deserialize, Serialize};
     use spectral::prelude::*;
 
@@ -464,7 +463,7 @@ mod tests {
                 config(&["", "--config-file=."])?.get_config_object();
             assert_that(&config).is_err();
             assert_eq!(
-                format!("{:?}", config.unwrap_err()),
+                format!("{:#}", config.unwrap_err()),
                 "Config file path cannot be a directory: '.'"
             );
 
@@ -583,14 +582,8 @@ mod tests {
             let obj: anyhow::Result<Settings, _> = config(&["", "-Casdf=0"])?.get_config_object();
             assert_that(&obj).is_err();
             assert_eq!(
-                format!("{:?}", obj.unwrap_err()),
-                indoc!(
-                    r#"
-                    Failed to construct configuration
-
-                    Caused by:
-                        Unknown configuration key "asdf" in command-line overrides"#
-                )
+                format!("{:#}", obj.unwrap_err()),
+                r#"Failed to construct configuration: Unknown configuration key "asdf" in command-line overrides"#
             );
 
             Ok(())
