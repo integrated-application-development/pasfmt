@@ -1063,10 +1063,11 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         KK::Type => ContextType::TypeBlock,
                         _ => ContextType::DeclarationBlock,
                     };
+                    let parent = self.get_line_parent_of_current_token();
                     self.next_token(); // Label/Const/Type/Var
                     self.parse_block(ParserContext {
                         context_type,
-                        parent: Some(self.get_line_parent_of_prev_token()),
+                        parent: Some(parent),
                         context_ending_predicate: local_declaration_section,
                         level_delta: 0i16.saturating_sub_unsigned(self.get_context_level()),
                     });
@@ -1335,12 +1336,12 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         self.finish_logical_line();
     }
     fn parse_begin_end(&mut self, parent: bool, level_delta: i16) {
-        self.next_token(); // Begin
         let parent = if parent {
-            Some(self.get_line_parent_of_prev_token())
+            Some(self.get_line_parent_of_current_token())
         } else {
             None
         };
+        self.next_token(); // Begin
         self.parse_block(ParserContext {
             context_type: ContextType::CompoundStatement,
             parent,
@@ -1751,22 +1752,10 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             .sum::<i64>()
             .clamp(u16::MIN as i64, u16::MAX as i64) as u16
     }
-    fn get_line_parent_of_prev_token(&self) -> LineParent {
-        let global_token_index =
-            if let Some(rev_skip) = self.pass_indices.len().checked_sub(self.pass_index) {
-                *self
-                    .pass_indices
-                    .iter()
-                    .rev()
-                    .skip(rev_skip)
-                    .find(|&&index| self.tokens.get(index).filter(token_filter).is_some())
-                    .unwrap_or(&0)
-            } else {
-                self.pass_indices[self.pass_index.saturating_sub(1)]
-            };
+    fn get_line_parent_of_current_token(&self) -> LineParent {
         LineParent {
             line_index: *self.current_line.last(),
-            global_token_index,
+            global_token_index: self.get_current_token_index().unwrap(),
         }
     }
 }
