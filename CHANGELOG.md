@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Silent ignoral of non-existent paths (were being treated as globs matching no files).
 - Parsing of repeated label definitions.
 - Consolidation of `in` as identifier in `class operator In` construct.
+- Duplicated line attribution of mid-line compiler directives.
 
 ## [0.3.0] - 2024-05-29
 

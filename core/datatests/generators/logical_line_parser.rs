@@ -189,6 +189,7 @@ mod directives {
                     ---
                     1:CompilerDirective
                 ",
+                mid_line = "_ |A {$J+} := B {$C+} + C {$C-};",
             );
         }
     }

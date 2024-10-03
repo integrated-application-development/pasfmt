@@ -245,13 +245,9 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.skip_token()
                 }
                 kind @ (TT::Comment(_) | TT::CompilerDirective) => {
-                    if let Some(token_index) = self.get_current_token_index() {
-                        self.get_current_logical_line_mut().tokens.push(token_index);
-                        if let TT::CompilerDirective = kind {
-                            self.attributed_directives.insert(token_index);
-                            self.set_logical_line_type(LLT::CompilerDirective);
-                        }
-                        self.pass_index += 1;
+                    self.next_token(); // Comment/CompilerDirective
+                    if let TT::CompilerDirective = kind {
+                        self.set_logical_line_type(LLT::CompilerDirective);
                     }
                     let line_ref = self.get_current_logical_line_ref();
                     self.finish_logical_line();
@@ -1558,6 +1554,9 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         loop {
             if let Some(token_index) = self.get_current_token_index() {
                 self.get_current_logical_line_mut().tokens.push(token_index);
+                if let Some(TT::CompilerDirective) = self.get_current_token_type() {
+                    self.attributed_directives.insert(token_index);
+                }
             }
 
             match self.get_current_token_type() {
