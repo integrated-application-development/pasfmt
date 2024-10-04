@@ -916,12 +916,13 @@ mod type_decls {
                         format!(
                             "
                                 _|type
-                                _|  Foo{0} = {1}{2}
+                                _|  Foo{0} = {1}
                                 _|  public
                                 _|    procedure Foo;
                                 _|  end;
                             ",
-                            generics, $type_decl, parents
+                            generics,
+                            format!($type_decl, parents),
                         )
                     }
                     generate_test_cases!(
@@ -948,19 +949,21 @@ mod type_decls {
                 generate_test_groups!(
                     root_dir,
                     test_group,
-                    object = "object",
-                    packed_object = "packed object",
-                    class = "class",
-                    packed_class = "packed class",
-                    abstract_class = "class abstract",
-                    sealed_class = "class sealed",
-                    class_helper = "class helper for TFoo",
+                    object = "object{}",
+                    packed_object = "packed object{}",
+                    class = "class{}",
+                    packed_class = "packed class{}",
+                    abstract_class = "class abstract{}",
+                    sealed_class = "class sealed{}",
+                    class_helper = "class helper{} for TFoo",
                     // Records can't have parents, but otherwise behave the same
-                    record = "record",
-                    packed_record = "packed record",
-                    record_helper = "record helper for TRec",
-                    interface = "interface",
-                    dispinterface = "dispinterface",
+                    record = "record{}",
+                    packed_record = "packed record{}",
+                    // Record helpers can't have parents, but otherwise behave the same
+                    record_helper = "record helper{} for TRec",
+                    interface = "interface{}",
+                    // Dispinterfaces can't have parents, but otherwise behave the same
+                    dispinterface = "dispinterface{}",
                 );
             }
         }

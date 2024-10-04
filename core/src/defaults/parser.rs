@@ -707,15 +707,20 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         }
                         self.next_token(); // Abstract/Sealed
                     }
-                    if let Some(KK::Helper) = self.get_current_keyword_kind() {
-                        if self.get_token_type::<1>() == Some(TT::Keyword(KK::For)) {
-                            self.consolidate_current_keyword();
-                            self.next_token(); // Helper
-                            self.next_token(); // For
-                            self.parse_expression(); // Type name
+                    if let (Some(KK::Helper), Some(TT::Keyword(KK::For) | TT::Op(OK::LParen))) =
+                        (self.get_current_keyword_kind(), self.get_token_type::<1>())
+                    {
+                        self.consolidate_current_keyword();
+                        self.next_token(); // Helper
+
+                        if self.get_current_token_type() == Some(TT::Op(OK::LParen)) {
+                            self.parse_parens(); // Parent types
                         }
-                    }
-                    if self.get_current_token_type() == Some(TT::Op(OK::LParen)) {
+                        if let Some(KK::For) = self.get_current_keyword_kind() {
+                            self.next_token(); // For
+                        }
+                        self.parse_expression(); // Type name
+                    } else if self.get_current_token_type() == Some(TT::Op(OK::LParen)) {
                         self.parse_parens(); // Parent types
                     }
                     match self.get_current_token_type() {
