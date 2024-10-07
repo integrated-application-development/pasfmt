@@ -536,6 +536,7 @@ casing_token_consolidation_test!(
     helper,
     record = { "type TFoo = record helper for HELPER end;" },
     class = { "type TFoo = class helper for HELPER end;" },
+    class_with_parent = { "type TFoo = class helper(HELPER) for HELPER end;" },
     identifier = { "type HELPER = class HELPER: HELPER end;" },
 );
 casing_token_consolidation_test!(
