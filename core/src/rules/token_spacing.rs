@@ -175,6 +175,7 @@ fn space_operator(
                     KeywordKind::Class
                     | KeywordKind::Abstract
                     | KeywordKind::Sealed
+                    | KeywordKind::Helper
                     | KeywordKind::Interface
                     | KeywordKind::Function
                     | KeywordKind::Procedure
@@ -244,10 +245,11 @@ mod tests {
     }
 
     formatter_test_group!(
-        parens_after_special_pure_keywords,
+        parens_after_special_keywords,
         class_before_parens = {"class ( TObject);", "class(TObject);"},
         abstract_class_before_parens = {"class abstract ( TObject);", "class abstract(TObject);"},
         sealed_class_before_parens = {"class sealed ( TObject);", "class sealed(TObject);"},
+        class_helper_before_parens = {"type A = class helper ( TObject) for TObject;", "type A = class helper(TObject) for TObject;"},
         interface_before_parens = {"interface ( IInterface);", "interface(IInterface);"},
         procedure_before_parens = {"procedure ();", "procedure();"},
         function_before_parens = {"function  ();", "function();"},
