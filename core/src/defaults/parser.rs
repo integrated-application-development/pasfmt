@@ -1139,9 +1139,10 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         parser.parse_expression();
                     }
                 }
-                Some(TT::Op(OK::Semicolon))
-                    if parser.paren_level == 0 && parser.brack_level == 0 =>
-                {
+                Some(TT::Op(OK::LessThan(_))) => {
+                    parser.skip_pair();
+                }
+                Some(TT::Op(OK::Semicolon)) => {
                     parser.next_token();
                     parser.take_until(no_more_separators());
                     if parser

@@ -1648,6 +1648,7 @@ mod routine_headers {
 
     pub fn generate(root_dir: &Path) {
         params::generate(root_dir);
+        generics::generate(root_dir);
         directives::generate(root_dir);
     }
 
@@ -1792,6 +1793,87 @@ mod routine_headers {
                 class_procedure = "class procedure",
                 constructor = "constructor",
                 destructor = "destructor",
+            );
+        }
+    }
+    mod generics {
+        use super::*;
+
+        macro_rules! test_group {
+            ($root_dir: expr, $input: expr) => {
+                generate_test_cases!(
+                    $root_dir,
+                    empty_list = format!( // This is invalid code
+                        "
+                            1|{} Foo<>;
+                            ---
+                            1:RoutineHeader
+                        ",
+                        $input
+                    ),
+                    comma_names = format!(
+                        "
+                            1|{} Foo<T, U, V>;
+                            ---
+                            1:RoutineHeader
+                        ",
+                        $input
+                    ),
+                    semi_names = format!(
+                        "
+                            1|{} Foo<T; U; V>;
+                            ---
+                            1:RoutineHeader
+                        ",
+                        $input
+                    ),
+                    constraints = format!(
+                        "
+                            1|{} Foo<T: record; U: constructor; V: object>;
+                            ---
+                            1:RoutineHeader
+                        ",
+                        $input
+                    ),
+                    comma_and_semi_names = format!(
+                        "
+                            1|{} Foo<T, U: record; V, W: constructor>();
+                            ---
+                            1:RoutineHeader
+                        ",
+                        $input
+                    ),
+                    with_param_list = format!(
+                        "
+                            1|{} Foo<T, U: record; V, W: constructor>(A: Integer; B: String);
+                            ---
+                            1:RoutineHeader
+                        ",
+                        $input
+                    ),
+                    generic_params = format!(
+                        "
+                            1|{} Foo<T, U: record; V, W: constructor>(
+                                  A: TDictionary<String, Integer>;
+                                  B: TFoo<T, U, V>
+                              );
+                            ---
+                            1:RoutineHeader
+                        ",
+                        $input
+                    ),
+                );
+            };
+        }
+
+        pub fn generate(root_dir: &Path) {
+            generate_test_groups!(
+                root_dir,
+                test_group,
+                function = "function",
+                class_function = "class function",
+                procedure = "procedure",
+                class_procedure = "class procedure",
             );
         }
     }
