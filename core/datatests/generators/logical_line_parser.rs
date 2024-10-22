@@ -989,25 +989,62 @@ mod type_decls {
             generate_test_cases!(
                 root_dir,
                 variant_record = "
-                    _|type
-                    _|  TRec = record
-                    _|  case Boolean of
-                    _|    True: (Foo: Integer);
-                    _|    False: (Foo: Double);
-                    _|  end;
+                    _  |type
+                    _  |  TRec = record
+                    _  |  case Boolean of
+                    1  |    True: ({1}
+                    3^1|      Foo: Integer;
+                    4^1|      Bar: Integer
+                    1  |    );
+                    2  |    False: ({2}
+                    5^2|      Baz: Double
+                    2  |    );
+                    _  |  end;
+                    ---
+                    1:VariantRecordCaseArm
+                    2:VariantRecordCaseArm
+                    3:Declaration
+                    4:Declaration
+                    5:Declaration
                 ",
                 nested_variant_record = "
-                    _|type
-                    _|  TRec = record
-                    _|  case Boolean of
-                    _|    True: (
-                     |      Foo: Integer;
-                     |      case Boolean of
-                     |        True: (Bar: Integer);
-                     |        False: (Bar: Double);
-                     |    );
-                    _|    False: (Foo: Double);
-                    _|  end;
+                    _     |type
+                    _     |  TRec = record
+                    _     |    A: B;
+                    _     |  case Boolean of
+                    1     |    True: ({1}
+                    11^1  |      Foo: Integer;
+                    12^1  |      case Boolean of
+                    13^1  |        True: ({2}
+                    131^2 |          Bar: Integer;
+                    132^2 |          Baz: Integer;
+                    133^2 |          case Boolean of
+                    134^2 |            True: ({3}
+                    1341^3|              Fuzz: Integer;
+                    134   |            );
+                    13    |          );
+                    14^1  |        False: ({4}
+                    141^4 |          Flim: Double
+                    14    |        );
+                    1     |    );
+                    2     |    False: ({5}
+                    21^5  |      Flam: Double
+                    2     |    );
+                    _     |  end;
+                    ---
+                    1:VariantRecordCaseArm
+                    11:Declaration
+                    12:CaseHeader
+                    13:VariantRecordCaseArm
+                    131:Declaration
+                    132:Declaration
+                    133:CaseHeader
+                    134:VariantRecordCaseArm
+                    1341:Declaration
+                    14:VariantRecordCaseArm
+                    141:Declaration
+                    2:VariantRecordCaseArm
+                    21:Declaration
                 ",
                 interface_guid = "
                     _|type

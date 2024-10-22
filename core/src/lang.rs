@@ -402,6 +402,7 @@ pub enum LogicalLineType {
     CaseHeader,
     CaseArm,
     Declaration,
+    VariantRecordCaseArm,
     Unknown,
     Voided,
 }

@@ -453,18 +453,43 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.next_token();
                 }
                 TT::Keyword(KK::Case) => {
-                    let tagged_record =
-                        self.context
-                            .iter()
-                            .any(|ParserContext { context_type, .. }| {
-                                matches!(context_type, ContextType::TypeDeclaration)
-                            });
-                    if tagged_record {
+                    let variant_record = self
+                        .context
+                        .iter()
+                        .any(|ctx| matches!(ctx.context_type, ContextType::TypeDeclaration));
+                    if variant_record {
+                        /*
+                            The level of the variant record case arm is
+                            dependent on which level of nesting it is declared.
+                            ```delphi
+                            TRec = record
+                            case Boolean of
+                              False: (
+                                F: Integer;
+                                case Boolean of
+                                  ...
+                              )
+                              ...
+                            end;
+                            ```
+                            The first `case` is deindented to the same level as
+                            the surrounding record.
+                            The second `case` is indented at the level of its
+                            sibling field declarations.
+                        */
+                        let level_delta = if let Some(ParserContextLevel::Parent(_, _)) =
+                            self.get_last_context().map(|ctx| &ctx.level)
+                        {
+                            0
+                        } else {
+                            -1
+                        };
+
                         self.context.push(ParserContext {
-                            context_type: ContextType::DeclarationBlock,
+                            context_type: ContextType::VariantRecord,
                             context_ending_predicate: never_ending,
-                            level: ParserContextLevel::Level(-1),
-                        })
+                            level: ParserContextLevel::Level(level_delta),
+                        });
                     }
                     self.next_token(); // Case
 
@@ -477,13 +502,30 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     });
                 }
                 TT::Keyword(KK::Of) => {
+                    let variant_record = self
+                        .context
+                        .iter()
+                        .any(|ctx| matches!(ctx.context_type, ContextType::TypeDeclaration));
+
                     self.next_token(); // Of
                     self.finish_logical_line();
+
+                    let context_type = if variant_record {
+                        ContextType::VariantDeclarationBlock
+                    } else {
+                        ContextType::CaseStatement
+                    };
                     self.parse_block(ParserContext {
-                        context_type: ContextType::CaseStatement,
-                        context_ending_predicate: else_end,
+                        context_type,
+                        context_ending_predicate: |parser: &LLP| {
+                            matches!(
+                                parser.get_current_token_type(),
+                                Some(TT::Op(OK::RParen) | TT::Keyword(KK::End | KK::Else))
+                            )
+                        },
                         level: ParserContextLevel::Level(1),
                     });
+
                     if let Some(TT::Keyword(KK::Else)) = self.get_current_token_type() {
                         self.next_token(); // Else
                         self.finish_logical_line();
@@ -493,14 +535,9 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                             level: ParserContextLevel::Level(1),
                         });
                     }
-                    let tagged_record =
-                        self.context
-                            .iter()
-                            .any(|ParserContext { context_type, .. }| {
-                                matches!(context_type, ContextType::TypeDeclaration)
-                            });
-                    if !tagged_record {
-                        // There is no end if it is a tagged record
+
+                    if !variant_record {
+                        // There is no end if it is a variant record
                         self.next_token(); // End
                         self.take_until(no_more_separators());
                         self.finish_logical_line();
@@ -682,14 +719,15 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     return;
                 }
                 if self.is_at_start_of_line() {
-                    match context.context_type {
-                        ContextType::CaseStatement => self.set_logical_line_type(LLT::CaseArm),
+                    if let Some(line_type) = match context.context_type {
+                        ContextType::CaseStatement => Some(LLT::CaseArm),
                         ContextType::LabelBlock
                         | ContextType::TypeBlock
-                        | ContextType::DeclarationBlock => {
-                            self.set_logical_line_type(LLT::Declaration)
-                        }
-                        _ => {}
+                        | ContextType::DeclarationBlock => Some(LLT::Declaration),
+                        ContextType::VariantDeclarationBlock => Some(LLT::VariantRecordCaseArm),
+                        _ => None,
+                    } {
+                        self.set_logical_line_type(line_type);
                     }
                 }
             }
@@ -835,7 +873,16 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     }
                     self.next_token();
                 }
-                TT::Op(OK::LParen) => self.parse_parens(),
+                TT::Op(OK::LParen) => {
+                    if matches!(self.get_token_type::<-1>(), Some(TT::Op(OK::Colon)))
+                        && self.get_last_context_type()
+                            == Some(ContextType::VariantDeclarationBlock)
+                    {
+                        self.parse_variant_record_fields();
+                    } else {
+                        self.parse_parens()
+                    }
+                }
                 TT::Op(OK::Semicolon) => {
                     self.take_until(no_more_separators());
                     self.finish_logical_line();
@@ -984,6 +1031,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                                 ContextType::DeclarationBlock
                                     | ContextType::VisibilityBlock
                                     | ContextType::CaseStatement
+                                    | ContextType::VariantDeclarationBlock
                                     | ContextType::TypeDeclaration
                             )
                         ) =>
@@ -1057,6 +1105,22 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             self.next_token();
         }
     }
+
+    fn parse_variant_record_fields(&mut self) {
+        let parent = self.get_line_parent_of_current_token();
+        self.next_token();
+        self.parse_block(ParserContext {
+            context_type: ContextType::DeclarationBlock,
+            context_ending_predicate: |parser| {
+                matches!(parser.get_current_token_type(), Some(TT::Op(OK::RParen)))
+            },
+            level: ParserContextLevel::Parent(parent, 0),
+        });
+        if let Some(TT::Op(OK::RParen)) = self.get_current_token_type() {
+            self.next_token(); // )
+        }
+    }
+
     fn parse_anonymous_routine(&mut self) {
         self.next_token(); // procedure/function
         loop {
@@ -2036,6 +2100,8 @@ enum ContextType {
     DeclarationBlock,
     SubRoutine,
     CaseStatement,
+    VariantRecord,
+    VariantDeclarationBlock,
     LabelBlock,
     CompoundStatement,
     InlineStatement,
