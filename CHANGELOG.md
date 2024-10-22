@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `InKind` for distinguishing import, for loop, and binary `In` keywords.
 - `CaretKind` for distinguishing pointer type, and variable dereference operators.
 - `OperatorKind::Caret(CaretKind)` to represent `^` tokens.
+- `DeclKind` for distinguishing kinds of `var` and `const` keywords.
 
 ### Fixed
 

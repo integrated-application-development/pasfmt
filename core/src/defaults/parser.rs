@@ -26,6 +26,7 @@ use itertools::Itertools;
 use crate::lang::ConditionalDirectiveKind as CDK;
 
 use crate::lang::CommentKind as CK;
+use crate::lang::DeclKind as DK;
 use crate::lang::KeywordKind as KK;
 use crate::lang::OperatorKind as OK;
 use crate::lang::RawTokenType as TT;
@@ -574,15 +575,21 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     });
                 }
                 TT::Keyword(
-                    keyword_kind @ (KK::Var | KK::ThreadVar | KK::Const | KK::Label | KK::Type),
+                    keyword_kind @ (KK::Var(_)
+                    | KK::ThreadVar
+                    | KK::Const(_)
+                    | KK::Label
+                    | KK::Type),
                 ) => {
                     if let Some(ContextType::CompoundStatement) = self.get_last_context_type() {
                         // Inline declaration
                         self.set_logical_line_type(LLT::InlineDeclaration);
+                        self.set_current_decl_kind(DK::Inline);
                         self.next_token();
                         continue;
                     }
 
+                    self.set_current_decl_kind(DK::Section);
                     self.next_token();
                     let reduce_level =
                         matches!(self.get_last_context_type(), Some(ContextType::SubRoutine));
@@ -828,10 +835,19 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         return;
                     } else {
                         self.next_token();
-                        if let Some(KK::Const) = self.get_current_keyword_kind() {
+                        if let Some(token) = self.get_token_mut::<0>().filter(|token| {
+                            matches!(token.get_token_type(), TT::Keyword(KK::Const(_)))
+                        }) {
+                            token.set_token_type(TT::Keyword(KK::Const(DK::Other)));
                             self.next_token();
                         }
                     }
+                }
+                TT::Keyword(KK::Var(_)) => {
+                    if let Some(TT::Keyword(KK::For)) = self.get_token_type::<-1>() {
+                        self.set_current_decl_kind(DK::Inline);
+                    }
+                    self.next_token();
                 }
                 TT::Op(OK::LParen) => self.parse_parens(),
                 TT::Op(OK::Semicolon) => {
@@ -1065,12 +1081,14 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             };
             match token_type {
                 TT::Op(OK::LParen) => self.parse_parameter_list(),
-                TT::Keyword(keyword_kind @ (KK::Label | KK::Const | KK::Type | KK::Var)) => {
+                TT::Keyword(keyword_kind @ (KK::Label | KK::Const(_) | KK::Type | KK::Var(_))) => {
                     let context_type = match keyword_kind {
                         KK::Type => ContextType::TypeBlock,
                         _ => ContextType::DeclarationBlock,
                     };
                     let parent = self.get_line_parent_of_current_token();
+
+                    self.set_current_decl_kind(DK::AnonSection);
                     self.next_token(); // Label/Const/Type/Var
                     self.parse_block(ParserContext {
                         context_type,
@@ -1208,17 +1226,18 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         parser.consolidate_current_caret_to_type();
                         parser.next_token();
                     }
-                    (_, Some(TT::Keyword(KK::Of)), Some(TT::Keyword(KK::Const))) => {
+                    (_, Some(TT::Keyword(KK::Of)), Some(TT::Keyword(KK::Const(_)))) => {
                         parser.next_token();
                     }
                     (
                         _,
                         Some(TT::Op(OK::Semicolon | OK::LParen)),
-                        Some(TT::Keyword(KK::Const | KK::Var)),
+                        Some(TT::Keyword(KK::Const(_) | KK::Var(_))),
                     ) => {
                         // By skipping the Const, and Var keywords, it ensures that parent
                         // contexts that are ended with these keywords, are not ended prematurely.
                         parser.next_token();
+                        parser.set_current_decl_kind(DK::Param);
                     }
                     _ => {}
                 };
@@ -1742,6 +1761,16 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         }
     }
 
+    fn set_current_decl_kind(&mut self, dk: DeclKind) {
+        if let Some(token) = self.get_token_mut::<0>() {
+            match token.get_token_type() {
+                TT::Keyword(KK::Const(_)) => token.set_token_type(TT::Keyword(KK::Const(dk))),
+                TT::Keyword(KK::Var(_)) => token.set_token_type(TT::Keyword(KK::Var(dk))),
+                _ => {}
+            }
+        }
+    }
+
     fn consolidate_current_caret_to_type(&mut self) {
         if let Some(token) = self
             .get_token_mut::<0>()
@@ -1925,9 +1954,9 @@ fn declaration_section(parser: &LLP) -> bool {
             Some(
                 TT::Keyword(
                     KK::Label
-                    | KK::Const
+                    | KK::Const(_)
                     | KK::Type
-                    | KK::Var
+                    | KK::Var(_)
                     | KK::Exports
                     | KK::ThreadVar
                     | KK::Begin
@@ -1988,9 +2017,9 @@ fn local_declaration_section(parser: &LLP) -> bool {
         parser.get_current_token_type(),
         Some(TT::Keyword(
             KK::Label
-                | KK::Const
+                | KK::Const(_)
                 | KK::Type
-                | KK::Var
+                | KK::Var(_)
                 | KK::Exports
                 | KK::Begin
                 | KK::Asm

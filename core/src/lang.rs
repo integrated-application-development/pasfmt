@@ -19,6 +19,31 @@ pub enum InKind {
     Import,
 }
 
+/// Used to distinguish the semantic meaning of `var` and `const` keywords
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+pub enum DeclKind {
+    /// As used to start a block
+    ///
+    /// E.g., ```const A = B;```
+    Section,
+    /// As used to declare inline
+    ///
+    /// E.g., ```const A: B = C;```
+    Inline,
+    /// As used to specify a parameter type
+    ///
+    /// E.g., ```procedure A(const B: C);```
+    Param,
+    /// As used to start an anonymous section
+    ///
+    /// E.g., ```A := procedure(B: C) const D = 1```
+    AnonSection,
+    /// As used to other usages
+    ///
+    /// E.g., ```type A = array of const```
+    Other,
+}
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(
     feature = "_lang_types_from_str",
@@ -35,7 +60,7 @@ pub enum KeywordKind {
     Begin,
     Case,
     Class,
-    Const,
+    Const(DeclKind),
     Constructor,
     Destructor,
     DispInterface,
@@ -88,7 +113,7 @@ pub enum KeywordKind {
     Unit,
     Until,
     Uses,
-    Var,
+    Var(DeclKind),
     While,
     With,
     Xor,

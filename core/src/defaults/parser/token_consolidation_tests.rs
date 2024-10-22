@@ -716,3 +716,32 @@ fn caret(input: &str, expected_token_types: &[TokenType]) {
         expected_token_types,
     );
 }
+
+const AVAR: TokenType = TokenType::Keyword(KK::Var(DK::AnonSection));
+const SVAR: TokenType = TokenType::Keyword(KK::Var(DK::Section));
+const IVAR: TokenType = TokenType::Keyword(KK::Var(DK::Inline));
+const PVAR: TokenType = TokenType::Keyword(KK::Var(DK::Param));
+const ACONST: TokenType = TokenType::Keyword(KK::Const(DK::AnonSection));
+const SCONST: TokenType = TokenType::Keyword(KK::Const(DK::Section));
+const ICONST: TokenType = TokenType::Keyword(KK::Const(DK::Inline));
+const PCONST: TokenType = TokenType::Keyword(KK::Const(DK::Param));
+const OCONST: TokenType = TokenType::Keyword(KK::Const(DK::Other));
+
+#[yare::parameterized(
+    anon = {
+        "A := procedure(var A; const B) var C: D; const E = F; begin var G := H; const I = J; end;",
+        &[PVAR, PCONST, AVAR, ACONST, IVAR, ICONST]
+    },
+    section = { "var A: B; const C = D;", &[SVAR, SCONST] },
+    inline = { "begin var A := B; const C = D; end;", &[IVAR, ICONST] },
+    param = { "procedure A(var B; const C);", &[PVAR, PCONST] },
+    for_loop = { "for var A := B to C do", &[IVAR] },
+    other = { "type A = array of const;", &[OCONST] },
+)]
+fn decl_kind(input: &str, expected_token_types: &[TokenType]) {
+    run_test(
+        input,
+        |tt| matches!(tt, TokenType::Keyword(KK::Const(_) | KK::Var(_))),
+        expected_token_types,
+    );
+}
