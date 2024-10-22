@@ -186,35 +186,8 @@ fn space_operator(
             Some(TT::Keyword(_)) => (Some(1), Some(0)),
             _ => (None, Some(0)),
         },
-        OK::Pointer => {
-            match (
-                token_type_by_idx(token_index.wrapping_sub(1)),
-                token_type_by_idx(token_index + 1),
-            ) {
-                /*
-                           | matching the operator in this column
-                           v
-
-                       foo ^
-                      foo^ ^
-                     foo() ^
-                    foo[0] ^
-                */
-                (
-                    Some(TT::Identifier | TT::Op(OK::RBrack | OK::RParen | OK::Pointer)),
-                    token_after,
-                ) => (
-                    Some(0),
-                    match token_after {
-                        Some(TT::Identifier | TT::Op(OK::LBrack | OK::LParen)) => Some(0),
-                        _ => Some(1),
-                    },
-                ),
-                // just ^foo
-                (_, Some(TT::Identifier)) => (None, Some(0)),
-                _ => (None, None),
-            }
-        }
+        OK::Caret(CaretKind::Deref) => (Some(0), Some(0)),
+        OK::Caret(CaretKind::Type) => (None, Some(0)),
         OK::Dot | OK::DotDot => (Some(0), Some(0)),
         OK::LessThan(ChevronKind::Generic) => (Some(0), Some(0)),
         OK::GreaterThan(ChevronKind::Generic) => (
@@ -297,7 +270,8 @@ mod tests {
 
     formatter_test_group!(
         pointer,
-        pointer_before = {"if  ^ Foo then", "if ^Foo then"},
+        // Caret-escaped characters are not supported
+        caret_escaped_character = {"if  ^f  = 1 then", "if^f = 1 then"},
         pointer_after = {"if Foo ^ then", "if Foo^ then"},
         pointer_after_parens = {"if Foo() ^ then", "if Foo()^ then"},
         pointer_after_brackets = {"if Foo[] ^then", "if Foo[]^ then"},

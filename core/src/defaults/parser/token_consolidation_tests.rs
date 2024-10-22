@@ -697,3 +697,22 @@ fn kk_in(input: &str, expected_token_types: &[TokenType]) {
         expected_token_types,
     );
 }
+
+const DC: TokenType = TokenType::Op(OK::Caret(CaretKind::Deref));
+const TC: TokenType = TokenType::Op(OK::Caret(CaretKind::Type));
+
+#[yare::parameterized(
+    type_block = { "type A = ^B;", &[TC] },
+    deref = { "A^.B^^[C^]^", &[DC, DC, DC, DC, DC] },
+    routine_param = { "function A(B: ^C = D^.E^): ^F;", &[TC, DC, DC, TC] },
+    prop_decl = { "property A: ^B read C^;", &[TC, DC] },
+    record = { "type R = record A: ^B end;", &[TC] },
+    var = { "var A: ^B;", &[TC] },
+)]
+fn caret(input: &str, expected_token_types: &[TokenType]) {
+    run_test(
+        input,
+        |tt| matches!(tt, TokenType::Op(OK::Caret(_))),
+        expected_token_types,
+    );
+}

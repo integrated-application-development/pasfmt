@@ -232,6 +232,19 @@ pub enum ChevronKind {
     Comp,
 }
 
+/// Used to distinguish the semantic meanings of `^`
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+pub enum CaretKind {
+    /// As used in pointer types
+    ///
+    /// E.g., ```PFoo = ^TFoo```
+    Type,
+    /// As used in expressions
+    ///
+    /// E.g., ```A := B^```
+    Deref,
+}
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum OperatorKind {
     Plus,
@@ -252,7 +265,7 @@ pub enum OperatorKind {
     RBrack,
     LParen,
     RParen,
-    Pointer,
+    Caret(CaretKind),
     AddressOf,
     Dot,
     DotDot,

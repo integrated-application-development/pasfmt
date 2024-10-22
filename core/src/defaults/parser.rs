@@ -862,6 +862,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                             _ => {}
                         }
                     }
+                    self.consolidate_current_caret_to_type();
                 }
                 TT::Op(OK::Equal(_)) => {
                     if matches!(
@@ -886,6 +887,11 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                                     // type TFoo = type of
                                     self.next_token()
                                 }
+                            }
+                            Some(TT::Op(OK::Caret(_))) => {
+                                // Pointer type, type A = ^B
+                                self.consolidate_current_caret_to_type();
+                                self.next_token();
                             }
                             Some(TT::Keyword(KK::Function | KK::Procedure)) => {
                                 self.parse_routine_header();
@@ -1153,6 +1159,11 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         return OpResult::Break;
                     }
                 }
+                Some(TT::Op(OK::Caret(CaretKind::Deref))) => {
+                    if let Some(TT::Op(OK::Colon)) = parser.get_token_type::<-1>() {
+                        parser.consolidate_current_caret_to_type();
+                    }
+                }
                 _ => parser.next_token(),
             }
             OpResult::Continue
@@ -1193,7 +1204,10 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         Some(TT::IdentifierOrKeyword(KK::Out)),
                         _,
                     ) => parser.consolidate_current_keyword(),
-
+                    (Some(TT::Op(OK::Colon)), Some(TT::Op(OK::Caret(_))), _) => {
+                        parser.consolidate_current_caret_to_type();
+                        parser.next_token();
+                    }
                     (_, Some(TT::Keyword(KK::Of)), Some(TT::Keyword(KK::Const))) => {
                         parser.next_token();
                     }
@@ -1238,6 +1252,10 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     parser.consolidate_current_ident();
                     parser.next_token();
                 }
+                (Some(TT::Op(OK::Colon)), Some(TT::Op(OK::Caret(_))), _) => {
+                    parser.consolidate_current_caret_to_type();
+                    parser.next_token();
+                }
                 (_, Some(TT::IdentifierOrKeyword(keyword_kind) | TT::Keyword(keyword_kind)), _)
                     if keyword_kind.is_property_directive() && parser.brack_level == 0 =>
                 {
@@ -1268,7 +1286,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         loop {
             match self.get_current_token_type() {
                 Some(TT::Op(OK::LParen | OK::LBrack)) => self.skip_pair(),
-                Some(TT::Op(OK::Pointer)) => {
+                Some(TT::Op(OK::Caret(_))) => {
                     self.next_token();
                     return;
                 }
@@ -1721,6 +1739,15 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     fn set_current_token_type(&mut self, token_type: RawTokenType) {
         if let Some(token) = self.get_token_mut::<0>() {
             token.set_token_type(token_type);
+        }
+    }
+
+    fn consolidate_current_caret_to_type(&mut self) {
+        if let Some(token) = self
+            .get_token_mut::<0>()
+            .filter(|token| token.get_token_type() == TT::Op(OK::Caret(CaretKind::Deref)))
+        {
+            token.set_token_type(TT::Op(OK::Caret(CaretKind::Type)));
         }
     }
 

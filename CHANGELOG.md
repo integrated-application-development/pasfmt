@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Default` trait impl for `PasFmtConfiguration`.
 - `LGeneric` and `RGeneric` token type in favour of `ChevronKind`.
+- `OperatorKind::Pointer` in favour of `OperatorKind::Caret`.
 
 ### Changed
 
@@ -22,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ChevronKind` for distinguishing greater-than and less-than operators.
 - `EqKind` for distinguishing declaration and binary equal operators.
 - `InKind` for distinguishing import, for loop, and binary `In` keywords.
+- `CaretKind` for distinguishing pointer type, and variable dereference operators.
+- `OperatorKind::Caret(CaretKind)` to represent `^` tokens.
 
 ### Fixed
 

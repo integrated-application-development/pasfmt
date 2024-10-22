@@ -210,7 +210,7 @@ const COMMON_LEXER_MAP: [Option<LexerFn>; 256] = make_byte_map(
         (ByteSet::List(b","), Some(comma)),
         (ByteSet::List(b";"), Some(semicolon)),
         (ByteSet::List(b"="), Some(equal)),
-        (ByteSet::List(b"^"), Some(pointer)),
+        (ByteSet::List(b"^"), Some(caret)),
         (ByteSet::List(b"@"), Some(address_of)),
         (ByteSet::List(b"["), Some(l_brack)),
         (ByteSet::List(b"]"), Some(r_brack)),
@@ -1293,7 +1293,7 @@ basic_op!(star, OK::Star);
 basic_op!(comma, OK::Comma);
 basic_op!(semicolon, OK::Semicolon);
 basic_op!(equal, OK::Equal(EqKind::Comp));
-basic_op!(pointer, OK::Pointer);
+basic_op!(caret, OK::Caret(CaretKind::Deref));
 basic_op!(address_of, OK::AddressOf);
 basic_op!(l_brack, OK::LBrack);
 basic_op!(r_brack, OK::RBrack);
@@ -2020,7 +2020,7 @@ mod tests {
                 (".)", TT::Op(OK::RBrack)),
                 ("(", TT::Op(OK::LParen)),
                 (")", TT::Op(OK::RParen)),
-                ("^", TT::Op(OK::Pointer)),
+                ("^", TT::Op(OK::Caret(CaretKind::Deref))),
                 ("@", TT::Op(OK::AddressOf)),
                 ("..", TT::Op(OK::DotDot)),
                 (".", TT::Op(OK::Dot)),
