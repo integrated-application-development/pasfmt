@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CaretKind` for distinguishing pointer type, and variable dereference operators.
 - `OperatorKind::Caret(CaretKind)` to represent `^` tokens.
 - `DeclKind` for distinguishing kinds of `var` and `const` keywords.
+- `LogicalLineType::CaseArm` to represent the arms of a case statement.
+- `LogicalLineType::Declaration` to represent `label`, `type`, `const` etc. declarations.
 
 ### Fixed
 

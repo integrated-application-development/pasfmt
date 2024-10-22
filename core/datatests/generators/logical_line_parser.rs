@@ -669,8 +669,10 @@ mod decl_sections {
                             _|unit Foo;
                             _|interface
                             {}
+                            ---
+                            {}
                         ",
-                        $input
+                        $input.0, $input.1
                     ),
                     implementation = format!(
                         "
@@ -678,8 +680,10 @@ mod decl_sections {
                             _|interface
                             _|implementation
                             {}
+                            ---
+                            {}
                         ",
-                        $input
+                        $input.0, $input.1
                     ),
                     local_decl = format!(
                         "
@@ -687,8 +691,10 @@ mod decl_sections {
                             {}
                             _|begin
                             _|end;
+                            ---
+                            {}
                         ",
-                        $input
+                        $input.0, $input.1
                     ),
                     after_sub_routine = format!(
                         "
@@ -699,8 +705,10 @@ mod decl_sections {
                             {}
                             _|begin
                             _|end;
+                            ---
+                            {}
                         ",
-                        $input
+                        $input.0, $input.1
                     ),
                 );
             };
@@ -710,55 +718,115 @@ mod decl_sections {
             generate_test_groups!(
                 root_dir,
                 test_group,
-                one_label = "
-                    1|label
-                    2|  1;
-                ",
-                many_labels = "
-                    1|label
-                    2|  1,ident;
-                ",
-                one_const = "
-                    1|const
-                    2|  CFoo = 1;
-                ",
-                many_consts = "
-                    1|const
-                    2|  CFoo = 1;
-                    3|  CBar = '1234';
-                ",
-                one_var = "
-                    1|var
-                    2|  A: TFoo;
-                ",
-                many_vars = "
-                    1|var
-                    2|  A: TFoo;
-                    3|  B: TFoo;
-                ",
-                many_names_var = "
-                    1|var
-                    2|  A, B: TFoo;
-                ",
-                many_names_vars = "
-                    1|var
-                    2|  A, B: TFoo;
-                    3|  C, D: TFoo;
-                ",
-                type_class = "
-                    1|type
-                    2|  TFoo = class;
-                    3|  TFoo = packed class;
-                ",
-                type_type = "
-                    1|type
-                    2|  TFoo = type Foo;
-                ",
-                type_routine = "
-                    1|type
-                    2|  TFoo = function: TBar of object;
-                    3|  TFoo = procedure of object;
-                ",
+                one_label = (
+                    "
+                        1|label
+                        2|  1;
+                    ",
+                    "
+                        2:Declaration
+                    "
+                ),
+                many_labels = (
+                    "
+                        1|label
+                        2|  1,ident;
+                    ",
+                    "
+                        2:Declaration
+                    "
+                ),
+                one_const = (
+                    "
+                        1|const
+                        2|  CFoo = 1;
+                    ",
+                    "
+                        2:Declaration
+                    "
+                ),
+                many_consts = (
+                    "
+                        1|const
+                        2|  CFoo = 1;
+                        3|  CBar = '1234';
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
+                ),
+                one_var = (
+                    "
+                        1|var
+                        2|  A: TFoo;
+                    ",
+                    "
+                        2:Declaration
+                    "
+                ),
+                many_vars = (
+                    "
+                        1|var
+                        2|  A: TFoo;
+                        3|  B: TFoo;
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
+                ),
+                many_names_var = (
+                    "
+                        1|var
+                        2|  A, B: TFoo;
+                    ",
+                    "
+                        2:Declaration
+                    "
+                ),
+                many_names_vars = (
+                    "
+                        1|var
+                        2|  A, B: TFoo;
+                        3|  C, D: TFoo;
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
+                ),
+                type_class = (
+                    "
+                        1|type
+                        2|  TFoo = class;
+                        3|  TFoo = packed class;
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
+                ),
+                type_type = (
+                    "
+                        1|type
+                        2|  TFoo = type Foo;
+                    ",
+                    "
+                        2:Declaration
+                    "
+                ),
+                type_routine = (
+                    "
+                        1|type
+                        2|  TFoo = function: TBar of object;
+                        3|  TFoo = procedure of object;
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
+                ),
             );
         }
     }
@@ -766,14 +834,16 @@ mod decl_sections {
     mod anonymous {
         use super::*;
 
-        fn test_case(decl_section: &str) -> String {
+        fn test_case(decl_section: &str, line_types: &str) -> String {
             format!(
                 "
                     _1|A := procedure Foo
                     {}
                     1|begin end;
+                    ---
+                    {}
                 ",
-                decl_section,
+                decl_section, line_types,
             )
         }
 
@@ -782,54 +852,81 @@ mod decl_sections {
                 root_dir,
                 one_label = test_case(
                     "
-                    1  |label{1}
-                    2^1|  1;
-                "
+                        1  |label{1}
+                        2^1|  1;
+                    ",
+                    "
+                        2:Declaration
+                    "
                 ),
                 many_labels = test_case(
                     "
-                    1  |label{1}
-                    2^1|  1,ident;
-                "
+                        1  |label{1}
+                        2^1|  1,ident;
+                    ",
+                    "
+                        2:Declaration
+                    "
                 ),
                 one_const = test_case(
                     "
-                    1  |const{1}
-                    2^1|  CFoo = 1;
-                "
+                        1  |const{1}
+                        2^1|  CFoo = 1;
+                    ",
+                    "
+                        2:Declaration
+                    "
                 ),
                 many_consts = test_case(
                     "
-                    1  |const{1}
-                    2^1|  CFoo = 1;
-                    3^1|  CBar = '1234';
-                "
+                        1  |const{1}
+                        2^1|  CFoo = 1;
+                        3^1|  CBar = '1234';
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
                 ),
                 one_var = test_case(
                     "
-                    1  |var{1}
-                    2^1|  A: TFoo;
-                "
+                        1  |var{1}
+                        2^1|  A: TFoo;
+                    ",
+                    "
+                        2:Declaration
+                    "
                 ),
                 many_vars = test_case(
                     "
-                    1  |var{1}
-                    2^1|  A: TFoo;
-                    3^1|  B: TFoo;
-                "
+                        1  |var{1}
+                        2^1|  A: TFoo;
+                        3^1|  B: TFoo;
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
                 ),
                 many_names_var = test_case(
                     "
-                    1  |var{1}
-                    2^1|  A, B: TFoo;
-                "
+                        1  |var{1}
+                        2^1|  A, B: TFoo;
+                    ",
+                    "
+                        2:Declaration
+                    "
                 ),
                 many_names_vars = test_case(
                     "
-                    1  |var{1}
-                    2^1|  A, B: TFoo;
-                    3^1|  C, D: TFoo;
-                "
+                        1  |var{1}
+                        2^1|  A, B: TFoo;
+                        3^1|  C, D: TFoo;
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
                 ),
                 anonymous_argument = "
                     _1 |Bar(procedure Foo
@@ -842,6 +939,12 @@ mod decl_sections {
                     5^3|  A, B: TFoo;
                     6^3|  C, D: TFoo;
                     1  |begin end);
+                    ---
+                    2:Declaration
+                    3:Declaration
+                    4:Declaration
+                    5:Declaration
+                    6:Declaration
                 "
             );
         }
@@ -1023,7 +1126,9 @@ mod type_decls {
                         "
                             _|interface
                             _|type
-                            _|  {};
+                            1|  {};
+                            ---
+                            1:Declaration
                         ",
                         $input,
                     ),
@@ -1031,7 +1136,9 @@ mod type_decls {
                         "
                             _|implementation
                             _|type
-                            _|  {};
+                            1|  {};
+                            ---
+                            1:Declaration
                         ",
                         $input,
                     ),
@@ -1039,9 +1146,11 @@ mod type_decls {
                         "
                             _|procedure Foo;
                             _|type
-                            _|  {};
+                            1|  {};
                             _|begin
                             _|end
+                            ---
+                            1:Declaration
                         ",
                         $input,
                     ),
@@ -1049,9 +1158,11 @@ mod type_decls {
                         "
                             _1 |A := procedure Foo
                             1  |type{{1}}
-                            _^1|  {};
+                            2^1|  {};
                             1  |begin
                             1  |end;
+                            ---
+                            2:Declaration
                         ",
                         $input,
                     ),
@@ -2290,38 +2401,44 @@ mod control_flows {
                 root_dir,
                 no_else = "
                     1|case True of
-                    _|  Foo:;
-                    _|  Bar:;
+                    2|  Foo:;
+                    3|  Bar:;
                     _|end;
                     ---
                     1:CaseHeader
+                    2:CaseArm
+                    3:CaseArm
                 ",
                 no_else_compound = "
                     1|case True of
-                    _|  Foo: begin
+                    2|  Foo: begin
                     _|    A;
                     _|  end;
-                    _|  Bar: begin
+                    3|  Bar: begin
                     _|    B;
                     _|  end;
                     _|end;
                     ---
                     1:CaseHeader
+                    2:CaseArm
+                    3:CaseArm
                 ",
                 else_block = "
                     1|case True of
-                    _|  Foo:;
-                    _|  Bar:;
+                    2|  Foo:;
+                    3|  Bar:;
                     _|else
                     _|  A;
                     _|end;
                     ---
                     1:CaseHeader
+                    2:CaseArm
+                    3:CaseArm
                 ",
                 else_block_compound = "
                     1|case True of
-                    _|  Foo:;
-                    _|  Bar:;
+                    2|  Foo:;
+                    3|  Bar:;
                     _|else
                     _|  begin
                     _|    Baz;
@@ -2329,13 +2446,15 @@ mod control_flows {
                     _|end;
                     ---
                     1:CaseHeader
+                    2:CaseArm
+                    3:CaseArm
                 ",
                 else_compound = "
                     1|case True of
-                    _|  Foo: begin
+                    2|  Foo: begin
                     _|    A;
                     _|  end;
-                    _|  Bar: begin
+                    3|  Bar: begin
                     _|    B;
                     _|  end;
                     _|else
@@ -2343,18 +2462,21 @@ mod control_flows {
                     _|end;
                     ---
                     1:CaseHeader
+                    2:CaseArm
+                    3:CaseArm
                 ",
                 anonymous_subject = "
                     1  |case Foo(procedure begin{1}
                     _^1|  Bar;
                     _^1|  Baz;
                     1  |end) of
-                    _  |  Foo: begin
+                    2  |  Foo: begin
                     _  |    A;
                     _  |  end;
                     _  |end;
                     ---
                     1:CaseHeader
+                    2:CaseArm
                 ",
             );
         }

@@ -400,6 +400,8 @@ pub enum LogicalLineType {
     Guid,
     Attribute,
     CaseHeader,
+    CaseArm,
+    Declaration,
     Unknown,
     Voided,
 }

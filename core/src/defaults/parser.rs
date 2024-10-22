@@ -702,6 +702,17 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.finish_logical_line();
                     return;
                 }
+                if self.is_at_start_of_line() {
+                    match context.context_type {
+                        ContextType::CaseStatement => self.set_logical_line_type(LLT::CaseArm),
+                        ContextType::LabelBlock
+                        | ContextType::TypeBlock
+                        | ContextType::DeclarationBlock => {
+                            self.set_logical_line_type(LLT::Declaration)
+                        }
+                        _ => {}
+                    }
+                }
             }
             match token_type {
                 TT::Keyword(
@@ -1084,6 +1095,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 TT::Keyword(keyword_kind @ (KK::Label | KK::Const(_) | KK::Type | KK::Var(_))) => {
                     let context_type = match keyword_kind {
                         KK::Type => ContextType::TypeBlock,
+                        KK::Label => ContextType::LabelBlock,
                         _ => ContextType::DeclarationBlock,
                     };
                     let parent = self.get_line_parent_of_current_token();
@@ -2063,6 +2075,7 @@ enum ContextType {
     DeclarationBlock,
     SubRoutine,
     CaseStatement,
+    LabelBlock,
     CompoundStatement,
     InlineStatement,
     TryBlock,
