@@ -663,8 +663,8 @@ const DEQ: TokenType = TokenType::Op(OK::Equal(EqKind::Decl));
 #[yare::parameterized(
     type_class = { "type A = class end;", &[DEQ] },
     type_record = {"type A = record end;", &[DEQ] },
-    type_proc = { "type A = procedure(B: {$if foo}Boolean{$else}Boolean{$endif} = 1 = 1);", &[DEQ, DEQ, BEQ] },
-    anonymous_arg_value = { "A(procedure(B: Boolean = 1 = 1));", &[DEQ, BEQ] },
+    type_proc = { "type A = procedure(B: {$if foo}Boolean{$else}Boolean{$endif} = 1 = 1; C: Boolean = 1 = 1);", &[DEQ, DEQ, BEQ, DEQ, BEQ] },
+    anonymous_arg_value = { "A(procedure(B: Boolean = 1 = 1; C: Boolean = 1 = 1));", &[DEQ, BEQ, DEQ, BEQ] },
     method_resolution_clause = { "type A = class procedure B = C; end;", &[DEQ, DEQ] },
     type_enum = { "type A = (B = 1, C = 2);", &[DEQ, DEQ, DEQ] },
     const_def = { "const A = 1 = 1;", &[DEQ, BEQ] },

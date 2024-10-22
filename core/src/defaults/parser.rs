@@ -1161,7 +1161,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     }
     fn parse_parameter_list(&mut self) {
         fn fix_next_eq(parser: &mut InternalDelphiLogicalLineParser) {
-            let mut index = parser.pass_index;
+            let mut index = parser.pass_index + 1;
             while let Some(token_type) = parser.get_token_type_for_index(index) {
                 match token_type {
                     TT::Op(OK::Equal(EqKind::Decl) | OK::Semicolon | OK::RParen) => return,
