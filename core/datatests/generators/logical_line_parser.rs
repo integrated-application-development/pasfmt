@@ -476,6 +476,23 @@ mod child_lines {
                 1   |end
                 1   |)
             ",
+            parallel_nested_anonymous = "
+                1  |Foo(procedure begin{1}
+                _  |{$ifdef A}
+                _^1|  AAAA;
+                _^1|  BBBB;
+                _^1|  CCCC;
+                _  |{$else}
+                _^1|  DDDD;
+                _  |{$endif}
+                2^1|  Bar(procedure begin{2}
+                _^2|    AAA;
+                2  |  end);
+                3^1|  Baz(procedure begin{3}
+                _^3|    BBB;
+                3  |  end);
+                1  |end);
+            ",
         );
     }
 }

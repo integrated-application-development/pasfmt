@@ -144,13 +144,8 @@ fn consolidate_pass_lines(
 ) {
     let mut mapped_line_indices = Vec::new();
     for mut line in pass_lines {
-        let mapped_line_index = match result_lines.get(&line) {
-            None => result_lines.len(),
-            Some(&index) => index,
-        };
-        mapped_line_indices.push(mapped_line_index);
-
         if line.tokens.is_empty() {
+            mapped_line_indices.push(usize::MAX);
             continue;
         }
 
@@ -159,7 +154,9 @@ fn consolidate_pass_lines(
             global_token_index: parent.global_token_index,
         });
 
-        result_lines.insert(line, mapped_line_index);
+        let new_line_index = result_lines.len();
+        let line_index = *result_lines.entry(line).or_insert(new_line_index);
+        mapped_line_indices.push(line_index);
     }
 }
 
