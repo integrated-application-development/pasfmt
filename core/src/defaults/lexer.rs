@@ -1181,15 +1181,10 @@ fn compiler_directive(args: LexArgs, kind: BlockCommentKind) -> OffsetAndTokenTy
     }
 }
 
-fn block_comment_kind(
-    nl_offset: usize,
-    start_offset: usize,
-    end_offset: usize,
-    lex_state: &LexState,
-) -> CommentKind {
-    if nl_offset >= start_offset && nl_offset < end_offset {
+fn block_comment_kind(nl_before: bool, nl_inside: bool) -> CommentKind {
+    if nl_inside {
         CommentKind::MultilineBlock
-    } else if nl_offset < start_offset || lex_state.is_first {
+    } else if nl_before {
         CommentKind::IndividualBlock
     } else {
         CommentKind::InlineBlock
@@ -1206,9 +1201,9 @@ fn _block_comment(
     end_offset: Option<usize>,
 ) -> OffsetAndTokenType {
     if let Some(end_offset) = end_offset {
-        let nl_offset =
-            memchr::memchr(b'\n', &input.as_bytes()[..end_offset]).unwrap_or(input.len());
-        let comment_kind = block_comment_kind(nl_offset, offset, end_offset, lex_state);
+        let nl_before = input.as_bytes()[..offset].contains(&b'\n') || lex_state.is_first;
+        let nl_inside = memchr::memchr(b'\n', &input.as_bytes()[offset..end_offset]).is_some();
+        let comment_kind = block_comment_kind(nl_before, nl_inside);
         (end_offset, TT::Comment(comment_kind))
     } else {
         warn_unterminated("block comment", input, offset - start_len);
@@ -1425,10 +1420,12 @@ mod tests {
     fn lex_block_comment_types() {
         run_test(
             indoc! {"
-                {block comment} {.$fake compiler directive} \
-                (*star block comment*) (*.$fake compiler star directive*) {*)} (*{*) \
+                {block comment} {.$fake compiler directive}
+                (*star block comment*) (*.$fake compiler star directive*) {*)} (*{*)
                 {
                     Multiline block comment
+                } {
+                    An inline multiline block comment
                 }"
             },
             &[
@@ -1439,7 +1436,7 @@ mod tests {
                 ),
                 (
                     "(*star block comment*)",
-                    TT::Comment(CommentKind::InlineBlock),
+                    TT::Comment(CommentKind::IndividualBlock),
                 ),
                 (
                     "(*.$fake compiler star directive*)",
@@ -1451,6 +1448,14 @@ mod tests {
                     indoc! {"
                         {
                             Multiline block comment
+                        }"
+                    },
+                    TT::Comment(CommentKind::MultilineBlock),
+                ),
+                (
+                    indoc! {"
+                        {
+                            An inline multiline block comment
                         }"
                     },
                     TT::Comment(CommentKind::MultilineBlock),

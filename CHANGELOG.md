@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Duplicated line attribution of mid-line compiler directives.
 - Parsing of `class helper`s with parent a type.
 - Parsing of generics parameters in routine headers.
+- Block comment kind for multiline comments on their own line.
 
 ## [0.3.0] - 2024-05-29
 
