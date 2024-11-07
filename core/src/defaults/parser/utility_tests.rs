@@ -334,7 +334,7 @@ fn run_get_token_test(pass_index: usize, offset: isize, expected_token_index: Op
         0 => parser.get_token_index::<0>(),
         1 => parser.get_token_index::<1>(),
         2 => parser.get_token_index::<2>(),
-        _ => panic!("Offset {offset} not mapped"),
+        _ => panic!("offset {offset} not mapped"),
     };
     assert_that(&offset_index).is_equal_to(expected_token_index);
 }

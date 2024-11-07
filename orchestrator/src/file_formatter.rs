@@ -128,11 +128,11 @@ impl FileFormatter {
                     let file_path = file_path?;
                     let mut file = open_options
                         .open(&file_path)
-                        .with_context(|| format!("Failed to open '{}'", file_path.display()))?;
+                        .with_context(|| format!("failed to open '{}'", file_path.display()))?;
 
                     let decoded_file = self
                         .decode_file(&mut file, file_path.display(), input_buf)
-                        .with_context(|| format!("Failed to read '{}'", file_path.display()))?;
+                        .with_context(|| format!("failed to read '{}'", file_path.display()))?;
 
                     self.formatter
                         .format_into_buf(&decoded_file.contents, output_buf);
@@ -153,18 +153,18 @@ impl FileFormatter {
             |file, file_path, decoded_file, formatted_output| {
                 if decoded_file.contents.eq(&formatted_output) {
                     debug!(
-                        "Skipping writing to '{}' because it is already formatted.",
+                        "skipping writing to '{}' because it is already formatted",
                         file_path.display()
                     );
                     return Ok(());
                 }
                 file.seek(SeekFrom::Start(0)).with_context(|| {
-                    format!("Failed to seek to start of file: '{}'", file_path.display())
+                    format!("failed to seek to start of file: '{}'", file_path.display())
                 })?;
                 let new_len = Self::write_out(file, decoded_file, formatted_output)
-                    .with_context(|| format!("Failed to write to '{}'", file_path.display()))?;
+                    .with_context(|| format!("failed to write to '{}'", file_path.display()))?;
                 file.set_len(new_len).with_context(|| {
-                    format!("Failed to set file length: '{}'", file_path.display())
+                    format!("failed to set file length: '{}'", file_path.display())
                 })?;
                 Ok(())
             },
@@ -238,7 +238,7 @@ impl FileFormatter {
         let mut stdin = std::io::stdin().lock();
 
         self.decode_file(&mut stdin, "<stdin>", buf)
-            .context("Failed to read from stdin")
+            .context("failed to read from stdin")
     }
 
     pub(crate) fn format_stdin_to_stdout(&self, error_handler: impl ErrHandler) {
@@ -247,7 +247,7 @@ impl FileFormatter {
             let decoded_stdin = self.decode_stdin(&mut buf)?;
             let formatted_input = self.formatter.format(&decoded_stdin.contents);
             Self::write_out(&mut std::io::stdout(), &decoded_stdin, &formatted_input)
-                .context("Failed to write to stdout")?;
+                .context("failed to write to stdout")?;
             Ok(())
         };
 

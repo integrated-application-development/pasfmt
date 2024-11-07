@@ -35,7 +35,7 @@ macro_rules! pasfmt_config {
                 if matches!(self.config.mode(), FormatMode::Files) && self.config.is_stdin() {
                     return Err(Self::command().error(
                         ErrorKind::ArgumentConflict,
-                        "Files mode not supported when reading from stdin.",
+                        "files mode not supported when reading from stdin",
                     ));
                 }
 
@@ -201,7 +201,7 @@ impl<'a> Provider for UnknownKeyErr<'a> {
 
     fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
         Err(figment::Error::from(format!(
-            "Unknown configuration key {:?}",
+            "unknown configuration key {:?}",
             self.key
         )))
     }
@@ -235,12 +235,12 @@ impl PasFmtConfiguration {
             Some(file) => {
                 if file.is_dir() {
                     bail!(
-                        "Config file path cannot be a directory: '{}'",
+                        "config file path cannot be a directory: '{}'",
                         file.display()
                     );
                 }
                 file.canonicalize().with_context(|| {
-                    format!("Failed to resolve config file path: '{}'", file.display())
+                    format!("failed to resolve config file path: '{}'", file.display())
                 })?
             }
             None => PathBuf::from(DEFAULT_CONFIG_FILE_NAME),
@@ -254,12 +254,11 @@ impl PasFmtConfiguration {
 
         let obj = config
             .extract::<T>()
-            .context("Failed to construct configuration")?;
+            .context("failed to construct configuration")?;
 
         debug!(
             "Configuration:\n{}",
-            toml::to_string_pretty(&obj)
-                .unwrap_or("Failed to serialize config object.".to_string())
+            toml::to_string_pretty(&obj).unwrap_or("failed to serialize config object".to_string())
         );
 
         Ok(obj)
@@ -273,7 +272,7 @@ impl FormatterConfiguration for PasFmtConfiguration {
             paths.to_mut().extend(
                 read_to_string(arg_file)
                     .with_context(|| {
-                        format!("Failed to read `--files-from` path: {}", arg_file.display())
+                        format!("failed to read `--files-from` path: {}", arg_file.display())
                     })?
                     .lines()
                     .map(String::from)
@@ -398,7 +397,7 @@ mod tests {
         // only on references and never on values, and mapping with `to_string()` would produce
         // a temporary value we cannot return a reference to.
         assert_that(&config.unwrap_err().to_string())
-            .starts_with("error: Files mode not supported when reading from stdin.");
+            .starts_with("error: files mode not supported when reading from stdin");
 
         Ok(())
     }
@@ -428,7 +427,7 @@ mod tests {
             let result = config.get_paths();
             assert_that(&result).is_err();
             assert_that(&result.unwrap_err().to_string())
-                .starts_with("Failed to read `--files-from` path:");
+                .starts_with("failed to read `--files-from` path:");
         }
 
         Ok(())
@@ -464,7 +463,7 @@ mod tests {
             assert_that(&config).is_err();
             assert_eq!(
                 format!("{:#}", config.unwrap_err()),
-                "Config file path cannot be a directory: '.'"
+                "config file path cannot be a directory: '.'"
             );
 
             Ok(())
@@ -484,7 +483,7 @@ mod tests {
 
             // The whole message is a bit hard to assert on, because it contains an OS error, which could vary.
             assert_that(&format!("{:?}", config.unwrap_err()))
-                .starts_with("Failed to resolve config file path:");
+                .starts_with("failed to resolve config file path:");
 
             Ok(())
         }
@@ -583,7 +582,7 @@ mod tests {
             assert_that(&obj).is_err();
             assert_eq!(
                 format!("{:#}", obj.unwrap_err()),
-                r#"Failed to construct configuration: Unknown configuration key "asdf" in command-line overrides"#
+                r#"failed to construct configuration: unknown configuration key "asdf" in command-line overrides"#
             );
 
             Ok(())

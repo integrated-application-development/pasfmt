@@ -18,7 +18,7 @@ fn windows_default_encoding() -> &'static Encoding {
         .and_then(|cp: u16| codepage::to_encoding(cp))
         .unwrap_or_else(|| {
             warn!(
-                "Failed to convert system codepage {} to encoding. Defaulting to UTF-8.",
+                "failed to convert system codepage {} to encoding, defaulting to UTF-8",
                 ansi_codepage
             );
             encoding_rs::UTF_8

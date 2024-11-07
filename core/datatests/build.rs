@@ -17,7 +17,7 @@ fn main() {
     if !test_root_dir.is_dir() {
         std::fs::create_dir(&test_root_dir).unwrap_or_else(|e| {
             panic!(
-                "Failed to create directory '{}', {e}",
+                "failed to create directory '{}', {e}",
                 &test_root_dir.display()
             )
         })
@@ -34,7 +34,7 @@ fn main() {
         remove_dir_if_present(&test_root_dir);
         std::fs::rename(&staging_test_root_dir, &test_root_dir).unwrap_or_else(|e| {
             panic!(
-                "Unable to rename '{}' to '{}', {e}",
+                "unable to rename '{}' to '{}', {e}",
                 &staging_test_root_dir.display(),
                 &test_root_dir.display()
             )
@@ -48,7 +48,7 @@ fn remove_dir_if_present(path: &PathBuf) {
     match std::fs::remove_dir_all(path) {
         Ok(()) => {}
         Err(e) if matches!(e.kind(), ErrorKind::NotFound) => {}
-        Err(e) => panic!("Unable to remove {}, {}", &path.display(), e),
+        Err(e) => panic!("unable to remove {}, {}", &path.display(), e),
     };
 }
 
@@ -75,8 +75,8 @@ fn get_dir_entries(root: &PathBuf) -> Vec<DirEntry> {
 fn read_file_bytes(file: &DirEntry) -> Vec<u8> {
     let mut contents = vec![];
     File::open(file.clone().into_path())
-        .unwrap_or_else(|e| panic!("Failed to open '{}', {e}", &file.path().display()))
+        .unwrap_or_else(|e| panic!("failed to open '{}', {e}", &file.path().display()))
         .read_to_end(&mut contents)
-        .unwrap_or_else(|e| panic!("Failed to read '{}', {e}", &file.path().display()));
+        .unwrap_or_else(|e| panic!("failed to read '{}', {e}", &file.path().display()));
     contents
 }

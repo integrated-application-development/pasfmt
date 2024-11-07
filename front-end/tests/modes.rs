@@ -76,12 +76,12 @@ fn format_files_to_stdout() -> TestResult {
     assert_eq!(
         read_to_string(child)?,
         "a ;",
-        "Files should not be written when formatting to stdout."
+        "files should not be written when formatting to stdout"
     );
     assert_eq!(
         read_to_string(child2)?,
         "b ;",
-        "Files should not be written when formatting to stdout."
+        "files should not be written when formatting to stdout"
     );
 
     Ok(())
@@ -158,12 +158,12 @@ fn check_files() -> TestResult {
     assert_eq!(
         read_to_string(formatted_child)?,
         formatted_child_orig_contents,
-        "Files should not be written when in check mode."
+        "files should not be written when in check mode"
     );
     assert_eq!(
         read_to_string(unformatted_child)?,
         "b ;",
-        "Files should not be written when in check mode."
+        "files should not be written when in check mode"
     );
 
     Ok(())

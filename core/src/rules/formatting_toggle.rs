@@ -42,7 +42,7 @@ fn parse_pasfmt_toggle(input: &str) -> Option<FormattingToggle> {
     } else if word.eq_ignore_ascii_case("off") {
         Some(FormattingToggle::Off)
     } else {
-        warn!("pasfmt directive comment found but '{word}' is neither 'on' nor 'off'.");
+        warn!("pasfmt directive comment found but '{word}' is neither 'on' nor 'off'");
         None
     }
 }

@@ -7,7 +7,7 @@ use crate::utils::*;
 fn non_existent() -> TestResult {
     fmt("foo.pas")?
         .failure()
-        .stderr(predicate::str::contains("ERROR Failed to open 'foo.pas'"));
+        .stderr(predicate::str::contains("ERROR failed to open 'foo.pas'"));
 
     Ok(())
 }
@@ -23,7 +23,7 @@ fn io_error_does_not_stop_formatting_other_files() -> TestResult {
         .current_dir(TESTS_DIR)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("ERROR Failed to open 'foo.pas'"));
+        .stderr(predicate::str::contains("ERROR failed to open 'foo.pas'"));
 
     child.assert("a;\n");
 
@@ -47,7 +47,7 @@ mod windows {
 
         fmt_with_lock(child.path(), LOCKFILE_EXCLUSIVE_LOCK)?
             .failure()
-            .stderr(predicate::str::contains("ERROR Failed to read "))
+            .stderr(predicate::str::contains("ERROR failed to read "))
             .stderr(predicate::str::contains(LOCKED_FILE_ERR_MSG));
 
         Ok(())
@@ -60,7 +60,7 @@ mod windows {
 
         fmt_with_lock(child.path(), 0)?
             .failure()
-            .stderr(predicate::str::contains("ERROR Failed to write to "))
+            .stderr(predicate::str::contains("ERROR failed to write to "))
             .stderr(predicate::str::contains(LOCKED_FILE_ERR_MSG));
 
         Ok(())

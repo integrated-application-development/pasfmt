@@ -36,7 +36,7 @@ fn lex_complete(input: &str) -> Vec<RawToken> {
     // Remaining input is always a programming error; invalid input should turn into 'Unknown' tokens.
     assert!(
         remaining.is_empty(),
-        "Failed to lex the entire input. Remaining input starts with: {}",
+        "failed to lex the entire input. Remaining input starts with: {}",
         rounded_prefix(remaining, 100)
     );
     tokens
@@ -471,7 +471,7 @@ fn get_word_token_type(input: &str) -> RawTokenType {
             if h < out.len() && out[h].is_none() {
                 out[h] = Some((*keyword, *token_type));
             } else {
-                panic!("Failed to construct keyword table.");
+                panic!("failed to construct keyword table");
             }
             i += 1;
         }
@@ -1350,7 +1350,7 @@ fn dot(args: LexArgs) -> OffsetAndTokenType {
 #[cold]
 fn unknown(args: LexArgs) -> OffsetAndTokenType {
     warn!(
-        "Found unexpected character: {}. Creating `Unknown` token.",
+        "found unexpected character: {}, creating `Unknown` token",
         *args.prev_byte().unwrap() as char
     );
     (args.offset, TT::Unknown)

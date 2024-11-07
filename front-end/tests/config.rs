@@ -4,7 +4,7 @@ use crate::utils::*;
 
 #[test]
 fn invalid_reconstruction_settings() -> TestResult {
-    const ERR_MSG: &str = "ERROR Invalid reconstruction settings: newline sequence must be all whitespace (was \"a\")";
+    const ERR_MSG: &str = "ERROR invalid reconstruction settings: newline sequence must be all whitespace (was \"a\")";
 
     pasfmt()?
         .arg("-Creconstruction.eol=a")
@@ -17,7 +17,7 @@ fn invalid_reconstruction_settings() -> TestResult {
 
 #[test]
 fn files_mode_conflicts_with_stdin() -> TestResult {
-    const ERR_MSG: &str = "error: Files mode not supported when reading from stdin.";
+    const ERR_MSG: &str = "error: files mode not supported when reading from stdin";
 
     pasfmt()?
         .arg("--mode=files")

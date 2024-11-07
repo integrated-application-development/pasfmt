@@ -578,7 +578,7 @@ pub struct InvalidReconstructionSettingsError {
 
 impl Display for InvalidReconstructionSettingsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Invalid reconstruction settings: {}", self.msg)
+        write!(f, "invalid reconstruction settings: {}", self.msg)
     }
 }
 
@@ -827,7 +827,7 @@ mod tests {
                     .err()
                     .unwrap()
                     .to_string(),
-                "Invalid reconstruction settings: newline sequence cannot be blank"
+                "invalid reconstruction settings: newline sequence cannot be blank"
             );
         }
     }
