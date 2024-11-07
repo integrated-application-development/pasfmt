@@ -26,7 +26,7 @@ fn bench_format_submodules(submodules: &[(&str, &PathBuf)], c: &mut Criterion) {
         group.bench_function(*name, |b| {
             b.iter(|| {
                 let config = Config::parse_from(["".into(), (*path).clone()]).config;
-                format_with_settings(FormattingSettings::default(), config).unwrap();
+                format_with_settings(FormattingSettings::default(), config, |e| panic!("{e:?}"));
             });
         });
     }

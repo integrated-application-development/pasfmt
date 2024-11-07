@@ -80,9 +80,20 @@ impl Default for Reconstruction {
 pub fn format_with_settings(
     formatting_settings: FormattingSettings,
     config: PasFmtConfiguration,
-) -> anyhow::Result<()> {
+    err_handler: impl ErrHandler,
+) {
     let uses_clause_formatter = &UsesClauseFormatter {};
     let eof_newline_formatter = &EofNewline {};
+
+    let reconstruction_settings: ReconstructionSettings =
+        match formatting_settings.reconstruction.try_into() {
+            Ok(s) => s,
+            Err(e) => {
+                err_handler(anyhow::Error::from(e));
+                return;
+            }
+        };
+
     let formatter = FileFormatter::new(
         Formatter::builder()
             .lexer(DelphiLexer {})
@@ -101,10 +112,10 @@ pub fn format_with_settings(
                 },
             ))
             .reconstructor(DelphiLogicalLinesReconstructor::new(
-                formatting_settings.reconstruction.try_into()?,
+                reconstruction_settings,
             ))
             .build(),
         formatting_settings.encoding,
     );
-    FormattingOrchestrator::run(formatter, config)
+    FormattingOrchestrator::run(formatter, config, err_handler);
 }

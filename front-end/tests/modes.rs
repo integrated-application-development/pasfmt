@@ -179,7 +179,7 @@ fn check_stdin() -> TestResult {
         .assert()
         .failure()
         .stderr(predicate::str::starts_with(
-            "Error: <stdin> is incorrectly formatted\n",
+            "ERROR CHECK: '<stdin>' has incorrect formatting\n",
         ));
 
     Ok(())

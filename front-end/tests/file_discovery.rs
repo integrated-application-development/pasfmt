@@ -154,9 +154,13 @@ fn glob_can_include_any_ext() -> TestResult {
 
 #[test]
 fn invalid_glob() -> TestResult {
+    let err_msg = "ERROR invalid glob expression `***`";
+    let err_details =
+        "Pattern syntax error near position 2: wildcards are either regular `*` or recursive `**`";
     fmt("***")?
-        .success()
-        .stderr(predicate::str::contains("WARN '***' is not a valid glob"));
+        .failure()
+        .stderr(predicate::str::contains(err_msg))
+        .stderr(predicate::str::contains(err_details));
 
     Ok(())
 }

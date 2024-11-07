@@ -14,6 +14,8 @@ use pasfmt_core::formatter::Formatter;
 use rayon::prelude::*;
 use walkdir::WalkDir;
 
+use crate::ErrHandler;
+
 struct DecodedFile<'a> {
     bom: Option<&'a [u8]>,
     contents: Cow<'a, str>,
@@ -32,43 +34,42 @@ impl FileFormatter {
         }
     }
 
-    fn warn_invalid_glob(&self, path: &str) {
-        warn!("'{}' is not a valid glob", path);
-    }
-
-    fn warn_invalid_file(&self, path: &str) {
-        warn!("'{}' is not a valid file path/glob", path);
-    }
-
-    fn find_files<S: AsRef<str>>(&self, paths: &[S]) -> Vec<PathBuf> {
-        let mut valid_paths = vec![];
+    fn expand_paths<S: AsRef<str>>(&self, paths: &[S]) -> Vec<Result<PathBuf, anyhow::Error>> {
+        let mut expanded_paths = vec![];
         paths.iter().map(AsRef::as_ref).for_each(|path_str| {
             let path = Path::new(path_str);
             match path.metadata() {
                 Ok(metadata) if metadata.is_dir() => {
-                    valid_paths.extend(WalkDir::new(path_str).into_iter().filter_map(|entry| {
-                        let entry = entry.ok()?;
-                        let file_path = entry.path();
-                        match formattable_file_path(file_path) {
-                            true => Some(file_path.to_path_buf()),
-                            false => None,
+                    expanded_paths.extend(WalkDir::new(path_str).into_iter().filter_map(|entry| {
+                        match entry {
+                            Ok(entry) => {
+                                let file_path = entry.path();
+                                match formattable_file_path(file_path) {
+                                    true => Some(Ok(file_path.to_path_buf())),
+                                    false => None,
+                                }
+                            }
+                            Err(e) => Some(Err(e.into())),
                         }
                     }));
                 }
-                _ if path_str.contains('*') => match glob(path_str) {
-                    Err(_) => self.warn_invalid_glob(path_str),
-                    Ok(glob) => glob.for_each(|entry| match entry {
-                        Err(_) => self.warn_invalid_file(path_str),
-                        Ok(path) => valid_paths.push(path),
-                    }),
-                },
+                _ if path_str.contains('*') => {
+                    match glob(path_str)
+                        .with_context(|| format!("invalid glob expression `{path_str}`"))
+                    {
+                        Err(e) => expanded_paths.push(Err(e)),
+                        Ok(glob) => {
+                            expanded_paths.extend(glob.map(|entry| entry.map_err(|e| e.into())))
+                        }
+                    }
+                }
                 _ => {
-                    valid_paths.push(path.to_path_buf());
+                    expanded_paths.push(Ok(path.to_path_buf()));
                 }
             }
         });
 
-        valid_paths
+        expanded_paths
     }
 
     fn decode_file<'a>(
@@ -103,20 +104,20 @@ impl FileFormatter {
         })
     }
 
-    #[must_use]
-    fn exec_format<S: AsRef<str>, T, O>(
+    fn exec_format<S, T, E>(
         &self,
         paths: &[S],
         mut open_options: OpenOptions,
         result_operation: T,
-    ) -> Vec<anyhow::Result<O>>
-    where
-        T: Fn(&mut File, &Path, &DecodedFile, &str) -> anyhow::Result<O> + Sync,
-        O: Send,
+        error_handler: E,
+    ) where
+        S: AsRef<str>,
+        E: ErrHandler,
+        T: Fn(&mut File, &Path, &DecodedFile, &str) -> anyhow::Result<()> + Sync,
     {
         open_options.read(true);
 
-        self.find_files(paths)
+        self.expand_paths(paths)
             .into_par_iter()
             .map_init(
                 || (Vec::<u8>::new(), String::new()),
@@ -124,6 +125,7 @@ impl FileFormatter {
                     input_buf.clear();
                     output_buf.clear();
 
+                    let file_path = file_path?;
                     let mut file = open_options
                         .open(&file_path)
                         .with_context(|| format!("Failed to open '{}'", file_path.display()))?;
@@ -137,17 +139,14 @@ impl FileFormatter {
                     result_operation(&mut file, &file_path, &decoded_file, output_buf)
                 },
             )
-            .map(|res| {
-                if let Err(e) = &res {
-                    error!("{:?}", e)
+            .for_each(|res| {
+                if let Err(e) = res {
+                    error_handler(e);
                 };
-                res
-            })
-            .collect()
+            });
     }
 
-    #[must_use]
-    pub fn format_files<S: AsRef<str>>(&self, paths: &[S]) -> Vec<anyhow::Result<()>> {
+    pub(crate) fn format_files<S: AsRef<str>>(&self, paths: &[S], error_handler: impl ErrHandler) {
         self.exec_format(
             paths,
             OpenOptions::new().write(true).to_owned(),
@@ -169,7 +168,8 @@ impl FileFormatter {
                 })?;
                 Ok(())
             },
-        )
+            error_handler,
+        );
     }
 
     fn encode_utf16(data: &str, u16_encoder: impl Fn(u16) -> [u8; 2]) -> Vec<u8> {
@@ -241,17 +241,26 @@ impl FileFormatter {
             .context("Failed to read from stdin")
     }
 
-    pub fn format_stdin_to_stdout(&self) -> anyhow::Result<()> {
-        let mut buf = vec![];
-        let decoded_stdin = self.decode_stdin(&mut buf)?;
-        let formatted_input = self.formatter.format(&decoded_stdin.contents);
-        Self::write_out(&mut std::io::stdout(), &decoded_stdin, &formatted_input)
-            .context("Failed to write to stdout")?;
-        Ok(())
+    pub(crate) fn format_stdin_to_stdout(&self, error_handler: impl ErrHandler) {
+        let inner = || {
+            let mut buf = vec![];
+            let decoded_stdin = self.decode_stdin(&mut buf)?;
+            let formatted_input = self.formatter.format(&decoded_stdin.contents);
+            Self::write_out(&mut std::io::stdout(), &decoded_stdin, &formatted_input)
+                .context("Failed to write to stdout")?;
+            Ok(())
+        };
+
+        if let Err(e) = inner() {
+            error_handler(e);
+        }
     }
 
-    #[must_use]
-    pub fn format_files_to_stdout<S: AsRef<str>>(&self, paths: &[S]) -> Vec<anyhow::Result<()>> {
+    pub(crate) fn format_files_to_stdout<S: AsRef<str>>(
+        &self,
+        paths: &[S],
+        error_handler: impl ErrHandler,
+    ) {
         self.exec_format(
             paths,
             OpenOptions::new(),
@@ -261,7 +270,8 @@ impl FileFormatter {
                 println!("{}:\n{}", file_path.display(), formatted_output);
                 Ok(())
             },
-        )
+            error_handler,
+        );
     }
 
     fn check_formatting(input: &str, output: &str, path: impl Display) -> anyhow::Result<()> {
@@ -271,8 +281,7 @@ impl FileFormatter {
         Ok(())
     }
 
-    #[must_use]
-    pub fn check_files<S: AsRef<str>>(&self, paths: &[S]) -> Vec<anyhow::Result<()>> {
+    pub(crate) fn check_files<S: AsRef<str>>(&self, paths: &[S], error_handler: impl ErrHandler) {
         self.exec_format(
             paths,
             OpenOptions::new(),
@@ -283,14 +292,21 @@ impl FileFormatter {
                     file_path.display(),
                 )
             },
-        )
+            error_handler,
+        );
     }
 
-    pub fn check_stdin(&self) -> anyhow::Result<()> {
-        let mut buf = vec![];
-        let decoded_stdin = self.decode_stdin(&mut buf)?;
-        let formatted_input = self.formatter.format(&decoded_stdin.contents);
-        Self::check_formatting(&decoded_stdin.contents, &formatted_input, "<stdin>")
+    pub(crate) fn check_stdin(&self, error_handler: impl ErrHandler) {
+        let inner = || {
+            let mut buf = vec![];
+            let decoded_stdin = self.decode_stdin(&mut buf)?;
+            let formatted_input = self.formatter.format(&decoded_stdin.contents);
+            Self::check_formatting(&decoded_stdin.contents, &formatted_input, "<stdin>")
+        };
+
+        if let Err(e) = inner() {
+            error_handler(e);
+        }
     }
 }
 

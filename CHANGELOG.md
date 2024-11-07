@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Error message when `--mode=check` fails on stdin, now reads `<stdin> is incorrectly formatted`.
+- Error message when `--mode=check` fails on stdin, now reads `'<stdin>' has incorrect formatting`.
 
 ### Added
 

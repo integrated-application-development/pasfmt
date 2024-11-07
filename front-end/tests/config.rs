@@ -4,7 +4,7 @@ use crate::utils::*;
 
 #[test]
 fn invalid_reconstruction_settings() -> TestResult {
-    const ERR_MSG: &str = "Error: Invalid reconstruction settings: newline sequence must be all whitespace (was \"a\")";
+    const ERR_MSG: &str = "ERROR Invalid reconstruction settings: newline sequence must be all whitespace (was \"a\")";
 
     pasfmt()?
         .arg("-Creconstruction.eol=a")

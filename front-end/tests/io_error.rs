@@ -7,8 +7,7 @@ use crate::utils::*;
 fn non_existent() -> TestResult {
     fmt("foo.pas")?
         .failure()
-        .stderr(predicate::str::contains("ERROR Failed to open 'foo.pas'"))
-        .stderr(predicate::str::contains("Error: 1 file with errors"));
+        .stderr(predicate::str::contains("ERROR Failed to open 'foo.pas'"));
 
     Ok(())
 }
@@ -24,8 +23,7 @@ fn io_error_does_not_stop_formatting_other_files() -> TestResult {
         .current_dir(TESTS_DIR)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("ERROR Failed to open 'foo.pas'"))
-        .stderr(predicate::str::contains("Error: 1 file with errors"));
+        .stderr(predicate::str::contains("ERROR Failed to open 'foo.pas'"));
 
     child.assert("a;\n");
 

@@ -189,7 +189,7 @@ mod malformed {
             .arg("-Cencoding=windows-1252")
             .assert()
             .failure()
-            .stderr(predicate::str::contains("Error: Failed to write to stdout"))
+            .stderr(predicate::str::contains("ERROR Failed to write to stdout"))
             .stderr(predicate::str::contains(
                 "Formatting result contains data that cannot be encoded as windows-1252",
             ));
