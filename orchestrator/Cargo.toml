@@ -13,7 +13,7 @@ toml = { workspace = true }
 walkdir = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
-figment = { workspace = true, features = ["toml", "env"] }
+config = { workspace = true, features = ["toml"] }
 anyhow = { workspace = true }
 anstyle = { workspace = true }
 

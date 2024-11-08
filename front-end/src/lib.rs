@@ -35,6 +35,7 @@ fn default_encoding() -> &'static Encoding {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct FormattingSettings {
     reconstruction: Reconstruction,
     encoding: &'static Encoding,
@@ -62,6 +63,7 @@ impl TryFrom<Reconstruction> for ReconstructionSettings {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 struct Reconstruction {
     eol: String,
     indentation: String,

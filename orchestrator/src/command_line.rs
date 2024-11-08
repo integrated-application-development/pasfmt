@@ -1,17 +1,19 @@
-use std::{borrow::Cow, error::Error, fs::read_to_string, path::PathBuf, str::FromStr};
+use std::{
+    borrow::{Borrow, Cow},
+    error::Error,
+    fs::read_to_string,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use anstyle::AnsiColor;
-use anyhow::{bail, Context};
+use anyhow::Context;
 pub use clap::{self, error::ErrorKind, CommandFactory, Parser};
 use clap::{
     builder::PossibleValuesParser, builder::Styles, builder::TypedValueParser, Args, ValueEnum,
 };
 
-use figment::{
-    providers::{Format, Serialized, Toml},
-    value::{Dict, Map, Value},
-    Figment, Metadata, Profile, Provider,
-};
+use config::{Config, File, FileFormat};
 use log::{debug, LevelFilter};
 use serde::{Deserialize, Serialize};
 
@@ -104,7 +106,7 @@ pub struct PasFmtConfiguration {
     /// Override one configuration option using KEY=VALUE. This takes
     /// precedence over `--config-file`.
     #[arg(short = 'C', value_parser = parse_key_val::<String, String>, value_name = "KEY=VALUE")]
-    config: Vec<(String, String)>,
+    overrides: Vec<(String, String)>,
 
     /// The mode of operation
     ///
@@ -157,103 +159,55 @@ fn get_styles() -> Styles {
         .placeholder(AnsiColor::White.on_default())
 }
 
-// By default, some providers save the source code location as their 'source'.
-// This struct and corresponding trait provide a way to erase that while also
-// providing a new name for the metadata.
-struct ErasedLocation<P: Provider> {
-    name: &'static str,
-    delegate: P,
-}
+impl PasFmtConfiguration {
+    fn find_config_file() -> std::io::Result<Option<PathBuf>> {
+        let mut path = std::env::current_dir()?;
+        loop {
+            path.push(DEFAULT_CONFIG_FILE_NAME);
 
-trait EraseLocation<P: Provider> {
-    fn erase_with_name(self, name: &'static str) -> ErasedLocation<P>;
-}
+            if path.is_file() {
+                return Ok(Some(path));
+            }
 
-impl<P: Provider> Provider for ErasedLocation<P> {
-    fn metadata(&self) -> Metadata {
-        Metadata::named(self.name)
-    }
-
-    fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        self.delegate.data()
-    }
-}
-
-impl<P: Provider> EraseLocation<P> for P {
-    fn erase_with_name(self, name: &'static str) -> ErasedLocation<P> {
-        ErasedLocation {
-            delegate: self,
-            name,
+            if !(path.pop() && path.pop()) {
+                debug!(
+                    "{} file not found in any parent directory",
+                    DEFAULT_CONFIG_FILE_NAME
+                );
+                return Ok(None);
+            }
         }
     }
-}
 
-const COMMAND_LINE_OVERRIDES_METADATA_NAME: &str = "command-line overrides";
+    fn get_config_file(&self) -> anyhow::Result<Option<Cow<Path>>> {
+        let config_file = match &self.config_file {
+            Some(file) => Some(Cow::Borrowed(file.as_path())),
+            None => Self::find_config_file()?.map(Cow::Owned),
+        };
 
-struct UnknownKeyErr<'a> {
-    key: &'a str,
-}
-
-impl<'a> Provider for UnknownKeyErr<'a> {
-    fn metadata(&self) -> Metadata {
-        Metadata::named(COMMAND_LINE_OVERRIDES_METADATA_NAME)
-    }
-
-    fn data(&self) -> Result<Map<Profile, Dict>, figment::Error> {
-        Err(figment::Error::from(format!(
-            "unknown configuration key {:?}",
-            self.key
-        )))
-    }
-}
-
-impl PasFmtConfiguration {
-    fn apply_overrides(&self, config: Figment) -> Figment {
-        self.config.iter().fold(config, |config, (key, val)| {
-            if config.find_metadata(key).is_none() {
-                config.merge(UnknownKeyErr { key })
-            } else {
-                let value: Result<_, std::convert::Infallible> = Value::from_str(val);
-                let value = value.unwrap(); // unwrapping is fine because the Err is Infallible
-                config.merge(
-                    Serialized::default(key, value)
-                        .erase_with_name(COMMAND_LINE_OVERRIDES_METADATA_NAME),
-                )
-            }
-        })
+        if let Some(f) = &config_file {
+            debug!("Using config file: {}", f.display());
+        }
+        Ok(config_file)
     }
 
     pub fn get_config_object<T>(&self) -> anyhow::Result<T>
     where
         T: for<'de> Deserialize<'de> + Serialize + Default,
     {
-        // A relative path will be searched for in the current directory and all parent directories.
-        // We want the user-provided path to only be resolved against the working directory, so we
-        // canonicalize it. We do want the default config path to be searched for in parent
-        // directories, so that path is left relative.
-        let config_file = match &self.config_file {
-            Some(file) => {
-                if file.is_dir() {
-                    bail!(
-                        "config file path cannot be a directory: '{}'",
-                        file.display()
-                    );
-                }
-                file.canonicalize().with_context(|| {
-                    format!("failed to resolve config file path: '{}'", file.display())
-                })?
-            }
-            None => PathBuf::from(DEFAULT_CONFIG_FILE_NAME),
-        };
-        debug!("Using config file: {}", config_file.display());
+        let mut builder = Config::builder().add_source(Config::try_from(&T::default())?);
 
-        let default_provider = Serialized::defaults(T::default()).erase_with_name("<default>");
-        let mut config = Figment::from(&default_provider).merge(Toml::file(config_file));
+        if let Some(f) = self.get_config_file()? {
+            builder = builder.add_source(File::from(f.borrow()).format(FileFormat::Toml));
+        }
 
-        config = self.apply_overrides(config);
+        for (key, val) in &self.overrides {
+            builder = builder.set_override(key, val.as_ref())?;
+        }
 
-        let obj = config
-            .extract::<T>()
+        let obj = builder
+            .build()?
+            .try_deserialize::<T>()
             .context("failed to construct configuration")?;
 
         debug!(
@@ -463,7 +417,7 @@ mod tests {
             assert_that(&config).is_err();
             assert_eq!(
                 format!("{:#}", config.unwrap_err()),
-                "config file path cannot be a directory: '.'"
+                "configuration file \".\" not found"
             );
 
             Ok(())
@@ -472,18 +426,15 @@ mod tests {
         #[test]
         fn config_file_must_exist() -> Result<(), Box<dyn Error>> {
             let tmp = TempDir::new()?;
-            let config: anyhow::Result<Settings> = config(&[
-                "",
-                "--config-file",
-                &tmp.join("does_not_exit").to_string_lossy(),
-            ])?
-            .get_config_object();
+            let config_path = tmp.join("does_not_exit");
+            let config: anyhow::Result<Settings> =
+                config(&["", "--config-file", &config_path.to_string_lossy()])?.get_config_object();
 
             assert_that(&config).is_err();
 
             // The whole message is a bit hard to assert on, because it contains an OS error, which could vary.
-            assert_that(&format!("{:?}", config.unwrap_err()))
-                .starts_with("failed to resolve config file path:");
+            let msg = format!("configuration file \"{}\" not found", config_path.display());
+            assert_that(&format!("{:?}", config.unwrap_err())).starts_with(&*msg);
 
             Ok(())
         }
@@ -577,48 +528,16 @@ mod tests {
         }
 
         #[test]
-        fn unknown_config_key_throws_error() -> Result<(), Box<dyn Error>> {
-            let obj: anyhow::Result<Settings, _> = config(&["", "-Casdf=0"])?.get_config_object();
-            assert_that(&obj).is_err();
-            assert_eq!(
-                format!("{:#}", obj.unwrap_err()),
-                r#"failed to construct configuration: unknown configuration key "asdf" in command-line overrides"#
-            );
-
-            Ok(())
-        }
-
-        #[test]
-        fn overrides_with_escaped_values() -> Result<(), Box<dyn Error>> {
+        fn overrides_with_escaped_values_not_supported() -> Result<(), Box<dyn Error>> {
             let cases = [
-                (
-                    "quoted backslash sequences should be unescaped",
-                    r#""\n""#,
-                    "\n",
-                ),
-                (
-                    "unquoted backslash sequences should not be unescaped",
-                    r#"\n"#,
-                    "\\n",
-                ),
-                (
-                    "quoted backslash sequences should be unescaped",
-                    r#""\\""#,
-                    "\\",
-                ),
-                (
-                    "unquoted backslash sequences should not be unescaped",
-                    r#"\\"#,
-                    "\\\\",
-                ),
-                ("quoted spaces should be preserved", r#"" ""#, " "),
-                ("unquoted spaces should be trimmed", " ", ""),
+                ("backslash sequences should not be unescaped", r#"\n\\"#),
+                ("quotes should not be trimmed", r#""a""#),
+                ("spaces should not be trimmed", " "),
             ];
 
-            for (desc, escaped, unescaped) in cases {
-                let obj: Settings =
-                    config(&["", &format!("-Cfoo={escaped}")])?.get_config_object()?;
-                assert_eq!(obj.foo, unescaped, "{}", desc);
+            for (desc, val) in cases {
+                let obj: Settings = config(&["", &format!("-Cfoo={val}")])?.get_config_object()?;
+                assert_eq!(obj.foo, val, "{}", desc);
             }
 
             Ok(())

@@ -121,16 +121,13 @@ mod codepages {
 
     #[test]
     fn invalid() -> TestResult {
-        let err_msg =
-            "invalid encoding label: cpASDF for key \"default.encoding\" in command-line overrides";
-
         pasfmt()?
             .write_stdin("a ;")
             .current_dir(TESTS_DIR)
             .arg("-Cencoding=cpASDF")
             .assert()
             .failure()
-            .stderr(predicate::str::contains(err_msg));
+            .stderr(predicate::str::contains("invalid encoding label: cpASDF"));
 
         Ok(())
     }
@@ -185,7 +182,7 @@ mod malformed {
         // it should fail to encode
         pasfmt()?
             .write_stdin("")
-            .arg("-Creconstruction.eol=\"\u{3000}\"")
+            .arg("-Creconstruction.eol=\u{3000}")
             .arg("-Cencoding=windows-1252")
             .assert()
             .failure()

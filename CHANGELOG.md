@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Default` trait impl for `PasFmtConfiguration`.
 - `LGeneric` and `RGeneric` token type in favour of `ChevronKind`.
 - `OperatorKind::Pointer` in favour of `OperatorKind::Caret`.
+- Ability to override configuration on the CLI with escaped values eg (`-Ckey="\uFF"`).
 
 ### Changed
 

@@ -43,15 +43,12 @@ fn invalid_option() -> TestResult {
 }
 
 #[test]
-fn invalid_keys_in_toml_are_ignored() -> TestResult {
+fn invalid_keys_in_toml_raise_error() -> TestResult {
     let config = assert_fs::NamedTempFile::new("pasfmt.toml")?;
-    // While we'd probably prefer to get a warning for invalid keys in the config file,
-    // The framework we're using doesn't support that.
     config.write_str(
         "\
         asdf = 0\n\
         [reconstruction]\n\
-        foo = \" \"\n\
         eol = \" \"\n\
         ",
     )?;
@@ -61,8 +58,11 @@ fn invalid_keys_in_toml_are_ignored() -> TestResult {
         .arg("--config-file")
         .arg(config.path())
         .assert()
-        .success()
-        .stdout("a ");
+        .failure()
+        .stderr(predicates::str::contains(
+            "ERROR failed to construct configuration",
+        ))
+        .stderr(predicates::str::contains("unknown field `asdf`, expected "));
 
     Ok(())
 }
