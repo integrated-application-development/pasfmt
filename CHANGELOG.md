@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `LGeneric` and `RGeneric` token type in favour of `ChevronKind`.
 - `OperatorKind::Pointer` in favour of `OperatorKind::Caret`.
 - Ability to override configuration on the CLI with escaped values eg (`-Ckey="\uFF"`).
+- Use of `Default::default` in `PasFmtConfiguration::get_config_object` to initialise the
+  configuration object defaults. Users can instead provide the defaults in the `Deserialize` impl.
 
 ### Changed
 

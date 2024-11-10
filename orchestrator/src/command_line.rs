@@ -193,9 +193,9 @@ impl PasFmtConfiguration {
 
     pub fn get_config_object<T>(&self) -> anyhow::Result<T>
     where
-        T: for<'de> Deserialize<'de> + Serialize + Default,
+        T: for<'de> Deserialize<'de> + Serialize,
     {
-        let mut builder = Config::builder().add_source(Config::try_from(&T::default())?);
+        let mut builder = Config::builder();
 
         if let Some(f) = self.get_config_file()? {
             builder = builder.add_source(File::from(f.borrow()).format(FileFormat::Toml));
@@ -397,16 +397,24 @@ mod tests {
         }
 
         #[derive(Serialize, Deserialize, Debug, Default, PartialEq, Eq)]
+        #[serde(deny_unknown_fields)]
         struct Nested {
+            #[serde(default)]
             bar: i32,
+            #[serde(default)]
             baz: Option<SettingEnum>,
         }
 
-        #[derive(Serialize, Deserialize, Debug, Default, PartialEq, Eq)]
+        #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+        #[serde(deny_unknown_fields)]
         struct Settings {
+            #[serde(default)]
             foo: String,
+            #[serde(default)]
             bar: i32,
+            #[serde(default)]
             baz: Option<SettingEnum>,
+            #[serde(default)]
             nested: Nested,
         }
 

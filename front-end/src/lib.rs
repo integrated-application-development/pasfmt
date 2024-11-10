@@ -37,7 +37,9 @@ fn default_encoding() -> &'static Encoding {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct FormattingSettings {
+    #[serde(default = "Reconstruction::default")]
     reconstruction: Reconstruction,
+    #[serde(default = "default_encoding")]
     encoding: &'static Encoding,
 }
 
@@ -65,16 +67,31 @@ impl TryFrom<Reconstruction> for ReconstructionSettings {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 struct Reconstruction {
+    #[serde(default = "default_eol")]
     eol: String,
+    #[serde(default = "default_indentation")]
     indentation: String,
+    #[serde(default = "default_continuation")]
     continuation: Option<String>,
 }
+
+fn default_eol() -> String {
+    "\r\n".to_owned()
+}
+
+fn default_indentation() -> String {
+    "  ".to_owned()
+}
+fn default_continuation() -> Option<String> {
+    None
+}
+
 impl Default for Reconstruction {
     fn default() -> Self {
         Reconstruction {
-            eol: "\r\n".to_owned(),
-            indentation: "  ".to_owned(),
-            continuation: None,
+            eol: default_eol(),
+            indentation: default_indentation(),
+            continuation: default_continuation(),
         }
     }
 }
