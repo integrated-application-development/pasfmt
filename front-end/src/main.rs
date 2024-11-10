@@ -2,6 +2,7 @@ use std::process::ExitCode;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
+use log::debug;
 use log::error;
 use pasfmt::format_with_settings;
 use pasfmt::FormattingSettings;
@@ -28,6 +29,7 @@ fn main() -> ExitCode {
 
     match config.get_config_object::<FormattingSettings>() {
         Ok(formatting_settings) => {
+            debug!("Configuration:\n{:#?}", formatting_settings);
             format_with_settings(formatting_settings, config, err_handler);
         }
         Err(e) => err_handler(e),

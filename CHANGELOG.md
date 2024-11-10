@@ -15,10 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to override configuration on the CLI with escaped values eg (`-Ckey="\uFF"`).
 - Use of `Default::default` in `PasFmtConfiguration::get_config_object` to initialise the
   configuration object defaults. Users can instead provide the defaults in the `Deserialize` impl.
+- Logging of the (toml-serialised) configuration object in `PasFmtConfiguration::get_config_object`.
+  Users can log the object however they want outside of this function.
 
 ### Changed
 
 - Error message when `--mode=check` fails on stdin, now reads `'<stdin>' has incorrect formatting`.
+- Style of the (debug-level) logging of the current configuration. Previously it was in TOML format,
+  now it's a simpler struct-level debug formatting.
 
 ### Added
 

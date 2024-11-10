@@ -3,7 +3,7 @@
 use encoding_rs::Encoding;
 use pasfmt_core::prelude::*;
 use pasfmt_orchestrator::predule::*;
-use serde_derive::{Deserialize, Serialize};
+use serde_derive::Deserialize;
 
 #[cfg(windows)]
 fn windows_default_encoding() -> &'static Encoding {
@@ -34,7 +34,7 @@ fn default_encoding() -> &'static Encoding {
     encoding_rs::UTF_8
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct FormattingSettings {
     #[serde(default = "Reconstruction::default")]
@@ -64,7 +64,7 @@ impl TryFrom<Reconstruction> for ReconstructionSettings {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 struct Reconstruction {
     #[serde(default = "default_eol")]

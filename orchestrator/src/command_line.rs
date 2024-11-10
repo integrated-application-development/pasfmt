@@ -15,7 +15,7 @@ use clap::{
 
 use config::{Config, File, FileFormat};
 use log::{debug, LevelFilter};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::formatting_orchestrator::FormatterConfiguration;
 
@@ -193,7 +193,7 @@ impl PasFmtConfiguration {
 
     pub fn get_config_object<T>(&self) -> anyhow::Result<T>
     where
-        T: for<'de> Deserialize<'de> + Serialize,
+        T: for<'de> Deserialize<'de>,
     {
         let mut builder = Config::builder();
 
@@ -205,17 +205,10 @@ impl PasFmtConfiguration {
             builder = builder.set_override(key, val.as_ref())?;
         }
 
-        let obj = builder
+        builder
             .build()?
             .try_deserialize::<T>()
-            .context("failed to construct configuration")?;
-
-        debug!(
-            "Configuration:\n{}",
-            toml::to_string_pretty(&obj).unwrap_or("failed to serialize config object".to_string())
-        );
-
-        Ok(obj)
+            .context("failed to construct configuration")
     }
 }
 
@@ -258,7 +251,6 @@ impl FormatterConfiguration for PasFmtConfiguration {
 mod tests {
     use super::*;
     use assert_fs::{prelude::*, TempDir};
-    use serde_derive::{Deserialize, Serialize};
     use spectral::prelude::*;
 
     pasfmt_config!(Config);
@@ -390,13 +382,13 @@ mod tests {
     mod cfg {
         use super::*;
 
-        #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+        #[derive(Deserialize, Debug, PartialEq, Eq)]
         enum SettingEnum {
             A,
             B,
         }
 
-        #[derive(Serialize, Deserialize, Debug, Default, PartialEq, Eq)]
+        #[derive(Deserialize, Debug, Default, PartialEq, Eq)]
         #[serde(deny_unknown_fields)]
         struct Nested {
             #[serde(default)]
@@ -405,7 +397,7 @@ mod tests {
             baz: Option<SettingEnum>,
         }
 
-        #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+        #[derive(Deserialize, Debug, PartialEq, Eq)]
         #[serde(deny_unknown_fields)]
         struct Settings {
             #[serde(default)]
