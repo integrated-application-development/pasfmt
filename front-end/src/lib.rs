@@ -6,29 +6,34 @@ use pasfmt_orchestrator::predule::*;
 use serde_derive::Deserialize;
 
 #[cfg(windows)]
-fn windows_default_encoding() -> &'static Encoding {
-    use log::warn;
-
+fn get_windows_default_encoding() -> &'static Encoding {
     // SAFETY: yes it's a foreign function, but it's a simple one from the WinAPI that we
     // can assume to be safe.
     let ansi_codepage = unsafe { windows_sys::Win32::Globalization::GetACP() };
-    ansi_codepage
+    let encoding = ansi_codepage
         .try_into()
         .ok()
         .and_then(|cp: u16| codepage::to_encoding(cp))
         .unwrap_or_else(|| {
-            warn!(
+            log::warn!(
                 "failed to convert system codepage {} to encoding, defaulting to UTF-8",
                 ansi_codepage
             );
             encoding_rs::UTF_8
-        })
+        });
+    log::debug!("encoding from system ANSI codepage: {}", encoding.name());
+    encoding
 }
 
 fn default_encoding() -> &'static Encoding {
     #[cfg(windows)]
     {
-        windows_default_encoding()
+        use std::sync::LazyLock;
+
+        static WINDOWS_DEFAULT_ENCODING: LazyLock<&'static Encoding> =
+            LazyLock::new(get_windows_default_encoding);
+
+        *WINDOWS_DEFAULT_ENCODING
     }
     #[cfg(not(windows))]
     encoding_rs::UTF_8
