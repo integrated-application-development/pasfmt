@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parsing of generics parameters in routine headers.
 - Block comment kind for multiline comments on their own line.
 - Parsing of anonymous routines with trailing semicolons.
+- Errors on writing non-ASCII data in an ANSI encoding to a Windows Console. Now written as Unicode.
 
 ## [0.3.0] - 2024-05-29
 

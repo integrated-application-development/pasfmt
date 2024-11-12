@@ -16,6 +16,8 @@ use walkdir::WalkDir;
 
 use crate::ErrHandler;
 
+type WriteResult = std::io::Result<u64>;
+
 struct DecodedFile<'a> {
     bom: Option<&'a [u8]>,
     contents: Cow<'a, str>,
@@ -74,7 +76,7 @@ impl FileFormatter {
 
     fn decode_file<'a>(
         &self,
-        file: &mut impl Read,
+        mut file: impl Read,
         name: impl Display,
         buf: &'a mut Vec<u8>,
     ) -> anyhow::Result<DecodedFile<'a>> {
@@ -161,7 +163,7 @@ impl FileFormatter {
                 file.seek(SeekFrom::Start(0)).with_context(|| {
                     format!("failed to seek to start of file: '{}'", file_path.display())
                 })?;
-                let new_len = Self::write_out(file, decoded_file, formatted_output)
+                let new_len = Self::write_file(&mut *file, decoded_file, formatted_output)
                     .with_context(|| format!("failed to write to '{}'", file_path.display()))?;
                 file.set_len(new_len).with_context(|| {
                     format!("failed to set file length: '{}'", file_path.display())
@@ -213,15 +215,16 @@ impl FileFormatter {
         }
     }
 
-    fn write_out(
-        write: &mut impl Write,
-        decoded: &DecodedFile,
+    fn write(
+        mut write: impl Write,
+        encoding: &'static Encoding,
+        bom: Option<&[u8]>,
         data: &str,
-    ) -> std::io::Result<u64> {
-        let encoded_output = Self::encode(decoded.encoding, data)?;
+    ) -> WriteResult {
+        let encoded_output = Self::encode(encoding, data)?;
 
         let mut len = 0;
-        if let Some(bom) = decoded.bom {
+        if let Some(bom) = bom {
             write.write_all(bom)?;
             len += bom.len();
         }
@@ -231,13 +234,36 @@ impl FileFormatter {
         Ok(len as u64)
     }
 
+    fn write_file(write: impl Write, decoded_file: &DecodedFile, data: &str) -> WriteResult {
+        Self::write(write, decoded_file.encoding, decoded_file.bom, data)
+    }
+
+    fn write_stdout(decoded_file: &DecodedFile, data: &str) -> WriteResult {
+        let stdout = std::io::stdout().lock();
+        let (encoding, bom) = if stdout.is_terminal() {
+            /*
+               stdout is a terminal, so we use UTF-8 as the output encoding because when std::io
+               writes to a Windows console it uses the W variants of the winapi functions which
+               require code units as u16. std::io takes the approach of converting the input from
+               UTF-8 to UTF-16, and returning an error if the input wasn't valid UTF-8.
+
+               See https://github.com/rust-lang/rust/issues/23344#issuecomment-228208528
+            */
+            debug!("writing output as UTF-8 because stdout was detected to be a console");
+            (encoding_rs::UTF_8, None)
+        } else {
+            (decoded_file.encoding, decoded_file.bom)
+        };
+
+        Self::write(stdout, encoding, bom, data)
+    }
+
     fn decode_stdin<'a>(&self, buf: &'a mut Vec<u8>) -> anyhow::Result<DecodedFile<'a>> {
-        if std::io::stdin().is_terminal() {
+        let stdin = std::io::stdin().lock();
+        if stdin.is_terminal() {
             eprintln!("waiting for stdin...");
         }
-        let mut stdin = std::io::stdin().lock();
-
-        self.decode_file(&mut stdin, "<stdin>", buf)
+        self.decode_file(stdin, "<stdin>", buf)
             .context("failed to read from stdin")
     }
 
@@ -246,7 +272,7 @@ impl FileFormatter {
             let mut buf = vec![];
             let decoded_stdin = self.decode_stdin(&mut buf)?;
             let formatted_input = self.formatter.format(&decoded_stdin.contents);
-            Self::write_out(&mut std::io::stdout(), &decoded_stdin, &formatted_input)
+            Self::write_stdout(&decoded_stdin, &formatted_input)
                 .context("failed to write to stdout")?;
             Ok(())
         };
@@ -265,9 +291,17 @@ impl FileFormatter {
             paths,
             OpenOptions::new(),
             |_, file_path, _, formatted_output| {
-                // Append a newline to the formatted output deliberately because makes it more
-                // human-readable and no less machine-readable.
-                println!("{}:\n{}", file_path.display(), formatted_output);
+                /*
+                   Write the output as UTF-8 — don't re-encode it.
+
+                   In this case, all the files are being concatenated to stdout.
+                   Each file could have a different encoding, so it doesn't make sense use the
+                   original encodings.
+
+                   Also, append an additional newline because makes it more human-readable and no
+                   less machine-readable.
+                */
+                print!("{}:\n{}\n", file_path.display(), formatted_output);
                 Ok(())
             },
             error_handler,

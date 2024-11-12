@@ -110,6 +110,9 @@ pub struct PasFmtConfiguration {
     ///
     /// The default is `files`, unless data is being read from stdin, in which
     /// case the default is `stdout`.
+    ///
+    /// When the mode is `stdout` and data is being read from files, all output
+    /// is concatenated in a human-readable format.
     #[arg(short, long, value_enum)]
     mode: Option<FormatMode>,
 
