@@ -282,9 +282,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         let mut push_program_head_context = |context_type| {
                             self.context.push(ParserContext {
                                 context_type,
-                                parent: None,
                                 context_ending_predicate: never_ending,
-                                level_delta: 0,
+                                level: ParserContextLevel::Level(0),
                             });
                         };
                         use ContextType as CT;
@@ -323,9 +322,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     let mut push_section_context = |context_type, level_delta| {
                         self.parse_block(ParserContext {
                             context_type,
-                            parent: None,
                             context_ending_predicate: section_headings,
-                            level_delta,
+                            level: ParserContextLevel::Level(level_delta),
                         });
                     };
                     match keyword_kind {
@@ -340,9 +338,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.next_token();
                     self.parse_block(ParserContext {
                         context_type: ContextType::CompoundStatement,
-                        parent: None,
                         context_ending_predicate: end,
-                        level_delta: 1,
+                        level: ParserContextLevel::Level(1),
                     });
                     self.next_token(); // End
                     if let Some(TT::Op(OK::Dot)) = self.get_current_token_type() {
@@ -362,9 +359,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.next_token(); // Repeat
                     self.parse_block(ParserContext {
                         context_type: ContextType::RepeatBlock,
-                        parent: None,
                         context_ending_predicate: until,
-                        level_delta: 1,
+                        level: ParserContextLevel::Level(1),
                     });
                     self.next_token(); // Until
                     let context_ending_predicate = match self.get_last_context() {
@@ -373,9 +369,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     };
                     self.context.push(ParserContext {
                         context_type: ContextType::BlockClause,
-                        parent: None,
                         context_ending_predicate,
-                        level_delta: 0,
+                        level: ParserContextLevel::Level(0),
                     });
                     self.parse_statement();
                     self.context.pop();
@@ -386,9 +381,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.next_token(); // Try
                     self.parse_block(ParserContext {
                         context_type: ContextType::TryBlock,
-                        parent: None,
                         context_ending_predicate: except_finally,
-                        level_delta: 1,
+                        level: ParserContextLevel::Level(1),
                     });
                     let context_type = match self.get_current_token_type() {
                         Some(TT::Keyword(KK::Except)) => ContextType::ExceptBlock,
@@ -397,17 +391,15 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.next_token(); // Except/Finally
                     self.parse_block(ParserContext {
                         context_type,
-                        parent: None,
                         context_ending_predicate: else_end,
-                        level_delta: 1,
+                        level: ParserContextLevel::Level(1),
                     });
                     if let Some(TT::Keyword(KK::Else)) = self.get_current_token_type() {
                         self.next_token(); // Else
                         self.parse_block(ParserContext {
                             context_type: ContextType::CompoundStatement,
-                            parent: None,
                             context_ending_predicate: end,
-                            level_delta: 1,
+                            level: ParserContextLevel::Level(1),
                         });
                     }
                     self.next_token(); // End
@@ -423,9 +415,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     // Continue parsing until do pops this context
                     self.context.push(ParserContext {
                         context_type: ContextType::BlockClause,
-                        parent: None,
                         context_ending_predicate: never_ending,
-                        level_delta: 0,
+                        level: ParserContextLevel::Level(0),
                     });
                 }
                 TT::Keyword(keyword_kind @ (KK::For | KK::While | KK::With)) => {
@@ -437,9 +428,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     // Continue parsing until do pops this context
                     self.context.push(ParserContext {
                         context_type: ContextType::BlockClause,
-                        parent: None,
                         context_ending_predicate: never_ending,
-                        level_delta: 0,
+                        level: ParserContextLevel::Level(0),
                     });
                     self.parse_statement();
                 }
@@ -449,9 +439,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     // Continue parsing until then pops this context
                     self.context.push(ParserContext {
                         context_type: ContextType::BlockClause,
-                        parent: None,
                         context_ending_predicate: never_ending,
-                        level_delta: 0,
+                        level: ParserContextLevel::Level(0),
                     })
                 }
                 TT::Keyword(KK::Then) => {
@@ -473,9 +462,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     if tagged_record {
                         self.context.push(ParserContext {
                             context_type: ContextType::DeclarationBlock,
-                            parent: None,
                             context_ending_predicate: never_ending,
-                            level_delta: -1,
+                            level: ParserContextLevel::Level(-1),
                         })
                     }
                     self.next_token(); // Case
@@ -484,9 +472,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.set_logical_line_type(LLT::CaseHeader);
                     self.context.push(ParserContext {
                         context_type: ContextType::BlockClause,
-                        parent: None,
                         context_ending_predicate: never_ending,
-                        level_delta: 0,
+                        level: ParserContextLevel::Level(0),
                     });
                 }
                 TT::Keyword(KK::Of) => {
@@ -494,18 +481,16 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.finish_logical_line();
                     self.parse_block(ParserContext {
                         context_type: ContextType::CaseStatement,
-                        parent: None,
                         context_ending_predicate: else_end,
-                        level_delta: 1,
+                        level: ParserContextLevel::Level(1),
                     });
                     if let Some(TT::Keyword(KK::Else)) = self.get_current_token_type() {
                         self.next_token(); // Else
                         self.finish_logical_line();
                         self.parse_block(ParserContext {
                             context_type: ContextType::CompoundStatement,
-                            parent: None,
                             context_ending_predicate: end,
-                            level_delta: 1,
+                            level: ParserContextLevel::Level(1),
                         });
                     }
                     let tagged_record =
@@ -566,9 +551,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
 
                     self.parse_block(ParserContext {
                         context_type: ContextType::VisibilityBlock,
-                        parent: None,
                         context_ending_predicate: visibility_block_ending,
-                        level_delta: 1,
+                        level: ParserContextLevel::Level(1),
                     });
                 }
                 TT::Keyword(
@@ -597,9 +581,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         */
                         self.context.push(ParserContext {
                             context_type: ContextType::SubRoutine,
-                            parent: None,
                             context_ending_predicate: never_ending,
-                            level_delta: -1,
+                            level: ParserContextLevel::Level(-1),
                         })
                     }
                     self.finish_logical_line();
@@ -609,9 +592,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     };
                     self.parse_block(ParserContext {
                         context_type,
-                        parent: None,
                         context_ending_predicate: declaration_section,
-                        level_delta: 1,
+                        level: ParserContextLevel::Level(1),
                     });
                     if reduce_level {
                         self.context.pop();
@@ -639,14 +621,13 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     if !is_forward_declaration {
                         self.parse_block(ParserContext {
                             context_type: ContextType::SubRoutine,
-                            parent: None,
                             context_ending_predicate: begin_asm,
-                            level_delta: 1,
+                            level: ParserContextLevel::Level(1),
                         });
                         match self.get_current_token_type() {
                             Some(TT::Keyword(KK::Asm)) => self.parse_asm_block(),
                             Some(TT::Keyword(KK::Begin)) => {
-                                self.parse_begin_end(false, 1);
+                                self.parse_begin_end(ParserContextLevel::Level(1));
                                 self.take_until(no_more_separators());
                                 self.finish_logical_line();
                             }
@@ -752,16 +733,14 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.finish_logical_line();
                     self.context.push(ParserContext {
                         context_type: ContextType::TypeDeclaration,
-                        parent: None,
                         context_ending_predicate: end,
-                        level_delta: 0,
+                        level: ParserContextLevel::Level(0),
                     });
                     // For the implicit published visibility section
                     self.context.push(ParserContext {
                         context_type: ContextType::VisibilityBlock,
-                        parent: None,
                         context_ending_predicate: visibility_block_ending,
-                        level_delta: 1,
+                        level: ParserContextLevel::Level(1),
                     });
                     if let Some((TT::Op(OK::LBrack), TT::TextLiteral(_))) = self
                         .get_current_token_type()
@@ -807,9 +786,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
 
                     self.context.push(ParserContext {
                         context_type: ContextType::InlineStatement,
-                        parent: None,
                         context_ending_predicate: semicolon_else_or_parent,
-                        level_delta: 1,
+                        level: ParserContextLevel::Level(1),
                     });
                     self.parse_structures();
                     self.finish_logical_line();
@@ -829,9 +807,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
 
                     self.context.push(ParserContext {
                         context_type: ContextType::InlineStatement,
-                        parent: None,
                         context_ending_predicate: semicolon_else_or_parent,
-                        level_delta: 1,
+                        level: ParserContextLevel::Level(1),
                     });
                     self.parse_structures();
                     self.finish_logical_line();
@@ -991,9 +968,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.next_token();
                     self.parse_block(ParserContext {
                         context_type: ContextType::CompoundStatement,
-                        parent: None,
                         context_ending_predicate: end,
-                        level_delta: 1,
+                        level: ParserContextLevel::Level(1),
                     });
                     self.next_token();
                     self.take_until(no_more_separators());
@@ -1024,11 +1000,11 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     }
 
     fn parse_block(&mut self, context: ParserContext) {
-        let context_has_parent = context.parent.is_some();
-        if context_has_parent {
+        let context_parent = context.level.parent();
+        if context_parent.is_some() {
             let new_logical_line = self.result_lines.len();
             self.result_lines.push(LocalLogicalLine {
-                parent: context.parent,
+                parent: context_parent,
                 level: 0,
                 tokens: vec![],
                 line_type: LLT::Unknown,
@@ -1043,7 +1019,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         self.context.pop();
 
         self.finish_logical_line();
-        if context_has_parent {
+        if context_parent.is_some() {
             self.current_line.pop();
         }
     }
@@ -1102,16 +1078,15 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.next_token(); // Label/Const/Type/Var
                     self.parse_block(ParserContext {
                         context_type,
-                        parent: Some(parent),
                         context_ending_predicate: local_declaration_section,
-                        level_delta: 0i16.saturating_sub_unsigned(self.get_context_level()),
+                        level: ParserContextLevel::Parent(parent, 0),
                     });
                 }
                 TT::Keyword(KK::Begin) => {
-                    self.parse_begin_end(
-                        true,
-                        0i16.saturating_sub_unsigned(self.get_context_level()),
-                    );
+                    self.parse_begin_end(ParserContextLevel::Parent(
+                        self.get_line_parent_of_current_token(),
+                        0,
+                    ));
                     break;
                 }
                 TT::Op(OK::Semicolon | OK::RParen | OK::RBrack) => break,
@@ -1350,9 +1325,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
 
         self.context.push(ParserContext {
             context_type: ContextType::CompoundStatement,
-            parent: None,
             context_ending_predicate: never_ending,
-            level_delta: 1,
+            level: ParserContextLevel::Level(1),
         });
         self.parse_asm_instructions();
         self.context.pop();
@@ -1384,18 +1358,12 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         }
         self.finish_logical_line();
     }
-    fn parse_begin_end(&mut self, parent: bool, level_delta: i16) {
-        let parent = if parent {
-            Some(self.get_line_parent_of_current_token())
-        } else {
-            None
-        };
+    fn parse_begin_end(&mut self, context_level: ParserContextLevel) {
         self.next_token(); // Begin
         self.parse_block(ParserContext {
             context_type: ContextType::CompoundStatement,
-            parent,
             context_ending_predicate: end,
-            level_delta,
+            level: context_level,
         });
         self.next_token(); // End
     }
@@ -1532,7 +1500,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             self.get_current_logical_line_mut().tokens.push(token_index);
             self.pass_index += 1;
         }
-        let mut context_level = self.get_context_level();
+        let (parent, context_level) = self.get_context_level();
 
         for unfinished_line in self.unfinished_comment_lines.drain(..).collect_vec() {
             if let Some(line) = self.get_logical_line_from_ref_mut(unfinished_line) {
@@ -1541,19 +1509,6 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         }
 
         let line_ref = *self.current_line.last();
-        let parent = self
-            .context
-            .iter()
-            .filter_map(|context| context.parent)
-            .next_back();
-
-        if let Some(parent) = parent {
-            context_level = context_level.saturating_sub(
-                self.get_logical_line_from_ref(parent.line_index)
-                    .unwrap()
-                    .level,
-            );
-        }
 
         {
             let line = self.get_logical_line_from_ref_mut(line_ref).unwrap();
@@ -1811,17 +1766,26 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             .last()
             .map(|&ParserContext { context_type, .. }| context_type)
     }
-    fn get_context_level(&self) -> u16 {
+    fn get_context_level(&self) -> (Option<LineParent>, u16) {
         /*
             The approach of widening and then narrowing is used to ensure there is no
             intermediary overflow while summing the level deltas.
         */
-        self.context
-            .iter()
-            .map(|&ParserContext { level_delta, .. }| level_delta as i64)
-            .sum::<i64>()
-            .clamp(u16::MIN as i64, u16::MAX as i64) as u16
+        let mut sum = 0i64;
+        let mut parent = None;
+        for ctx in self.context.iter().rev() {
+            match ctx.level {
+                ParserContextLevel::Parent(line_parent, level_delta) => {
+                    parent = Some(line_parent);
+                    sum += level_delta as i64;
+                    break;
+                }
+                ParserContextLevel::Level(level_delta) => sum += level_delta as i64,
+            };
+        }
+        (parent, sum.clamp(u16::MIN as i64, u16::MAX as i64) as u16)
     }
+
     fn get_line_parent_of_current_token(&self) -> LineParent {
         LineParent {
             line_index: *self.current_line.last(),
@@ -2091,11 +2055,26 @@ struct LocalLogicalLine {
 use LogicalLineType as LLT;
 
 #[derive(Debug)]
+enum ParserContextLevel {
+    /// When a parser context has a parent, the level is used as an absolute level.
+    Parent(LineParent, u16),
+    /// When a context has no parent, the level is used as a level delta.
+    Level(i16),
+}
+impl ParserContextLevel {
+    fn parent(&self) -> Option<LineParent> {
+        match self {
+            Self::Level(_) => None,
+            Self::Parent(parent, _) => Some(*parent),
+        }
+    }
+}
+
+#[derive(Debug)]
 struct ParserContext {
     context_type: ContextType,
-    parent: Option<LineParent>,
     context_ending_predicate: ContextEndingPredicate,
-    level_delta: i16,
+    level: ParserContextLevel,
 }
 
 fn is_operator(token_type: RawTokenType) -> bool {
