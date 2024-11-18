@@ -2675,6 +2675,8 @@ mod statements {
                 assign_l = "A := A + A * B",
                 assign_r = "A.B[C + D] := 0",
                 assign = "A.B[C + D] := E + F mod G",
+                anonymous_proc = "A := procedure begin end",
+                anonymous_func = "A := function: Boolean begin end",
             );
         }
     }

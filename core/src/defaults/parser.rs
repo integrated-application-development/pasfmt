@@ -650,6 +650,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                             Some(TT::Keyword(KK::Asm)) => self.parse_asm_block(),
                             Some(TT::Keyword(KK::Begin)) => {
                                 self.parse_begin_end(false, 1);
+                                self.take_until(no_more_separators());
                                 self.finish_logical_line();
                             }
                             _ => {}
@@ -1400,7 +1401,6 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             level_delta,
         });
         self.next_token(); // End
-        self.take_until(no_more_separators());
     }
     fn consolidate_portability_directives(&mut self) {
         fn get_token_type_of_line_index(
