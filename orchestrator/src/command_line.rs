@@ -163,13 +163,13 @@ fn get_styles() -> Styles {
 }
 
 impl PasFmtConfiguration {
-    fn find_config_file() -> std::io::Result<Option<PathBuf>> {
-        let mut path = std::env::current_dir()?;
+    fn find_config_file(search_dir: PathBuf) -> Option<PathBuf> {
+        let mut path = search_dir;
         loop {
             path.push(DEFAULT_CONFIG_FILE_NAME);
 
             if path.is_file() {
-                return Ok(Some(path));
+                return Some(path);
             }
 
             if !(path.pop() && path.pop()) {
@@ -177,30 +177,19 @@ impl PasFmtConfiguration {
                     "{} file not found in any parent directory",
                     DEFAULT_CONFIG_FILE_NAME
                 );
-                return Ok(None);
+                return None;
             }
         }
     }
 
-    fn get_config_file(&self) -> anyhow::Result<Option<Cow<Path>>> {
-        let config_file = match &self.config_file {
-            Some(file) => Some(Cow::Borrowed(file.as_path())),
-            None => Self::find_config_file()?.map(Cow::Owned),
-        };
-
-        if let Some(f) = &config_file {
-            debug!("Using config file: {}", f.display());
-        }
-        Ok(config_file)
-    }
-
-    pub fn get_config_object<T>(&self) -> anyhow::Result<T>
+    fn get_config_object_from_file<T>(&self, config_file: Option<Cow<Path>>) -> anyhow::Result<T>
     where
         T: for<'de> Deserialize<'de>,
     {
         let mut builder = Config::builder();
 
-        if let Some(f) = self.get_config_file()? {
+        if let Some(f) = config_file {
+            debug!("Using config file: {}", f.display());
             builder = builder.add_source(File::from(f.borrow()).format(FileFormat::Toml));
         }
 
@@ -212,6 +201,17 @@ impl PasFmtConfiguration {
             .build()?
             .try_deserialize::<T>()
             .context("failed to construct configuration")
+    }
+
+    pub fn get_config_object<T>(&self) -> anyhow::Result<T>
+    where
+        T: for<'de> Deserialize<'de>,
+    {
+        let config_file = match &self.config_file {
+            Some(file) => Some(Cow::Borrowed(file.as_path())),
+            None => Self::find_config_file(std::env::current_dir()?).map(Cow::Owned),
+        };
+        self.get_config_object_from_file(config_file)
     }
 }
 
@@ -494,7 +494,7 @@ mod tests {
         #[test]
         fn config_obj_from_overrides() -> Result<(), Box<dyn Error>> {
             let config = config(&["", "-C", "foo=bar", "-Cbar=-1", "-Cnested.baz=B"])?;
-            let obj: Settings = config.get_config_object()?;
+            let obj: Settings = config.get_config_object_from_file(None)?;
 
             assert_eq!(
                 obj,
@@ -539,7 +539,8 @@ mod tests {
             ];
 
             for (desc, val) in cases {
-                let obj: Settings = config(&["", &format!("-Cfoo={val}")])?.get_config_object()?;
+                let obj: Settings =
+                    config(&["", &format!("-Cfoo={val}")])?.get_config_object_from_file(None)?;
                 assert_eq!(obj.foo, val, "{}", desc);
             }
 
