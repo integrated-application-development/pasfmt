@@ -3,7 +3,7 @@
 use encoding_rs::Encoding;
 use pasfmt_core::prelude::*;
 use pasfmt_orchestrator::predule::*;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 
 #[cfg(windows)]
 fn get_windows_default_encoding() -> &'static Encoding {

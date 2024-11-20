@@ -10,8 +10,7 @@ autotests = false
 encoding_rs = { workspace = true, features = ["serde"] }
 pasfmt-core = { path = "../core" }
 pasfmt-orchestrator = { path = "../orchestrator" }
-serde = { workspace = true }
-serde_derive = { workspace = true }
+serde = { workspace = true, features= ["derive"] }
 stderrlog = { workspace = true }
 log = { workspace = true }
 anyhow = { workspace = true }

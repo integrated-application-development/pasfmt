@@ -21,7 +21,7 @@ anstyle = { workspace = true }
 yare = { workspace = true }
 assert_fs = { workspace = true }
 indoc = { workspace = true }
-serde_derive = { workspace = true }
+serde = { workspace = true, features= ["derive"] }
 spectral = { workspace = true }
 
 [lib]

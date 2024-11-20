@@ -31,7 +31,6 @@ predicates = "3.1.0"
 rand = "0.8.5"
 rayon = "1.10.0"
 serde = "1.0.201"
-serde_derive = "1.0.201"
 spectral = { version = "0.6.0", default-features = false }
 stderrlog = "0.6.0"
 strum = "0.26.2"
