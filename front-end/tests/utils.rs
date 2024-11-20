@@ -1,7 +1,9 @@
 pub static TESTS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests");
 
 pub fn pasfmt() -> Result<assert_cmd::Command, assert_cmd::cargo::CargoError> {
-    assert_cmd::Command::cargo_bin("pasfmt")
+    let mut pasfmt = assert_cmd::Command::cargo_bin("pasfmt")?;
+    pasfmt.current_dir(TESTS_DIR);
+    Ok(pasfmt)
 }
 
 pub fn fmt(
