@@ -2286,6 +2286,15 @@ mod control_flows {
                     _|    Baz := Flarp;
                     _|end;
                 ",
+                inline_dangling_else = "
+                    _|begin
+                    _|  if True then
+                    _|    if True then
+                    _|      Foo := Bar;
+                    _|    else
+                    _|      Bar := Foo;
+                    _|end;
+                ",
                 compound = "
                     _|begin
                     _|  if True then begin
