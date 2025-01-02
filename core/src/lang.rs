@@ -658,7 +658,7 @@ impl<'a> RawToken<'a> {
         }
     }
 }
-impl<'a> TokenData for RawToken<'a> {
+impl TokenData for RawToken<'_> {
     type TokenType = RawTokenType;
     fn get_leading_whitespace(&self) -> &str {
         &self.content[..self.ws_len as usize]
@@ -698,7 +698,7 @@ impl<'a> Token<'a> {
     }
 }
 
-impl<'a> TokenData for Token<'a> {
+impl TokenData for Token<'_> {
     type TokenType = TokenType;
     fn get_leading_whitespace(&self) -> &str {
         &self.content[..self.ws_len as usize]
