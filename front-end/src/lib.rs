@@ -48,15 +48,6 @@ pub struct FormattingSettings {
     encoding: &'static Encoding,
 }
 
-impl Default for FormattingSettings {
-    fn default() -> Self {
-        Self {
-            reconstruction: Default::default(),
-            encoding: default_encoding(),
-        }
-    }
-}
-
 impl TryFrom<Reconstruction> for ReconstructionSettings {
     type Error = InvalidReconstructionSettingsError;
 
