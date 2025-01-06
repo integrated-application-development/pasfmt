@@ -103,13 +103,12 @@ fn init_submodules() {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let source_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("benches");
-    set_current_dir(&source_dir)
-        .unwrap_or_else(|_| panic!("failed to change into the source directory: {source_dir:?}"));
+    let submodule_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("benches/modules");
+    set_current_dir(&submodule_dir).unwrap_or_else(|_| {
+        panic!("failed to change into the source directory: {submodule_dir:?}")
+    });
 
     init_submodules();
-
-    let submodule_dir = source_dir.join("modules");
 
     bench_format_submodules(
         &[
