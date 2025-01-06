@@ -384,6 +384,7 @@ mod tests {
 
     mod cfg {
         use super::*;
+        use indoc::indoc;
 
         #[derive(Deserialize, Debug, PartialEq, Eq)]
         enum SettingEnum {
@@ -515,10 +516,42 @@ mod tests {
         #[test]
         fn config_override_syntax_errors() -> Result<(), Box<dyn Error>> {
             for (arg, msg) in [
-                ("a..=", "Char"),
-                (".=", "IsA"),
-                ("!=", "IsA"),
-                ("a[=", "Digit"),
+                (
+                    "a..=",
+                    indoc! {"
+                        a..
+                          ^
+                        invalid identifier
+                        expected ASCII alphanumeric, `_`, `-`\
+                    "},
+                ),
+                (
+                    ".=",
+                    indoc! {"
+                        .
+                        ^
+                        invalid identifier
+                        expected ASCII alphanumeric, `_`, `-`\
+                    "},
+                ),
+                (
+                    "!=",
+                    indoc! {"
+                        !
+                        ^
+                        invalid identifier
+                        expected ASCII alphanumeric, `_`, `-`\
+                    "},
+                ),
+                (
+                    "a[=",
+                    indoc! { "
+                        a[
+                          ^
+                        invalid subscript
+                        expected integer\
+                    "},
+                ),
             ] {
                 let config = config(&["", "-C", arg])?;
                 let err = config

@@ -16,7 +16,7 @@ assert_cmd = "2.0.14"
 assert_fs = "1.1.1"
 clap = "4.5.4"
 codepage = "0.1.1"
-config = { version = "0.14.1", default-features = false }
+config = { version = "0.15.4", default-features = false }
 criterion = "0.5.1"
 datatest-stable = "0.2.9"
 encoding_rs = "0.8.34"
