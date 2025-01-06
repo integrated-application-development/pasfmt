@@ -1,16 +1,6 @@
 use std::path::Path;
 
-// region: test-gen-utils
-
-macro_rules! get_dir_from_module {
-    () => {
-        module_path!()
-            .split("::")
-            .skip_while(|module| module != &"logical_line_parser")
-            .skip(1)
-            .fold(std::path::PathBuf::new(), |acc, element| acc.join(element))
-    };
-}
+use crate::*;
 
 macro_rules! generate_test_groups {
     ($root_dir: expr, $test_group: ident, $($name: ident = $($input: expr);*),* $(,)?) => {
@@ -24,26 +14,6 @@ macro_rules! generate_test_groups {
         )*
     };
 }
-
-macro_rules! generate_test_cases {
-    ($root_dir: expr, $($name: ident = $input: expr),* $(,)?) => {
-        let dir = $root_dir.join(get_dir_from_module!());
-        $(
-            {
-                std::fs::create_dir_all(&dir)
-                    .expect(&format!("failed to create all directories: {}", &dir.display()));
-                let file_name = dir.join(stringify!($name));
-                if file_name.exists() {
-                    panic!("Test with name {} already exists at {}", stringify!($name), file_name.display());
-                }
-                std::fs::write(&file_name, $input)
-                    .expect(&format!("failed to write file `{}` for test", &file_name.display()));
-            }
-        )*
-    };
-}
-
-// endregion: test-gen-utils
 
 pub fn generate_test_files(root_dir: &Path) {
     directives::generate(root_dir);
@@ -208,7 +178,7 @@ mod comments {
 
         macro_rules! test_group {
             ($root_dir: expr, $comment: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     end_of_line = format!(
                         "
@@ -268,7 +238,7 @@ mod comments {
 
         macro_rules! test_group {
             ($root_dir: expr, $comment: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     empty_compound_statement = format!(
                         "
@@ -502,7 +472,7 @@ mod file_headers {
 
     macro_rules! test_group {
         ($root_dir: expr, $header: expr) => {
-            generate_test_cases!(
+            crate::generate_test_cases!(
                 $root_dir,
                 individual = format!("_|{}", $header),
                 comment_before = format!(
@@ -572,7 +542,7 @@ mod import_clauses {
 
     macro_rules! test_group {
         ($root_dir: expr, $keyword: expr) => {
-            generate_test_cases!(
+            crate::generate_test_cases!(
                 $root_dir,
                 one_file = format!(
                     "
@@ -679,7 +649,7 @@ mod decl_sections {
 
         macro_rules! test_group {
             ($root_dir: expr, $input: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     interface = format!(
                         "
@@ -1082,7 +1052,7 @@ mod type_decls {
                             format!($type_decl, parents),
                         )
                     }
-                    generate_test_cases!(
+                    crate::generate_test_cases!(
                         $root_dir,
                         plain = test_case("", ""),
                         with_parent = test_case("", "(Foo)"),
@@ -1174,7 +1144,7 @@ mod type_decls {
 
         macro_rules! test_group {
             ($root_dir: expr, $input: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     interface = format!(
                         "
@@ -1255,7 +1225,7 @@ mod type_decls {
 
         macro_rules! test_group {
             ($root_dir: expr, $input: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     type_decl = format!(
                         "
@@ -1465,7 +1435,7 @@ mod type_decls {
 
         macro_rules! test_group {
             ($root_dir: expr, $input: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     array_of_const = format!(
                         "
@@ -1536,7 +1506,7 @@ mod type_decls {
 
         macro_rules! test_group {
             ($root_dir: expr, $input: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     no_args = format!(
                         "
@@ -1634,7 +1604,7 @@ mod visibility_sections {
 
     macro_rules! test_group {
         ($root_dir: expr, $input: expr) => {
-            generate_test_cases!(
+            crate::generate_test_cases!(
                 $root_dir,
                 in_type = format!(
                     "
@@ -1705,7 +1675,7 @@ mod prop_decls {
 
     macro_rules! test_group {
         ($root_dir: expr, $input: expr) => {
-            generate_test_cases!(
+            crate::generate_test_cases!(
                 $root_dir,
                 naked = format!(
                     "
@@ -1822,7 +1792,7 @@ mod routine_headers {
 
         macro_rules! test_group {
             ($root_dir: expr, $input: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     naked = format!(
                         "
@@ -1966,7 +1936,7 @@ mod routine_headers {
 
         macro_rules! test_group {
             ($root_dir: expr, $input: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     empty_list = format!( // This is invalid code
                         "
@@ -2048,7 +2018,7 @@ mod routine_headers {
 
         macro_rules! test_group {
             ($root_dir: expr, $input: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     single = format!(
                         "
@@ -2382,7 +2352,7 @@ mod control_flows {
 
         macro_rules! test_group {
             ($root_dir: expr, $($input: expr),* $(,)?) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     simple_compound = format!(
                         "
@@ -2698,7 +2668,7 @@ mod statements {
 
         macro_rules! test_group {
             ($root_dir: expr, $expression: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     individual = format!("_|{}", $expression),
                     in_block = format!(
@@ -2749,7 +2719,7 @@ mod statements {
 
         macro_rules! test_group {
             ($root_dir: expr, $input: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     individual = format!("_|{}", $input),
                     in_block = format!(
@@ -2910,7 +2880,7 @@ mod statements {
 
         macro_rules! test_group {
             ($root_dir: expr, $input: expr) => {
-                generate_test_cases!(
+                crate::generate_test_cases!(
                     $root_dir,
                     in_except = format!(
                         "
@@ -3020,7 +2990,7 @@ mod semicolons {
 
     macro_rules! test_group {
         ($root_dir: expr, $input: expr) => {
-            generate_test_cases!(
+            super::generate_test_cases!(
                 $root_dir,
                 with_semicolon = format!($input, ";"),
                 without_semicolon = format!($input, ""),
