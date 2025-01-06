@@ -244,9 +244,12 @@ const ASM_LEXER_MAP: [LexerFn; 256] = merge_byte_maps(
                 (ByteSet::List(b"\""), Some(asm_text_literal)),
                 (ByteSet::Range(b'0'..=b'9'), Some(asm_number_literal)),
                 // The only keyword that can occur in an asm block is 'end'; anything else is an identifier.
+                // Although we don't process conditional directives until after lexing, so we need to also
+                // allow the 'asm' keyword to be lexed 'inside' an asm block.
                 (ByteSet::Range(b'a'..=b'z'), Some(identifier)),
                 (ByteSet::Range(b'A'..=b'Z'), Some(identifier)),
-                (ByteSet::List(b"eE"), Some(asm_identifier)),
+                // a for 'asm', e for 'end'
+                (ByteSet::List(b"aAeE"), Some(asm_identifier)),
             ],
             None,
         ),
@@ -744,10 +747,13 @@ fn asm_label(LexArgs { input, offset, .. }: LexArgs) -> OffsetAndTokenType {
 
 fn asm_identifier(args: LexArgs) -> OffsetAndTokenType {
     let end_offset = find_identifier_end(args.input, args.offset);
+    let word = &args.input[(args.offset - 1)..end_offset];
 
-    if args.input[(args.offset - 1)..end_offset].eq_ignore_ascii_case("end") {
+    if word.eq_ignore_ascii_case("end") {
         args.lex_state.in_asm = false;
         (end_offset, TT::Keyword(KK::End))
+    } else if word.eq_ignore_ascii_case("asm") {
+        (end_offset, TT::Keyword(KK::Asm))
     } else {
         (end_offset, TT::Identifier)
     }
@@ -2269,6 +2275,45 @@ mod tests {
                 ("RBX", TT::Identifier),
                 (",", TT::Op(OK::Comma)),
                 ("RBX", TT::Identifier),
+                ("end", TT::Keyword(KK::End)),
+            ],
+        );
+    }
+
+    #[test]
+    fn inline_assembly_nested_asm() {
+        // this isn't valid
+        run_test(
+            indoc! {"
+            asm
+            asm
+            end
+            "},
+            &[
+                ("asm", TT::Keyword(KK::Asm)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("end", TT::Keyword(KK::End)),
+            ],
+        );
+    }
+
+    #[test]
+    fn inline_assembly_conditional_asm() {
+        run_test(
+            indoc! {"
+            {$if A}
+            asm
+            {$else}
+            asm
+            {$endif}
+            end
+            "},
+            &[
+                ("{$if A}", TT::ConditionalDirective(CDK::If)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("{$else}", TT::ConditionalDirective(CDK::Else)),
+                ("asm", TT::Keyword(KK::Asm)),
+                ("{$endif}", TT::ConditionalDirective(CDK::Endif)),
                 ("end", TT::Keyword(KK::End)),
             ],
         );
