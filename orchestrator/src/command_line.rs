@@ -513,6 +513,29 @@ mod tests {
         }
 
         #[test]
+        fn config_override_syntax_errors() -> Result<(), Box<dyn Error>> {
+            for (arg, msg) in [
+                ("a..=", "Char"),
+                (".=", "IsA"),
+                ("!=", "IsA"),
+                ("a[=", "Digit"),
+            ] {
+                let config = config(&["", "-C", arg])?;
+                let err = config
+                    .get_config_object_from_file::<Settings>(None)
+                    .unwrap_err();
+
+                assert_eq!(
+                    format!("{}", err),
+                    msg,
+                    "parsing {arg} gave the wrong error message"
+                );
+            }
+
+            Ok(())
+        }
+
+        #[test]
         fn config_overrides_have_greater_precedence_than_file() -> Result<(), Box<dyn Error>> {
             let tmp = TempDir::new()?;
             let config_file = &tmp.child("custom_settings.toml");
