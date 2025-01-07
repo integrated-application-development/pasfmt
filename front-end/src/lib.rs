@@ -120,11 +120,17 @@ impl Default for Olf {
     }
 }
 
-pub fn format_with_settings(
-    formatting_settings: FormattingSettings,
-    config: PasFmtConfiguration,
-    err_handler: impl ErrHandler,
-) {
+pub fn format(config: PasFmtConfiguration, err_handler: impl ErrHandler) {
+    let formatting_settings = match config.get_config_object::<FormattingSettings>() {
+        Ok(formatting_settings) => formatting_settings,
+        Err(e) => {
+            err_handler(e);
+            return;
+        }
+    };
+
+    log::debug!("Configuration:\n{:#?}", formatting_settings);
+
     let eof_newline_formatter = &EofNewline {};
 
     let reconstruction_settings: ReconstructionSettings =

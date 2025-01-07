@@ -12,7 +12,7 @@ use walkdir::WalkDir;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use pasfmt::format_with_settings;
+use pasfmt::format;
 use pasfmt_orchestrator::predule::*;
 
 pasfmt_config!(Config);
@@ -26,9 +26,7 @@ fn bench_format_submodules(submodules: &[(&str, &PathBuf)], c: &mut Criterion) {
         group.bench_function(*name, |b| {
             b.iter(|| {
                 let config = Config::parse_from(["".into(), (*path).clone()]).config;
-                format_with_settings(config.get_config_object().unwrap(), config, |e| {
-                    panic!("{e:?}")
-                });
+                format(config, |e| panic!("{e:?}"));
             });
         });
     }
