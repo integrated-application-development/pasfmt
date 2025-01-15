@@ -1402,8 +1402,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
 
     fn parse_asm_instructions(&mut self) {
         let add_asm_instruction_line = |parser: &mut InternalDelphiLogicalLineParser| {
-            parser.finish_logical_line();
             parser.set_logical_line_type(LLT::AsmInstruction);
+            parser.finish_logical_line();
         };
 
         while let Some(token) = self
@@ -1420,7 +1420,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 self.next_token();
             }
         }
-        self.finish_logical_line();
+        add_asm_instruction_line(self);
     }
     fn parse_begin_end(&mut self, context_level: ParserContextLevel) {
         self.next_token(); // Begin

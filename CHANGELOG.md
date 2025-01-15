@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parsing of anonymous routines with trailing semicolons.
 - Errors on writing non-ASCII data in an ANSI encoding to a Windows Console. Now written as Unicode.
 - Parent line attribution of parent lines whose line number changes with conditional compilation.
+- `LogicalLineType` of inline assembly instructions without leading new line.
 
 ## [0.3.0] - 2024-05-29
 
