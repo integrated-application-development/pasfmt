@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   configuration object defaults. Users can instead provide the defaults in the `Deserialize` impl.
 - Logging of the (toml-serialised) configuration object in `PasFmtConfiguration::get_config_object`.
   Users can log the object however they want outside of this function.
+- Support for inline assembly instruction formatting. Instructions lines are ignored.
 
 ### Changed
 

@@ -117,6 +117,7 @@ pub fn format_with_settings(
             .lines_consolidator(ImportClauseConsolidator {})
             .token_ignorer(FormattingToggler {})
             .token_ignorer(IgnoreNonUnitImportClauses {})
+            .token_ignorer(IgnoreAsmIstructions {})
             .file_formatter(TokenSpacing {})
             .line_formatter(RemoveRepeatedNewlines {})
             .line_formatter(FormatterSelector::new(
