@@ -66,13 +66,13 @@ fn lex(mut input: &str) -> (&str, Vec<RawToken>) {
 fn to_final_token(
     LexedToken {
         whitespace_count,
-        mut token_content,
+        token_content,
         token_type,
     }: LexedToken,
 ) -> RawToken<'_> {
     let whitespace_count: u32 = whitespace_count
         .try_into()
-        .unwrap_or_else(|_| truncate_whitespace(&mut token_content, whitespace_count));
+        .unwrap_or_else(|_| panic!("whitespace length overflows an unsigned 32-bit integer"));
     RawToken::new(token_content, whitespace_count, token_type)
 }
 
@@ -108,22 +108,6 @@ fn whitespace_and_token<'a>(
             token_type,
         },
     ))
-}
-
-#[cold]
-fn truncate_whitespace(content: &mut &str, whitespace: usize) -> u32 {
-    /*
-        To save space in the Token enum, we limit the whitespace count to 32 bits.
-        This gives a measurable improvement in performance, but we have to handle the case
-        where the whitespace is too long. We simply truncate it, which seems acceptable given
-        the whitespace count is literally overflowing a 32-bit integer.
-    */
-    warn!(
-        "Truncating whitespace before token to avoid overflow. Token starts with: {}",
-        rounded_prefix(content, 50)
-    );
-    *content = &content[(whitespace - u32::MAX as usize)..];
-    u32::MAX
 }
 
 pub(crate) fn count_leading_whitespace(input: &str) -> usize {
