@@ -723,7 +723,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         ContextType::CaseStatement => Some(LLT::CaseArm),
                         ContextType::LabelBlock
                         | ContextType::TypeBlock
-                        | ContextType::DeclarationBlock => Some(LLT::Declaration),
+                        | ContextType::DeclarationBlock
+                        | ContextType::VisibilityBlock => Some(LLT::Declaration),
                         ContextType::VariantDeclarationBlock => Some(LLT::VariantRecordCaseArm),
                         _ => None,
                     } {
