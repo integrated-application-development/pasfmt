@@ -39,6 +39,7 @@ fn default_encoding() -> &'static Encoding {
     encoding_rs::UTF_8
 }
 
+#[cfg_attr(feature = "__demo", derive(serde::Serialize))]
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct FormattingSettings {
@@ -48,6 +49,23 @@ pub struct FormattingSettings {
     olf: Olf,
     #[serde(default = "default_encoding")]
     encoding: &'static Encoding,
+}
+
+impl FormattingSettings {
+    #[cfg(feature = "__demo")]
+    pub fn max_line_length(&self) -> u32 {
+        self.olf.max_line_length
+    }
+}
+
+impl Default for FormattingSettings {
+    fn default() -> Self {
+        Self {
+            reconstruction: Default::default(),
+            encoding: default_encoding(),
+            olf: Olf::default(),
+        }
+    }
 }
 
 impl TryFrom<Reconstruction> for ReconstructionSettings {
@@ -62,6 +80,7 @@ impl TryFrom<Reconstruction> for ReconstructionSettings {
     }
 }
 
+#[cfg_attr(feature = "__demo", derive(serde::Serialize))]
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 struct Reconstruction {
@@ -94,6 +113,7 @@ impl Default for Reconstruction {
     }
 }
 
+#[cfg_attr(feature = "__demo", derive(serde::Serialize))]
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 struct Olf {
@@ -128,45 +148,50 @@ pub fn format(config: PasFmtConfiguration, err_handler: impl ErrHandler) {
             return;
         }
     };
-
     log::debug!("Configuration:\n{:#?}", formatting_settings);
+
+    let encoding = formatting_settings.encoding;
+    let formatter = match make_formatter(&formatting_settings) {
+        Ok(f) => f,
+        Err(e) => {
+            err_handler(anyhow::Error::from(e));
+            return;
+        }
+    };
+
+    let file_formatter = FileFormatter::new(formatter, encoding);
+    FormattingOrchestrator::run(file_formatter, config, err_handler)
+}
+
+pub fn make_formatter(
+    settings: &FormattingSettings,
+) -> Result<Formatter, InvalidReconstructionSettingsError> {
+    let reconstruction_settings: ReconstructionSettings =
+        settings.reconstruction.clone().try_into()?;
 
     let eof_newline_formatter = &EofNewline {};
 
-    let reconstruction_settings: ReconstructionSettings =
-        match formatting_settings.reconstruction.try_into() {
-            Ok(s) => s,
-            Err(e) => {
-                err_handler(anyhow::Error::from(e));
-                return;
-            }
-        };
-
-    let formatter = FileFormatter::new(
-        Formatter::builder()
-            .lexer(DelphiLexer {})
-            .parser(DelphiLogicalLineParser {})
-            .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
-            .lines_consolidator(ImportClauseConsolidator {})
-            .token_ignorer(FormattingToggler {})
-            .token_ignorer(IgnoreNonUnitImportClauses {})
-            .token_ignorer(IgnoreAsmIstructions {})
-            .file_formatter(TokenSpacing {})
-            .line_formatter(FormatterSelector::new(
-                |logical_line_type| match logical_line_type {
-                    LogicalLineType::Eof => Some(eof_newline_formatter),
-                    _ => None,
-                },
-            ))
-            .file_formatter(OptimisingLineFormatter::new(
-                formatting_settings.olf.into(),
-                reconstruction_settings.clone(),
-            ))
-            .reconstructor(DelphiLogicalLinesReconstructor::new(
-                reconstruction_settings,
-            ))
-            .build(),
-        formatting_settings.encoding,
-    );
-    FormattingOrchestrator::run(formatter, config, err_handler);
+    Ok(Formatter::builder()
+        .lexer(DelphiLexer {})
+        .parser(DelphiLogicalLineParser {})
+        .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
+        .lines_consolidator(ImportClauseConsolidator {})
+        .token_ignorer(FormattingToggler {})
+        .token_ignorer(IgnoreNonUnitImportClauses {})
+        .token_ignorer(IgnoreAsmIstructions {})
+        .file_formatter(TokenSpacing {})
+        .line_formatter(FormatterSelector::new(
+            |logical_line_type| match logical_line_type {
+                LogicalLineType::Eof => Some(eof_newline_formatter),
+                _ => None,
+            },
+        ))
+        .file_formatter(OptimisingLineFormatter::new(
+            settings.olf.clone().into(),
+            reconstruction_settings.clone(),
+        ))
+        .reconstructor(DelphiLogicalLinesReconstructor::new(
+            reconstruction_settings,
+        ))
+        .build())
 }

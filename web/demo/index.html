@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pasfmt demo</title>
+    <style>
+      @media (prefers-color-scheme: light) {
+        :root {
+          color-scheme: light;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+        }
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        border: 0;
+      }
+      .editor-container {
+        flex: 1;
+        /* without this, scrollbars appear when you shrink vertically */
+        min-height: 0;
+      }
+      .editor {
+        flex: 50%;
+        /* without this, scrollbars appear when you shrink vertically */
+        overflow: hidden;
+      }
+      #settings {
+        flex: 0 1 auto;
+      }
+      #editpane {
+        display: flex;
+        height: 100%;
+        flex-direction: row;
+      }
+      @media screen and (max-width: 120ch) {
+        #editpane {
+          flex-direction: column;
+        }
+        #formatted-editor {
+          border-top: solid rgba(0, 0, 0, 0.3);
+          border-width: 1px;
+        }
+      }
+      #diffpane {
+        height: 100%;
+      }
+
+      .modal {
+        display: none;
+        justify-content: center;
+        position: fixed;
+        z-index: 10;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+      }
+      :root {
+        --settings-border: currentColor;
+      }
+      .modal-content {
+        background-color: Canvas;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid
+          color-mix(in srgb, var(--settings-border) 50%, transparent);
+        width: 400px;
+        border-radius: 10px;
+      }
+      .close {
+        float: right;
+      }
+      .modal form {
+        display: flex;
+        flex-direction: column;
+      }
+      .modal textarea {
+        resize: none;
+      }
+      #settingsEditor {
+        height: 300px;
+      }
+      .label {
+        margin: 10px 0 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="settingsModal" class="modal">
+      <div class="modal-content">
+        <button class="close" id="closeModal">Close</button>
+        <h2>Settings</h2>
+        <button id="resetToDefaultSettings">Reset to Default</button>
+        <div id="settingsEditor"></div>
+      </div>
+    </div>
+    <div id="settings">
+      <button id="openSettings">Open Settings</button>
+      <button id="toggle-view">Toggle Diff View</button>
+      <select name="sample file" id="sample-picker" class="app__sample">
+        <option value="" selected disabled hidden>Load Example</option>
+        <option value="/examples/simple.pas">simple</option>
+      </select>
+      <button id="share-example">Share Example</button>
+    </div>
+    <div class="editor-container" id="editorContainer">
+      <div class="" id="editpane">
+        <div class="editor" id="original-editor"></div>
+        <div class="editor" id="formatted-editor"></div>
+      </div>
+      <div class="" id="diffpane"></div>
+    </div>
+
+    <script type="module" src="/src/index.ts"></script>
+  </body>
+</html>

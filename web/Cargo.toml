@@ -1,0 +1,13 @@
+[package]
+name = "web"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2.100"
+pasfmt = { path = "../front-end", features = ["__demo"]}
+pasfmt-core = { path = "../core" }
+toml = { workspace = true }

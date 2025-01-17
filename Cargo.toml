@@ -5,6 +5,15 @@ members = [
     "orchestrator",
     "front-end",
     "core/datatests",
+    "web",
+]
+
+# exclude 'web' from default members
+default-members = [
+    "core",
+    "orchestrator",
+    "front-end",
+    "core/datatests",
 ]
 
 resolver = "2"
