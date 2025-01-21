@@ -5,7 +5,7 @@ use crate::{lang::*, traits::LogicalLineFormatter};
 pub struct UsesClauseFormatter {}
 impl LogicalLineFormatter for UsesClauseFormatter {
     fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
-        let mut conditional_depth: isize = 0;
+        let mut conditional_depth: i16 = 0;
         for &token_index in input.get_tokens() {
             {
                 // Reset formatting for the token

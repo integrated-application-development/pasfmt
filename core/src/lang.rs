@@ -456,10 +456,10 @@ impl LogicalLine {
 #[derive(Default)]
 pub struct FormattingData {
     ignored: bool,
-    pub newlines_before: usize,
-    pub indentations_before: usize,
-    pub continuations_before: usize,
-    pub spaces_before: usize,
+    pub newlines_before: u16,
+    pub indentations_before: u16,
+    pub continuations_before: u16,
+    pub spaces_before: u16,
 }
 
 impl From<&str> for FormattingData {
@@ -473,7 +473,9 @@ impl From<(&str, bool)> for FormattingData {
         let newlines_before = leading_whitespace
             .chars()
             .filter(|char| char.eq(&'\n'))
-            .count();
+            .count()
+            .try_into()
+            .unwrap_or(u16::MAX);
 
         // Rusts .lines() fn doesn't treat a trailing newline as creating
         // another line.
@@ -483,12 +485,16 @@ impl From<(&str, bool)> for FormattingData {
             .map(|line| line.trim_end_matches('\r'))
             .unwrap_or_default();
 
+        let spaces_before = (last_line.len() - last_line.trim_start().len())
+            .try_into()
+            .unwrap_or(u16::MAX);
+
         FormattingData {
             ignored,
             newlines_before,
             indentations_before: 0,
             continuations_before: 0,
-            spaces_before: last_line.len() - last_line.trim_start().len(),
+            spaces_before,
         }
     }
 }

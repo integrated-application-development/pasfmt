@@ -48,7 +48,7 @@ impl LogicalLineFileFormatter for TokenSpacing {
 fn max_one_either_side(
     token_index: usize,
     formatted_tokens: &mut FormattedTokens<'_>,
-) -> (Option<usize>, Option<usize>) {
+) -> (Option<u16>, Option<u16>) {
     (
         formatted_tokens
             .get_formatting_data(token_index)
@@ -59,7 +59,7 @@ fn max_one_either_side(
     )
 }
 
-fn spaces_before(token_type: Option<TokenType>, spaces: usize) -> Option<usize> {
+fn spaces_before(token_type: Option<TokenType>, spaces: u16) -> Option<u16> {
     match token_type {
         None => None,
         Some(TT::Op(OK::LBrack | OK::LParen | OK::LessThan(ChevronKind::Generic))) => Some(0),
@@ -67,7 +67,7 @@ fn spaces_before(token_type: Option<TokenType>, spaces: usize) -> Option<usize> 
     }
 }
 
-fn spaces_after(token_type: Option<TokenType>, spaces: usize) -> Option<usize> {
+fn spaces_after(token_type: Option<TokenType>, spaces: u16) -> Option<u16> {
     match token_type {
         None => None,
         Some(TT::Op(OK::RBrack | OK::RParen | OK::GreaterThan(ChevronKind::Generic))) => Some(0),
@@ -78,7 +78,7 @@ fn spaces_after(token_type: Option<TokenType>, spaces: usize) -> Option<usize> {
 fn one_space_either_side(
     token_index: usize,
     formatted_tokens: &mut FormattedTokens<'_>,
-) -> (Option<usize>, Option<usize>) {
+) -> (Option<u16>, Option<u16>) {
     (
         spaces_before(
             formatted_tokens.get_token_type_for_index(token_index.wrapping_sub(1)),
@@ -94,7 +94,7 @@ fn one_space_either_side(
 fn one_space_before(
     token_index: usize,
     formatted_tokens: &mut FormattedTokens<'_>,
-) -> (Option<usize>, Option<usize>) {
+) -> (Option<u16>, Option<u16>) {
     (
         spaces_before(
             formatted_tokens.get_token_type_for_index(token_index.wrapping_sub(1)),
@@ -108,7 +108,7 @@ fn space_operator(
     operator: OperatorKind,
     token_index: usize,
     formatted_tokens: &mut FormattedTokens<'_>,
-) -> (Option<usize>, Option<usize>) {
+) -> (Option<u16>, Option<u16>) {
     let token_type_by_idx = |token_idx: usize| formatted_tokens.get_token_type_for_index(token_idx);
     let prev_real_token_type = |token_idx: usize| {
         formatted_tokens
