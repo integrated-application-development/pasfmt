@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DeclKind` for distinguishing kinds of `var` and `const` keywords.
 - `LogicalLineType::CaseArm` to represent the arms of a case statement.
 - `LogicalLineType::Declaration` to represent `label`, `type`, `const` etc. declarations.
+- Debug logging for time taken to format each file.
 
 ### Fixed
 

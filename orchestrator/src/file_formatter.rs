@@ -7,6 +7,7 @@ use std::{
     fs::{File, OpenOptions},
     io::{self, IsTerminal, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
+    time::Instant,
 };
 
 use glob::glob;
@@ -136,8 +137,11 @@ impl FileFormatter {
                         .decode_file(&mut file, file_path.display(), input_buf)
                         .with_context(|| format!("failed to read '{}'", file_path.display()))?;
 
+                    debug!("Formatting {}", file_path.display());
+                    let time = Instant::now();
                     self.formatter
                         .format_into_buf(&decoded_file.contents, output_buf);
+                    debug!("Formatted {} in {:?}", file_path.display(), time.elapsed());
                     result_operation(&mut file, &file_path, &decoded_file, output_buf)
                 },
             )
