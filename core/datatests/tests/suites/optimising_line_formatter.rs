@@ -37,7 +37,7 @@ fn run_test(input: &str) -> datatest_stable::Result<()> {
         .map(trim_string)
         .unwrap_or_else(|| Ok(input.clone()))?;
 
-    let formatted_input = formatter.format(&input);
+    let formatted_input = formatter.format(&input, FileOptions::new());
     assert_str_eq!(formatted_input, expected_output);
     Ok(())
 }

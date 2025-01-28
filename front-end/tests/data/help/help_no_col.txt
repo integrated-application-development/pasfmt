@@ -12,6 +12,8 @@ Options:
   -C <KEY=VALUE>                   Override one configuration option using KEY=VALUE. This takes
                                    precedence over `--config-file`
   -m, --mode <MODE>                The mode of operation [possible values: files, stdout, check]
+      --cursor <CURSOR>...         Print (to stderr) where cursors at the given UTF-8 byte positions
+                                   move to after formatting
   -v, --verbose...                 Increase logging verbosity (can be repeated)
   -l, --log-level <LOG_LEVEL>      Only show log messages at least this severe [default: WARN]
                                    [possible values: OFF, ERROR, WARN, INFO, DEBUG, TRACE]

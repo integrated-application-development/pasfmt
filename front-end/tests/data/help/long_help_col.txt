@@ -32,6 +32,14 @@
           - [96mcheck[0m:  exit zero if input is formatted correctly, otherwise exit non-zero and list the
             erroneous files
 
+      [96m--cursor[0m[37m [0m[37m<CURSOR>...[0m
+          Print (to stderr) where cursors at the given UTF-8 byte positions move to after formatting
+          
+          Cursors provided can be comma-separated. After formatting, a single line of the form
+          `CURSOR=<LIST>` will be printed to stderr, where `<LIST>` is a comma-separated list of the
+          new UTF-8 byte positions for the input positions. The order of this list matches the
+          provided order of the cursors.
+
   [96m-v[0m, [96m--verbose[0m[37m...[0m
           Increase logging verbosity (can be repeated)
 

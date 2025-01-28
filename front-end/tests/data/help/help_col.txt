@@ -12,6 +12,8 @@
   [96m-C[0m[37m [0m[37m<KEY=VALUE>[0m                   Override one configuration option using KEY=VALUE. This takes
                                    precedence over `--config-file`
   [96m-m[0m, [96m--mode[0m[37m [0m[37m<MODE>[0m                The mode of operation [possible values: files, stdout, check]
+      [96m--cursor[0m[37m [0m[37m<CURSOR>...[0m         Print (to stderr) where cursors at the given UTF-8 byte positions
+                                   move to after formatting
   [96m-v[0m, [96m--verbose[0m[37m...[0m                 Increase logging verbosity (can be repeated)
   [96m-l[0m, [96m--log-level[0m[37m [0m[37m<LOG_LEVEL>[0m      Only show log messages at least this severe [default: WARN]
                                    [possible values: OFF, ERROR, WARN, INFO, DEBUG, TRACE]

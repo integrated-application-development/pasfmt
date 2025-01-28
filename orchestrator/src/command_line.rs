@@ -119,6 +119,17 @@ pub struct PasFmtConfiguration {
     #[arg(short, long, value_enum)]
     mode: Option<FormatMode>,
 
+    /// Print (to stderr) where cursors at the given UTF-8 byte positions move
+    /// to after formatting
+    ///
+    /// Cursors provided can be comma-separated. After formatting, a single
+    /// line of the form `CURSOR=<LIST>` will be printed to stderr, where
+    /// `<LIST>` is a comma-separated list of the new UTF-8 byte positions for
+    /// the input positions. The order of this list matches the provided order
+    /// of the cursors.
+    #[arg(long, value_delimiter = ',', num_args = 1..)]
+    cursor: Vec<u32>,
+
     /// Increase logging verbosity (can be repeated).
     #[arg(short, long, action = clap::ArgAction::Count, conflicts_with = "log_level")]
     verbose: u8,
@@ -248,6 +259,10 @@ impl FormatterConfiguration for PasFmtConfiguration {
 
     fn is_stdin(&self) -> bool {
         self.paths.is_empty() && self.files_from.is_none()
+    }
+
+    fn cursors(&self) -> &[u32] {
+        &self.cursor
     }
 }
 

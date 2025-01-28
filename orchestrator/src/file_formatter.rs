@@ -11,7 +11,10 @@ use std::{
 };
 
 use glob::glob;
-use pasfmt_core::formatter::Formatter;
+use pasfmt_core::{
+    formatter::Formatter,
+    prelude::{Cursor, FileOptions},
+};
 use rayon::prelude::*;
 use walkdir::WalkDir;
 
@@ -107,12 +110,18 @@ impl FileFormatter {
         })
     }
 
+    fn output_new_cursors(cursors: &[Cursor]) {
+        let cursors: Vec<_> = cursors.iter().map(|c| c.0.to_string()).collect();
+        eprintln!("CURSOR={}", cursors.join(","));
+    }
+
     fn exec_format<S, T, E>(
         &self,
         paths: &[S],
         mut open_options: OpenOptions,
         result_operation: T,
         error_handler: E,
+        cursors: &[u32],
     ) where
         S: AsRef<str>,
         E: ErrHandler,
@@ -120,31 +129,45 @@ impl FileFormatter {
     {
         open_options.read(true);
 
-        self.expand_paths(paths)
+        let paths = self.expand_paths(paths);
+
+        let cursors = if paths.len() > 1 && !cursors.is_empty() {
+            warn!("cursor position cannot be tracked when formatting more than one file");
+            &[]
+        } else {
+            cursors
+        };
+
+        paths
             .into_par_iter()
-            .map_init(
-                || (Vec::<u8>::new(), String::new()),
-                |(input_buf, output_buf), file_path| {
-                    input_buf.clear();
-                    output_buf.clear();
+            .map_init(Vec::<u8>::new, |input_buf, file_path| {
+                input_buf.clear();
 
-                    let file_path = file_path?;
-                    let mut file = open_options
-                        .open(&file_path)
-                        .with_context(|| format!("failed to open '{}'", file_path.display()))?;
+                let file_path = file_path?;
+                let mut file = open_options
+                    .open(&file_path)
+                    .with_context(|| format!("failed to open '{}'", file_path.display()))?;
 
-                    let decoded_file = self
-                        .decode_file(&mut file, file_path.display(), input_buf)
-                        .with_context(|| format!("failed to read '{}'", file_path.display()))?;
+                let decoded_file = self
+                    .decode_file(&mut file, file_path.display(), input_buf)
+                    .with_context(|| format!("failed to read '{}'", file_path.display()))?;
 
-                    debug!("Formatting {}", file_path.display());
-                    let time = Instant::now();
-                    self.formatter
-                        .format_into_buf(&decoded_file.contents, output_buf);
-                    debug!("Formatted {} in {:?}", file_path.display(), time.elapsed());
-                    result_operation(&mut file, &file_path, &decoded_file, output_buf)
-                },
-            )
+                let mut inner_cursors: Vec<_> = cursors.iter().map(|c| Cursor(*c)).collect();
+
+                debug!("Formatting {}", file_path.display());
+                let time = Instant::now();
+                let output = self.formatter.format(
+                    &decoded_file.contents,
+                    FileOptions::new().with_cursors(&mut inner_cursors),
+                );
+                debug!("Formatted {} in {:?}", file_path.display(), time.elapsed());
+
+                if !inner_cursors.is_empty() {
+                    Self::output_new_cursors(&inner_cursors);
+                }
+
+                result_operation(&mut file, &file_path, &decoded_file, &output)
+            })
             .for_each(|res| {
                 if let Err(e) = res {
                     error_handler(e);
@@ -152,7 +175,12 @@ impl FileFormatter {
             });
     }
 
-    pub(crate) fn format_files<S: AsRef<str>>(&self, paths: &[S], error_handler: impl ErrHandler) {
+    pub(crate) fn format_files<S: AsRef<str>>(
+        &self,
+        paths: &[S],
+        error_handler: impl ErrHandler,
+        cursors: &[u32],
+    ) {
         self.exec_format(
             paths,
             OpenOptions::new().write(true).to_owned(),
@@ -175,6 +203,7 @@ impl FileFormatter {
                 Ok(())
             },
             error_handler,
+            cursors,
         );
     }
 
@@ -271,13 +300,23 @@ impl FileFormatter {
             .context("failed to read from stdin")
     }
 
-    pub(crate) fn format_stdin_to_stdout(&self, error_handler: impl ErrHandler) {
+    pub(crate) fn format_stdin_to_stdout(&self, error_handler: impl ErrHandler, cursors: &[u32]) {
         let inner = || {
             let mut buf = vec![];
             let decoded_stdin = self.decode_stdin(&mut buf)?;
-            let formatted_input = self.formatter.format(&decoded_stdin.contents);
+
+            let mut cursors: Vec<_> = cursors.iter().map(|c| Cursor(*c)).collect();
+
+            let formatted_input = self.formatter.format(
+                &decoded_stdin.contents,
+                FileOptions::new().with_cursors(&mut cursors),
+            );
             Self::write_stdout(&decoded_stdin, &formatted_input)
                 .context("failed to write to stdout")?;
+
+            if !cursors.is_empty() {
+                Self::output_new_cursors(&cursors);
+            }
             Ok(())
         };
 
@@ -290,6 +329,7 @@ impl FileFormatter {
         &self,
         paths: &[S],
         error_handler: impl ErrHandler,
+        cursors: &[u32],
     ) {
         self.exec_format(
             paths,
@@ -309,6 +349,7 @@ impl FileFormatter {
                 Ok(())
             },
             error_handler,
+            cursors,
         );
     }
 
@@ -331,6 +372,7 @@ impl FileFormatter {
                 )
             },
             error_handler,
+            &[],
         );
     }
 
@@ -338,7 +380,9 @@ impl FileFormatter {
         let inner = || {
             let mut buf = vec![];
             let decoded_stdin = self.decode_stdin(&mut buf)?;
-            let formatted_input = self.formatter.format(&decoded_stdin.contents);
+            let formatted_input = self
+                .formatter
+                .format(&decoded_stdin.contents, FileOptions::new());
             Self::check_formatting(&decoded_stdin.contents, &formatted_input, "<stdin>")
         };
 

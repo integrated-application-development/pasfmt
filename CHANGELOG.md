@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Users can log the object however they want outside of this function.
 - Support for inline assembly instruction formatting. Instructions lines are ignored.
 - `RemoveRepeatedNewlines`, `ImportClauseConsolidator`, and `UsesClauseFormatter` in favour of `OptimisingLineFormatter`
+- `Formatter::format_into_buf` function.
 
 ### Changed
 
@@ -28,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parsing of variant records. Variant fields are now child lines of the record tag.
 - Parsing of `uses`, `contains`, `requires`, and `exports`. Now parsed as heading and body lines.
 - Wrap CLI help at the smallest of the terminal width and 120 characters.
+- Parameters to the `Formatter::format` function, allowing per-file options to be passed in
+  (e.g. cursors to track).
 
 ### Added
 
@@ -42,6 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `LogicalLineType::Declaration` to represent `label`, `type`, `const` etc. declarations.
 - Debug logging for time taken to format each file.
 - `OptimisingLineFormatter` to reflow all kinds of logical lines.
+- Method `process_cursor` to the `LogicalLinesReconstructor` trait.
+- Trait `CursorMetadata`.
+- Cursor tracking, via the `--cursor` CLI option.
 
 ### Fixed
 

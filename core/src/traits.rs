@@ -1,4 +1,4 @@
-use crate::formatter::TokenMarker;
+use crate::formatter::{Cursor, TokenMarker};
 use crate::lang::*;
 
 pub trait Lexer {
@@ -35,6 +35,11 @@ pub trait LogicalLineFileFormatter {
     fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &[LogicalLine]);
 }
 
+pub trait CursorTracker {
+    fn relocate_cursors(&mut self, formatted_tokens: &FormattedTokens);
+    fn notify_token_deleted(&mut self, deleted_token: usize);
+}
+
 pub trait LogicalLinesReconstructor {
     fn reconstruct_into_buf(&self, formatted_tokens: FormattedTokens, out: &mut String);
     fn reconstruct(&self, formatted_tokens: FormattedTokens) -> String {
@@ -42,4 +47,10 @@ pub trait LogicalLinesReconstructor {
         self.reconstruct_into_buf(formatted_tokens, &mut out);
         out
     }
+
+    fn process_cursors<'cursor>(
+        &'cursor self,
+        cursors: &'cursor mut [Cursor],
+        tokens: &[RawToken],
+    ) -> Box<dyn CursorTracker + 'cursor>;
 }

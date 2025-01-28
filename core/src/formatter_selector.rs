@@ -33,7 +33,7 @@ mod tests {
     use spectral::prelude::*;
 
     fn run_test(formatter: Formatter, input: &str, expected_output: &str) {
-        let output = formatter.format(input);
+        let output = formatter.format(input, FileOptions::new());
         assert_that(&output).is_equal_to(expected_output.to_string());
     }
 

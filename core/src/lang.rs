@@ -454,7 +454,7 @@ impl LogicalLine {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, PartialEq, Eq)]
 pub struct FormattingData {
     ignored: bool,
     pub newlines_before: u16,
@@ -664,6 +664,9 @@ impl<'a> RawToken<'a> {
             ws_len,
             token_type,
         }
+    }
+    pub(crate) fn get_str(&self) -> &str {
+        self.content
     }
 }
 impl TokenData for RawToken<'_> {

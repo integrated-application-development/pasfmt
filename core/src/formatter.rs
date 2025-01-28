@@ -46,6 +46,25 @@ impl TokenMarker {
     }
 }
 
+#[derive(Default)]
+pub struct FileOptions<'cursor> {
+    cursors: &'cursor mut [Cursor],
+}
+
+impl<'cursor> FileOptions<'cursor> {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_cursors(mut self, cursors: &'cursor mut [Cursor]) -> Self {
+        self.cursors = cursors;
+        self
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub struct Cursor(pub u32);
+
 pub struct Formatter {
     lexer: Box<dyn Lexer + Sync>,
     token_consolidators: Vec<Box<dyn RawTokenConsolidator + Sync>>,
@@ -60,13 +79,17 @@ impl Formatter {
     pub fn builder() -> FormatterBuilder<WithNothing> {
         FormatterBuilder::default()
     }
-    pub fn format(&self, input: &str) -> String {
+
+    pub fn format(&self, input: &str, options: FileOptions) -> String {
         let mut out = String::new();
-        self.format_into_buf(input, &mut out);
+        self.format_into_buf(input, &mut out, options);
         out
     }
-    pub fn format_into_buf(&self, input: &str, buf: &mut String) {
+
+    fn format_into_buf(&self, input: &str, buf: &mut String, options: FileOptions) {
         let mut tokens = self.lexer.lex(input);
+        let mut cursors = self.reconstructor.process_cursors(options.cursors, &tokens);
+
         for token_consolidator in self.token_consolidators.iter() {
             token_consolidator.consolidate(&mut tokens);
         }
@@ -87,13 +110,22 @@ impl Formatter {
                 .set
                 .retain(|idx| !ignored_tokens.is_marked(idx));
         }
-        delete_marked_tokens(tokens_marked_for_deletion, &mut tokens, &mut lines);
+
+        delete_marked_tokens(
+            tokens_marked_for_deletion,
+            &mut tokens,
+            &mut lines,
+            Some(cursors.as_mut()),
+        );
         delete_voided_logical_lines(&mut lines);
 
         let mut formatted_tokens = FormattedTokens::new_from_tokens(&tokens, &ignored_tokens);
         for formatter in self.logical_line_formatters.iter() {
             formatter.format(&mut formatted_tokens, &lines);
         }
+
+        cursors.relocate_cursors(&formatted_tokens);
+
         self.reconstructor
             .reconstruct_into_buf(formatted_tokens, buf);
     }
@@ -107,9 +139,16 @@ fn delete_marked_tokens(
     token_marker: TokenMarker,
     tokens: &mut Vec<Token>,
     lines: &mut [LogicalLine],
+    cursors: Option<&mut dyn CursorTracker>,
 ) {
     if !token_marker.any_marked() {
         return;
+    }
+
+    if let Some(cursors) = cursors {
+        for idx in &token_marker.set {
+            cursors.notify_token_deleted(*idx);
+        }
     }
 
     let mut new_indices: Vec<usize> = Vec::with_capacity(tokens.len());
@@ -413,7 +452,7 @@ mod tests {
     use spectral::prelude::*;
 
     fn run_test(formatter: Formatter, input: &str, expected_output: &str) {
-        let output = formatter.format(input);
+        let output = formatter.format(input, FileOptions::new());
         assert_that(&output).is_equal_to(expected_output.to_string());
     }
 
@@ -437,7 +476,12 @@ mod tests {
             .map(|line_indices| LogicalLine::new(None, 0, line_indices, LogicalLineType::Unknown))
             .collect_vec();
 
-        delete_marked_tokens(TokenMarker { set: marked_tokens }, &mut tokens, &mut lines);
+        delete_marked_tokens(
+            TokenMarker { set: marked_tokens },
+            &mut tokens,
+            &mut lines,
+            None,
+        );
         delete_voided_logical_lines(&mut lines);
         assert_that(&lines).equals_iterator(&expected_lines.iter());
     }

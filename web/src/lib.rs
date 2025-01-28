@@ -1,4 +1,5 @@
 use pasfmt::{make_formatter, FormattingSettings};
+use pasfmt_core::prelude::FileOptions;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -31,5 +32,5 @@ pub fn default_settings_toml() -> String {
 pub fn fmt(src: &str, settings: &SettingsWrapper) -> Result<String, String> {
     let formatter = make_formatter(&settings.formatting_settings).map_err(|e| e.to_string())?;
 
-    Ok(formatter.format(src))
+    Ok(formatter.format(src, FileOptions::new()))
 }

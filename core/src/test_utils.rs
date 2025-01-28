@@ -9,7 +9,7 @@ macro_rules! formatter_test_group {
         )]
         fn $i(input: &str, output: &str) {
             let formatter: Formatter = formatter();
-            let formatted_output = formatter.format(input);
+            let formatted_output = formatter.format(input, FileOptions::new());
             assert_that(&formatted_output).is_equal_to(output.to_string());
         }
     };
