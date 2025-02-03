@@ -26,6 +26,7 @@ macro_rules! pasfmt_config {
     ($(#[$attr: meta])* $type_name: ident) => {
         #[derive(clap::Parser, Debug)]
         #[command(author, about, version, long_about = None)]
+        #[clap(max_term_width = 120)]
         $(#[$attr])*
         struct $type_name {
             #[command(flatten)]

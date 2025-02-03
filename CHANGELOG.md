@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now it's a simpler struct-level debug formatting.
 - Parsing of variant records. Variant fields are now child lines of the record tag.
 - Parsing of `uses`, `contains`, `requires`, and `exports`. Now parsed as heading and body lines.
+- Wrap CLI help at the smallest of the terminal width and 120 characters.
 
 ### Added
 
