@@ -60,7 +60,6 @@ mod tests {
         Formatter::builder()
             .lexer(DelphiLexer {})
             .parser(DelphiLogicalLineParser {})
-            .lines_consolidator(ImportClauseConsolidator {})
             .token_ignorer(IgnoreNonUnitImportClauses {})
             .file_formatter(AddSpaceAfterComma {})
             .reconstructor(default_test_reconstructor())

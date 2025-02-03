@@ -175,7 +175,6 @@ pub fn make_formatter(
         .lexer(DelphiLexer {})
         .parser(DelphiLogicalLineParser {})
         .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
-        .lines_consolidator(ImportClauseConsolidator {})
         .token_ignorer(FormattingToggler {})
         .token_ignorer(IgnoreNonUnitImportClauses {})
         .token_ignorer(IgnoreAsmIstructions {})
