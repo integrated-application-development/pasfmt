@@ -135,9 +135,18 @@ impl InternalOptimisingLineFormatter<'_, '_> {
             (_, Some(TT::Op(OK::Dot)))
                 if matches!(last_context.context_type(), CT::MemberAccess) =>
             {
-                ctx_data
-                    .one_element_per_line
-                    .if_else_or_default(DR::MustBreak, DR::MustNotBreak)
+                if let Some(CT::RoutineHeader) = contexts_data
+                    .get_last_context(context_matches!(
+                        CT::RoutineHeader | CT::Brackets(_, _) | CT::Type
+                    ))
+                    .map(|ctx| ctx.0.context_type())
+                {
+                    DR::MustNotBreak
+                } else {
+                    ctx_data
+                        .one_element_per_line
+                        .if_else_or_default(DR::MustBreak, DR::MustNotBreak)
+                }
             }
             (_, Some(TT::Op(OK::Equal(EqKind::Decl)))) => DR::MustNotBreak,
             (_, Some(TT::Keyword(KK::In(InKind::ForLoop) | KK::To | KK::Downto))) => contexts_data

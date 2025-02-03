@@ -1895,26 +1895,27 @@ mod routines {
                     interface
                     procedure Apples.Banana(A: B);
                     procedure Apple.Boo.Caa(A: B);
-                    procedure Apples
-                        .Bananas(A: B);
                     procedure Apples.Bananas(
                         AAAAAAAAAAAAA: B
                     );
                     procedure Apple.Boo.Caaa(
                         A: B
                     );
-                    procedure Applessss
-                        .Bananassss(
-                            AAAAAAAAAA: B
-                        );
-                    procedure Apple
-                        .Booooo
-                        .Caaaaaa(A: B);
-                    procedure Apple
-                        .Booooo
-                        .Caaaaaa(
-                            AAAAAAAAA: BBBBB
-                        );
+                    procedure Applessss.Bananassss(
+                        AAAAAAAAAA: BBBBBBBBBBBB =
+                            CCCCCCCCCCC
+                                .DDDDDDDDDDD
+                    );
+                    procedure Apple.Booooo.Caaaaaa(
+                        A: B
+                    );
+                    function Apple.Booooo.Caaaaaaa(
+                        AAAAAAAAAA:
+                            BBBBBBBBBBBBB
+                                .BBBBBBBBB
+                    ):
+                        AAAAAAAAAAAAA
+                            .AAAAAAAAAAAAA;
                 ",
                 generic_params = "
                     interface
