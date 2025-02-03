@@ -812,6 +812,7 @@ impl<'a> LineFormattingContexts<'a> {
                     }
                     match prev_token_type {
                         TT::Keyword(KK::Of) => {
+                            contexts.push(CT::Subject);
                             contexts.push_expression();
                         }
                         TT::Keyword(KK::Type)
@@ -1055,7 +1056,7 @@ impl<'a> LineFormattingContexts<'a> {
                     contexts.pop_until_and_retain(CT::Precedence(op_prec));
                 }
                 TT::Keyword(KK::Then | KK::Do | KK::Of) => {
-                    contexts.pop_until(context_matches!(CT::ControlFlow | CT::ForLoop | CT::Type));
+                    contexts.pop_until(context_matches!(CT::ControlFlow | CT::ForLoop));
                 }
                 TT::Keyword(KK::Function | KK::Procedure)
                     if last_context_type != CT::RoutineHeader =>

@@ -1072,6 +1072,23 @@ mod type_decls {
                               AAAAAAAAAA
                                   .AAAAAAAAA;
                 ",
+                nested_array_of = "
+                    type
+                      AAAAAAAAAA = array of const;
+                      AAAAAAAAAAA =
+                          array of const;
+                      AAAAAAAAAAA =
+                          array of array of const;
+                      AAAAAAAAAAA =
+                          array of array of AAAAA;
+                      AAAAAAAAAAA =
+                          array of
+                              array of AAAAAA;
+                      AAAAAAAAAAA =
+                          array of
+                              array of
+                                  AAAAAAAAAAA;
+                ",
                 array_index_of_const = "
                     type
                       AAAA = array[0..1] of const;
