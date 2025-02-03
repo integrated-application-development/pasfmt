@@ -840,6 +840,9 @@ impl<'a> LineFormattingContexts<'a> {
                         TT::Keyword(KK::For) => {
                             contexts.push_expression();
                         }
+                        TT::Keyword(KK::In(InKind::ForLoop) | KK::To | KK::Downto) => {
+                            contexts.push_expression();
+                        }
                         TT::Keyword(KK::If | KK::While | KK::On | KK::Until | KK::Case) => {
                             contexts.push_expression();
                         }
@@ -1029,7 +1032,6 @@ impl<'a> LineFormattingContexts<'a> {
                 TT::Keyword(KK::In(InKind::ForLoop) | KK::To | KK::Downto) => {
                     contexts.pop_until(CT::ForLoop);
                     contexts.push(CT::Subject);
-                    contexts.push_expression();
                 }
                 TT::Keyword(KK::Raise) => {
                     contexts.push(CT::Raise);

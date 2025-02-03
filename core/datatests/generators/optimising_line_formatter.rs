@@ -2628,6 +2628,17 @@ mod control_flows {
                                 1111
                             ) do
                       A;
+                    for AAAAAAAAAA := BBBBBBBB
+                        to
+                            CCCCCCCC.DDDDDDDD
+                                + 1 do
+                      A;
+                    for AAAAAAAAAA := BBBBBBBB
+                        to
+                            CCCCCCCCCCC
+                                    .DDDDDDDDDDD
+                                + 1 do
+                      A;
                     for AAAAAAAAAA :=
                             BBBBBBBB(
                                 000000,
