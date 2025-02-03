@@ -557,9 +557,17 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 TT::Keyword(KK::Exports) => {
                     self.finish_logical_line();
                     self.next_token(); // Exports
+                    self.finish_logical_line();
+                    self.context.push(ParserContext {
+                        context_type: ContextType::ImportExport,
+                        context_ending_predicate: never_ending,
+                        level: ParserContextLevel::Level(1),
+                    });
                     self.parse_expression(); // Identifier
                     self.simple_op_until(after_semicolon(), parse_exports);
+                    self.set_logical_line_type(LLT::ExportClause);
                     self.finish_logical_line();
+                    self.context.pop();
                 }
                 TT::Keyword(KK::Class) => {
                     // If class is the first token in the line, allow the next
@@ -689,15 +697,22 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     fn parse_import_clause(&mut self) {
         self.finish_logical_line();
         self.consolidate_current_keyword();
-        self.set_logical_line_type(LLT::ImportClause);
-        self.next_token();
+        self.next_token(); // uses/requires/contains
+        self.finish_logical_line();
+        self.context.push(ParserContext {
+            context_type: ContextType::ImportExport,
+            context_ending_predicate: never_ending,
+            level: ParserContextLevel::Level(1),
+        });
         self.simple_op_until(after_semicolon(), |parser| {
             if let Some(TT::Keyword(KK::In(_))) = parser.get_current_token_type() {
                 parser.set_current_token_type(TT::Keyword(KK::In(InKind::Import)));
             }
             parser.next_token();
         });
+        self.set_logical_line_type(LLT::ImportClause);
         self.finish_logical_line();
+        self.context.pop();
     }
 
     fn consolidate_class_op_in(&mut self) {
@@ -2110,6 +2125,7 @@ enum ContextType {
     RepeatBlock,
     ExceptBlock,
     BlockClause,
+    ImportExport,
 }
 
 #[derive(Debug, Hash, PartialEq, Eq)]

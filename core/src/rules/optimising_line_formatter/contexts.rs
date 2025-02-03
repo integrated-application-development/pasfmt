@@ -751,6 +751,11 @@ impl<'a> LineFormattingContexts<'a> {
                 contexts.push_utility(CT::AssignLHS);
                 contexts.push_utility((CT::CommaList, 0));
             }
+            LLT::ImportClause | LLT::ExportClause => {
+                contexts.push((CT::CommaList, 0));
+                contexts.push(CT::CommaElem);
+                contexts.push_expression();
+            }
             LLT::RoutineHeader => {
                 contexts.push_utility(CT::DirectivesLine);
                 contexts.push(CT::RoutineHeader);
@@ -840,11 +845,6 @@ impl<'a> LineFormattingContexts<'a> {
                         TT::Keyword(KK::With) => {
                             contexts.push_utility((CT::CommaList, 0));
                             contexts.push_utility(CT::CommaElem);
-                            contexts.push_expression();
-                        }
-                        TT::Keyword(KK::Uses | KK::Contains | KK::Requires | KK::Exports) => {
-                            contexts.push((CT::CommaList, 0));
-                            contexts.push(CT::CommaElem);
                             contexts.push_expression();
                         }
                         TT::Keyword(KK::Var(DeclKind::Inline) | KK::Const(DeclKind::Inline)) => {
@@ -2362,19 +2362,19 @@ mod tests {
         #[yare::parameterized(
             uses = {"
                                 uses AA, BB, CC in 'CC.pas';
-                1 Base          ^---------------------------
+                1 Base               ^----------------------
                 0 CommaList          ^--------------------$
                 1 CommaElem                  ^------------$
                 1 Precedence(4)              ^------------$
             "},
             requires = {"
                                package A; requires AA, BB, CC;
-                1 Base                    ^-------------------
+                1 Base                             ^----------
                 0 CommaList                        ^--------$
             "},
             contains = {"
                                package A; contains AA, BB, CC in 'CC.pas';
-                1 Base                    ^-------------------------------
+                1 Base                             ^----------------------
                 0 CommaList                        ^--------------------$
                 1 CommaElem                                ^------------$
                 1 Precedence(4)                            ^------------$
@@ -2387,12 +2387,12 @@ mod tests {
         #[yare::parameterized(
             names = {"
                                exports AA, BB, CC;
-                1 Base         ^------------------
+                1 Base                 ^----------
                 0 CommaList            ^--------$
             "},
             directives = {"
                                exports AA index AA name AA, BB index BB name BB;
-                1 Base         ^------------------------------------------------
+                1 Base                 ^----------------------------------------
                 0 CommaList            ^--------------------------------------$
                 1 CommaElem            ^-----------------$
                 0 DirectiveList           ^--------------$

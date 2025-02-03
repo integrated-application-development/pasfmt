@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Style of the (debug-level) logging of the current configuration. Previously it was in TOML format,
   now it's a simpler struct-level debug formatting.
 - Parsing of variant records. Variant fields are now child lines of the record tag.
+- Parsing of `uses`, `contains`, `requires`, and `exports`. Now parsed as heading and body lines.
 
 ### Added
 

@@ -393,6 +393,7 @@ pub enum LogicalLineType {
     ForLoop,
     Eof,
     ImportClause,
+    ExportClause,
     AsmInstruction,
     PropertyDeclaration,
     RoutineHeader,

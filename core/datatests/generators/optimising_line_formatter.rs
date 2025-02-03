@@ -478,38 +478,35 @@ mod import_exports {
                 root_dir,
                 uses = "
                     program A;
-                    uses AAA;
-                    uses AAAAAAA, BBB.BB, CCCCCCC;
                     uses
-                        AAAA.AAA, BBB.BB, CCCCCCC;
+                      AAAA.AAAA, BBB.BBB, CCCCCCC;
                     uses
-                        AAAAA.AAA,
-                        BBB.BBB,
-                        CCCCCCCC;
+                      AAAAA.AAA,
+                      BBB.BBB,
+                      CCCCCCCC;
                 ",
                 uses_in = "
                     program A;
-                    uses A in 'a';
                     uses
-                        AA.A in 'a', BBBBB in 'b';
+                      AA.AA in 'a', BBBBBB in 'b';
                     uses
-                        AAAAA in 'a',
-                        BB.BB in 'b';
+                      AAAAAA in 'a',
+                      BB.BBB in 'b';
                     uses
-                        AAAAAAAAAAAAAA
-                                .AAAAAAAAAAAA
-                                .AAAAAAAAAAAA
-                            in 'aaaaaaaaaaaaa',
-                        BBBBB
-                            in 'bbbbbbbbbbbbbbbb';
+                      AAAAAAAAAAAAAA
+                              .AAAAAAAAAAAA
+                              .AAAAAAAAAAAA
+                          in 'aaaaaaaaaaaaa',
+                      BBBBBBB
+                          in 'bbbbbbbbbbbbbbbb';
                     uses
-                        AA.AAAA
-                            in 'aaaaaaaaaaaaa',
-                        BBBBB in 'b';
+                      AAAA.AAAA
+                          in 'aaaaaaaaaaaaa',
+                      BBBBB in 'b';
                     uses
-                        AA.AA in 'A',
-                        BBBBBBB
-                            in 'bbbbbbbbbbbbb';
+                      AA.AA in 'A',
+                      BBBBBBB
+                          in 'bbbbbbbbbbbbbbb';
                 ",
             );
         }
@@ -523,19 +520,17 @@ mod import_exports {
                 root_dir,
                 requires = "
                     package A;
-                    requires AAA;
-                    requires AAA.AA, BB.BB, CCCCC;
                     requires
-                        AAAAAA, BBB.BB, CCCCC;
+                      AAAAAA, BBB.BB, CCCCC;
                     requires
-                        AAAAA.AAA,
-                        BBBBBBB,
-                        CCCCC.CC;
+                      AAAAA.AAA,
+                      BBBBBBB,
+                      CCCCC.CC;
                     requires
-                        AAAAAAAAAAAAA
-                            .AAAAAAAAAAAA,
-                        BBBBBBB,
-                        CCCCC.CC;
+                      AAAAAAAAAAAAAA
+                          .AAAAAAAAAAAAA,
+                      BBBBBBB,
+                      CCCCC.CC;
                 ",
             );
         }
@@ -549,38 +544,35 @@ mod import_exports {
                 root_dir,
                 contains = "
                     package A;
-                    contains AAA;
-                    contains AA.AA, BBBBB, CCC.CC;
                     contains
-                        AAAAA, BBB.BB, CCCCCC;
+                      AAAAA, BBB.BB, CCCCCC;
                     contains
-                        AAAA.AAAA,
-                        BBBBBBB,
-                        CCCC.CCC;
+                      AAAA.AAAA,
+                      BBBBBBB,
+                      CCCC.CCC;
                 ",
                 contains_in = "
                     package A;
-                    contains A in 'a';
                     contains
-                        AA.A in 'a', BBB.B in 'b';
+                      AA.AA in 'a', BBB.BB in 'b';
                     contains
-                        AA.AA in 'a',
-                        BBBBB in 'b';
+                      AA.AAA in 'a',
+                      BBBBBB in 'b';
                     contains
-                        AA.AAAA
-                            in 'aaaaaaaaaaaaa',
-                        BBBBB in 'b';
+                      AAAA.AAAA
+                          in 'aaaaaaaaaaaaa',
+                      BBBBB in 'b';
                     contains
-                        AAAAAAAAAAAAAA
-                                .AAAAAAAAAAAA
-                                .AAAAAAAAAAAA
-                            in 'aaaaaaaaaaaaa',
-                        BBBBBBBBBBBBBB
-                            in 'bbbbbbbbbbbbb';
+                      AAAAAAAAAAAAAA
+                              .AAAAAAAAAAAA
+                              .AAAAAAAAAAAA
+                          in 'aaaaaaaaaaaaa',
+                      BBBBBBBBBBBBBB
+                          in 'bbbbbbbbbbbbb';
                     contains
-                        AA.AA in 'A',
-                        BBBBBBB
-                            in 'bbbbbbbbbbbbb';
+                      AA.AA in 'A',
+                      BBBBBBBBB
+                          in 'bbbbbbbbbbbbb';
                 ",
             );
         }
@@ -593,91 +585,85 @@ mod import_exports {
             generate_test_cases!(
                 root_dir,
                 ident = "
-                    exports AAAAAA, BBBBB, CCCCCC;
                     exports
-                        AAAAAA, BBBBBB, CCCCCC;
+                      AAAAAA, BBBBBB, CCCCCC;
                     exports
-                        AAAAAAAA,
-                        BBBBBBBB,
-                        CCCCCC;
+                      AAAAAAAA,
+                      BBBBBBBB,
+                      CCCCCCCC;
                 ",
                 index = "
-                    exports AAAAAAAAA index BBBBB;
                     exports
-                        AAAAAAAAA index BBBBBB;
-                    exports A index B, C index D;
+                      AAAAAAAAA index BBBBBB;
                     exports
-                        AA index BB, C index D;
+                      AA index BB, C index D;
                     exports
-                        AAA index BBB,
-                        CC index DD;
+                      AAA index BBB,
+                      CCC index DDD;
                     exports
-                        AAAAAAAAAA
-                            index BBBBBBBBB,
-                        CC index DD;
+                      AAAAAAAAAAA
+                          index BBBBBBBBBB,
+                      CC index DD;
                     exports
-                        AAAAAAAAAA
-                            index
-                                BBBBBB + CCCCCCC,
-                        CC index DD;
+                      AAAAAAAAAA
+                          index
+                              BBBBBBB + CCCCCCCC,
+                      CC index DD;
                     exports
-                        AAAAAAAAAA
-                            index
-                                BBBBBBB
-                                    + CCCCCCCC,
-                        CC index DD;
+                      AAAAAAAAAA
+                          index
+                              BBBBBBBB
+                                  + CCCCCCCCC,
+                      CC index DD;
                 ",
                 name = "
-                    exports AAAAAAAAA name BBBBBB;
                     exports
-                        AAAAAAAAA name BBBBBBB;
-                    exports A name B, C name D;
+                      AAAAAAAAA name BBBBBBB;
                     exports
-                        AA name BB, CC name DD;
+                      AA name BB, CC name DD;
                     exports
-                        AAA name BBB,
-                        CCC name DDD;
+                      AAAA name BBB,
+                      CCCC name DDD;
                     exports
-                        AAAAAAAAAA
-                            name BBBBBBBBBB,
-                        CC name DD;
+                      AAAAAAAAAAA
+                          name BBBBBBBBBBB,
+                      CC name DD;
                     exports
-                        AAAAAAAAAA
-                            name
-                                BBBBBBB + CCCCCCC,
-                        CC name DD;
+                      AAAAAAAAAAA
+                          name
+                              BBBBBBBB + CCCCCCCC,
+                      CC name DD;
                     exports
-                        AAAAAAAAAA
-                            name
-                                BBBBBBB
-                                    + CCCCCCCC,
-                        CC name DD;
+                      AAAAAAAAAAA
+                          name
+                              BBBBBBBBB
+                                  + CCCCCCCCC,
+                      CC name DD;
                 ",
                 index_name = "
-                    exports AA index AA name AA;
                     exports
-                        AAA index AAA name AAA;
+                      AAA index AAA name AAA;
                     exports
-                        AAAA index AAAA name AAAA,
-                        BBBB index BBBB name BBBB;
+                      AAAA index AAAA name AAAA,
+                      BBBB index BBBB name BBBB;
                     exports
-                        AAAAA
-                            index AAAAA
-                            name AAAAA,
-                        BBBB index BBBB name BBBB;
+                      AAAAA
+                          index AAAAAA
+                          name AAAAAA,
+                      BBBB index BBBB name BBBB;
                     exports
-                        AAAAA
-                            index
-                                AAAAAA + AAAAAAAA
-                            name AAAA,
-                        BBBB index BBBB name BBBB;
+                      AAAAA
+                          index
+                              AAAAAAA + AAAAAAAAA
+                          name AAAA,
+                      BBBB index BBBB name BBBB;
                     exports
-                        AAAAA
-                            index
-                                AAAAAAA
-                                    + AAAAAAAAA
-                            name AAAA,
-                        BBBB index BBBB name BBBB;
+                      AAAAA
+                          index
+                              AAAAAAAA
+                                  + AAAAAAAAAA
+                          name AAAA,
+                      BBBB index BBBB name BBBB;
                 ",
             );
         }

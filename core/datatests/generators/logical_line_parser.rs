@@ -547,8 +547,8 @@ mod import_clauses {
                 one_file = format!(
                     "
                         _|package Foo;
-                        1|{}
-                         |  unit1;
+                        _|{}
+                        1|  unit1;
                         ---
                         1:ImportClause
                     ",
@@ -557,8 +557,8 @@ mod import_clauses {
                 one_file_in = format!(
                     "
                         _|package Foo;
-                        1|{}
-                         |  unit1 in 'foo/bar';
+                        _|{}
+                        1|  unit1 in 'foo/bar';
                         ---
                         1:ImportClause
                     ",
@@ -567,9 +567,8 @@ mod import_clauses {
                 many_files = format!(
                     "
                         _|package Foo;
-                        1|{}
-                         |    unit1
-                         |  , unit2;
+                        _|{}
+                        1|  unit1, unit2;
                         ---
                         1:ImportClause
                     ",
@@ -578,8 +577,8 @@ mod import_clauses {
                 many_files_in = format!(
                     "
                         _|package Foo;
-                        1|{}
-                         |  unit1 in 'foo/bar',
+                        _|{}
+                        1|  unit1 in 'foo/bar',
                          |  unit2 in 'foo/baz';
                         ---
                         1:ImportClause
@@ -607,30 +606,42 @@ mod exports {
         generate_test_cases!(
             root_dir,
             one_export = "
-                1|exports
-                 |  Foo;
+                _|exports
+                1|  Foo;
+                ---
+                1:ExportClause
             ",
             one_export_with_index = "
-                1|exports
-                 |  Foo index 1;
+                _|exports
+                1|  Foo index 1;
+                ---
+                1:ExportClause
             ",
             one_export_with_index_name = "
-                1|exports
-                 |  Foo index 1 name foo;
+                _|exports
+                1|  Foo index 1 name foo;
+                ---
+                1:ExportClause
             ",
             many_exports = "
-                1|exports
-                 |  Foo, Bar;
+                _|exports
+                1|  Foo, Bar;
+                ---
+                1:ExportClause
             ",
             many_exports_with_index = "
-                1|exports
-                 |  Foo index 1,
+                _|exports
+                1|  Foo index 1,
                  |  Bar index 2;
+                ---
+                1:ExportClause
             ",
             many_exports_with_index_name = "
-                1|exports
-                 |  Foo index 1 name Foo,
+                _|exports
+                1|  Foo index 1 name Foo,
                  |  Bar index 2 name Bar;
+                ---
+                1:ExportClause
             ",
         );
     }
