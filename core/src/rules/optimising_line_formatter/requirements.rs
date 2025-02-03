@@ -182,7 +182,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 DR::MustNotBreak
             }
             (_, Some(TT::Keyword(KK::End))) => contexts_data
-                .get_last_context(CT::CommaElem)
+                .get_last_context(context_matches!(CT::CommaElem | CT::AssignRHS))
                 .and_then(|(_, data)| data.break_anonymous_routine)
                 .if_else_or_default(DR::MustBreak, DR::MustNotBreak),
             (_, Some(TT::Keyword(KK::Then | KK::Do | KK::Of))) => DR::MustNotBreak,
@@ -191,7 +191,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 .map(|(_, data)| data.is_child_broken)
                 .if_else_or_default(DR::MustBreak, DR::Indifferent),
             (Some(_), Some(TT::Keyword(KK::Begin))) => contexts_data
-                .get_last_context(CT::CommaElem)
+                .get_last_context(context_matches!(CT::CommaElem | CT::AssignRHS))
                 .and_then(|(_, data)| data.break_anonymous_routine)
                 .if_else_or_default(DR::MustBreak, DR::MustNotBreak),
             (

@@ -589,9 +589,13 @@ impl<'a> SpecificContextStack<'a> {
                 _,
                 Some(TT::Keyword(KK::Label | KK::Const(_) | KK::Type | KK::Var(_) | KK::ThreadVar)),
             ) => {
-                let _ = self.update_last_matching_context(node, CT::CommaElem, |_, data| {
-                    data.break_anonymous_routine.get_or_insert(is_break);
-                }) || (self.formatting_contexts.line.get_line_type() != LLT::ForLoop
+                let _ = self.update_last_matching_context(
+                    node,
+                    context_matches!(CT::CommaElem | CT::AssignRHS),
+                    |_, data| {
+                        data.break_anonymous_routine.get_or_insert(is_break);
+                    },
+                ) || (self.formatting_contexts.line.get_line_type() != LLT::ForLoop
                     && self.update_last_matching_context(node, CT::Subject, apply_pivotal_break))
                     || self.update_last_matching_context(node, context_matches!(_), |_, data| {
                         data.is_broken |= is_break;
@@ -649,7 +653,7 @@ impl<'a> SpecificContextStack<'a> {
                             data.one_element_per_line = Some(true);
                         }
                     }
-                    CT::CommaElem => {
+                    CT::CommaElem | CT::AssignRHS => {
                         if is_break {
                             data.break_anonymous_routine = Some(true);
                         }

@@ -438,6 +438,24 @@ mod anonymous {
                         end
                     );
             ",
+            assignment = "
+                    A := procedure begin AAA; end;
+                    AA :=
+                        procedure begin AAA; end;
+                    AA :=
+                        procedure
+                        begin
+                          A;
+                          A;
+                        end;
+                    AA :=
+                        procedure
+                        var
+                          A: TProc;
+                        begin
+                          A;
+                        end;
+            "
         );
     }
 }
