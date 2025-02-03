@@ -45,6 +45,10 @@ impl LogicalLineFileFormatter for TokenSpacing {
                 }
             }
         }
+
+        if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(0) {
+            formatting_data.spaces_before = 0;
+        }
     }
 }
 
@@ -446,5 +450,10 @@ mod tests {
         literal_then_directive_before_binary_op = {"1{$R}+2", "1 {$R} + 2"},
         several_directives_and_comments_before_unary_op = {"{}{$R}{}+2", "{} {$R} {} +2"},
         several_directives_and_comments_before_binary_op = {"1{}{$R}{}+2", "1 {} {$R} {} + 2"},
+    );
+
+    formatter_test_group!(
+        global,
+        before_first_token = {"    A   +   B;", "A + B;"},
     );
 }
