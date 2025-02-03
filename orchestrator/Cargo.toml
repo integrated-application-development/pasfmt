@@ -4,7 +4,7 @@ version = "0.3.0+dev"
 edition = "2021"
 
 [dependencies]
-clap = { workspace = true, features = ["derive"] }
+clap = { workspace = true, features = ["derive", "wrap_help"] }
 encoding_rs = { workspace = true }
 glob = { workspace = true }
 pasfmt-core = { path = "../core" }

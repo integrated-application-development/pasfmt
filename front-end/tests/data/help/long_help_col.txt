@@ -2,29 +2,35 @@
 
 [1m[4m[37mArguments:[0m
   [37m[PATHS]...[0m
-          Paths that will be formatted. Can be a path/dir/glob. If no paths are specified, stdin is read
+          Paths that will be formatted. Can be a path/dir/glob. If no paths are specified, stdin is
+          read
 
 [1m[4m[37mOptions:[0m
   [96m-f[0m, [96m--files-from[0m[37m [0m[37m<FILES_FROM>[0m
           A file containing paths to operate on. Newline separated list of path/dir/glob
 
       [96m--config-file[0m[37m [0m[37m<CONFIG_FILE>[0m
-          Override the configuration file. By default working directory will be traversed until a `pasfmt.toml` file is found
+          Override the configuration file. By default working directory will be traversed until a
+          `pasfmt.toml` file is found
 
   [96m-C[0m[37m [0m[37m<KEY=VALUE>[0m
-          Override one configuration option using KEY=VALUE. This takes precedence over `--config-file`
+          Override one configuration option using KEY=VALUE. This takes precedence over
+          `--config-file`
 
   [96m-m[0m, [96m--mode[0m[37m [0m[37m<MODE>[0m
           The mode of operation
           
-          The default is `files`, unless data is being read from stdin, in which case the default is `stdout`.
+          The default is `files`, unless data is being read from stdin, in which case the default is
+          `stdout`.
           
-          When the mode is `stdout` and data is being read from files, all output is concatenated in a human-readable format.
+          When the mode is `stdout` and data is being read from files, all output is concatenated in
+          a human-readable format.
 
           Possible values:
           - [96mfiles[0m:  format files in-place
           - [96mstdout[0m: print formatted files to stdout
-          - [96mcheck[0m:  exit zero if input is formatted correctly, otherwise exit non-zero and list the erroneous files
+          - [96mcheck[0m:  exit zero if input is formatted correctly, otherwise exit non-zero and list the
+            erroneous files
 
   [96m-v[0m, [96m--verbose[0m[37m...[0m
           Increase logging verbosity (can be repeated)

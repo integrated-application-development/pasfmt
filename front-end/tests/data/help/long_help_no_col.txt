@@ -2,29 +2,35 @@ Usage: pasfmt [OPTIONS] [PATHS]...
 
 Arguments:
   [PATHS]...
-          Paths that will be formatted. Can be a path/dir/glob. If no paths are specified, stdin is read
+          Paths that will be formatted. Can be a path/dir/glob. If no paths are specified, stdin is
+          read
 
 Options:
   -f, --files-from <FILES_FROM>
           A file containing paths to operate on. Newline separated list of path/dir/glob
 
       --config-file <CONFIG_FILE>
-          Override the configuration file. By default working directory will be traversed until a `pasfmt.toml` file is found
+          Override the configuration file. By default working directory will be traversed until a
+          `pasfmt.toml` file is found
 
   -C <KEY=VALUE>
-          Override one configuration option using KEY=VALUE. This takes precedence over `--config-file`
+          Override one configuration option using KEY=VALUE. This takes precedence over
+          `--config-file`
 
   -m, --mode <MODE>
           The mode of operation
           
-          The default is `files`, unless data is being read from stdin, in which case the default is `stdout`.
+          The default is `files`, unless data is being read from stdin, in which case the default is
+          `stdout`.
           
-          When the mode is `stdout` and data is being read from files, all output is concatenated in a human-readable format.
+          When the mode is `stdout` and data is being read from files, all output is concatenated in
+          a human-readable format.
 
           Possible values:
           - files:  format files in-place
           - stdout: print formatted files to stdout
-          - check:  exit zero if input is formatted correctly, otherwise exit non-zero and list the erroneous files
+          - check:  exit zero if input is formatted correctly, otherwise exit non-zero and list the
+            erroneous files
 
   -v, --verbose...
           Increase logging verbosity (can be repeated)
