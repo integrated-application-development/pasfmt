@@ -4,25 +4,62 @@ use itertools::Itertools;
 
 use super::*;
 
-pub(super) struct RawDebugLine<'a> {
+pub(super) struct RawDebugLine<'a, 'b, 'c> {
     line: (usize, &'a LogicalLine),
-    formatted_tokens: &'a FormattedTokens<'a>,
+    iolf: &'a InternalOptimisingLineFormatter<'b, 'c>,
 }
-impl<'a> RawDebugLine<'a> {
-    pub fn new(line: (usize, &'a LogicalLine), formatted_tokens: &'a FormattedTokens<'a>) -> Self {
-        Self {
-            line,
-            formatted_tokens,
-        }
+impl<'a, 'b, 'c> RawDebugLine<'a, 'b, 'c> {
+    pub fn new(
+        line: (usize, &'a LogicalLine),
+        iolf: &'a InternalOptimisingLineFormatter<'b, 'c>,
+    ) -> Self {
+        Self { line, iolf }
     }
 }
-impl Debug for RawDebugLine<'_> {
+impl Debug for RawDebugLine<'_, '_, '_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let minmax = self.line.1.get_tokens().iter().cloned().minmax();
-        let (first, last) = minmax.into_option().unwrap_or((0, 0));
+        let (first, mut last) = minmax.into_option().unwrap_or((0, 0));
 
-        let included_tokens = (first..last).flat_map(|token_index| {
-            self.formatted_tokens
+        let get_next_line_parent = |line_children: &LineChildren| {
+            let last_child_line_index = *line_children.line_indices.last()?;
+            let last_child_line_token_index = *self
+                .iolf
+                .lines
+                .get(last_child_line_index)?
+                .get_tokens()
+                .last()?;
+            Some(LineParent {
+                line_index: last_child_line_index,
+                global_token_index: last_child_line_token_index,
+            })
+        };
+
+        let mut line_parent = LineParent {
+            line_index: self.line.0,
+            global_token_index: *self
+                .line
+                .1
+                .get_tokens()
+                .iter()
+                .rev()
+                .find(|&&t| !self.iolf.token_types[t].is_comment_or_directive())
+                .unwrap_or(&last),
+        };
+        while let Some(children) = self.iolf.line_children.get(&line_parent) {
+            if let Some(next_parent) = get_next_line_parent(children) {
+                line_parent = next_parent;
+                if next_parent.global_token_index > last {
+                    last = next_parent.global_token_index;
+                }
+            } else {
+                break;
+            }
+        }
+
+        let included_tokens = (first..=last).flat_map(|token_index| {
+            self.iolf
+                .formatted_tokens
                 .get_token(token_index)
                 .map(|token| token.0)
         });

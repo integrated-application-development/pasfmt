@@ -190,14 +190,14 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             trace!(
                 "Skipping formatting `{:?}` line:\n{:?}",
                 line.1.get_line_type(),
-                RawDebugLine::new(line, self.formatted_tokens)
+                RawDebugLine::new(line, self)
             );
             return None;
         } else {
             trace!(
                 "Formatting `{:?}` line:\n{:?}",
                 line.1.get_line_type(),
-                RawDebugLine::new(line, self.formatted_tokens)
+                RawDebugLine::new(line, self)
             );
         }
         let optimal_solution = self.find_optimal_solution(
@@ -223,7 +223,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                         FormattingSolutionError::IterationLimitReached => "Iteration limit reached",
                         FormattingSolutionError::NoSolutionFound => "No solution found",
                     },
-                    RawDebugLine::new(line, self.formatted_tokens),
+                    RawDebugLine::new(line, self),
                 )
             })
             .ok()
