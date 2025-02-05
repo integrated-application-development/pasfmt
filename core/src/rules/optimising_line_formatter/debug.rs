@@ -111,22 +111,45 @@ impl<'a, 'b> DebugPrintableLine<'a, 'b> {
 }
 impl Debug for DebugPrintableLine<'_, '_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        InternalDebugPrintableLine {
+            dpl: self,
+            top_level: true,
+        }
+        .fmt(f)
+    }
+}
+struct InternalDebugPrintableLine<'a, 'b, 'c> {
+    dpl: &'a DebugPrintableLine<'b, 'c>,
+    top_level: bool,
+}
+impl Debug for InternalDebugPrintableLine<'_, '_, '_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let tokens_decisions = self
+            .dpl
             .line
             .get_tokens()
             .iter()
-            .map(|&token_idx| self.iolf.formatted_tokens.get_token(token_idx).unwrap())
-            .zip(&self.decisions.0)
+            .map(|&token_idx| self.dpl.iolf.formatted_tokens.get_token(token_idx).unwrap())
+            .zip(&self.dpl.decisions.0)
             .enumerate();
 
         for (line_index, ((token, formatting_data), decision)) in tokens_decisions {
-            let starting_ind = self.starting_ws.indentations;
-            let starting_cont = self.starting_ws.continuations;
+            let starting_ind = self.dpl.starting_ws.indentations;
+            let starting_cont = self.dpl.starting_ws.continuations;
+            if self.top_level && line_index == 0 && matches!(decision.decision, Decision::Continue)
+            {
+                for _ in 0..(decision.last_line_length
+                    - token.get_content().len() as u32
+                    - formatting_data.spaces_before as u32)
+                {
+                    f.write_char('█')?;
+                }
+            }
             let (nl, ind, cont, sp) = match (decision.decision, line_index) {
-                (Decision::Continue, 0) if self.line.get_parent().is_none() => {
+                (Decision::Continue, 0) if self.dpl.line.get_parent().is_none() => {
                     (0, starting_ind, starting_cont, 0)
                 }
-                (Decision::Break { continuations }, 0) if self.line.get_parent().is_none() => {
+                (Decision::Break { continuations }, 0) if self.dpl.line.get_parent().is_none() => {
                     (0, starting_ind, starting_cont + continuations, 0)
                 }
                 (Decision::Break { continuations }, _) => {
@@ -135,13 +158,13 @@ impl Debug for DebugPrintableLine<'_, '_> {
                 (Decision::Continue, _) => (0, 0, 0, formatting_data.spaces_before),
             };
             for _ in 0..nl {
-                f.write_str(self.iolf.recon_settings.get_newline_str())?;
+                f.write_str(self.dpl.iolf.recon_settings.get_newline_str())?;
             }
             for _ in 0..ind {
-                f.write_str(self.iolf.recon_settings.get_indentation_str())?;
+                f.write_str(self.dpl.iolf.recon_settings.get_indentation_str())?;
             }
             for _ in 0..cont {
-                f.write_str(self.iolf.recon_settings.get_continuation_str())?;
+                f.write_str(self.dpl.iolf.recon_settings.get_continuation_str())?;
             }
             for _ in 0..sp {
                 f.write_char(' ')?;
@@ -150,21 +173,25 @@ impl Debug for DebugPrintableLine<'_, '_> {
             f.write_str(token.get_content())?;
 
             for (line_index, child_solution) in &decision.child_solutions {
-                DebugPrintableLine::new(
-                    child_solution,
-                    self.starting_ws,
-                    &self.iolf.lines[*line_index],
-                    self.iolf,
-                )
+                InternalDebugPrintableLine {
+                    dpl: &DebugPrintableLine::new(
+                        child_solution,
+                        child_solution.starting_ws,
+                        &self.dpl.iolf.lines[*line_index],
+                        self.dpl.iolf,
+                    ),
+                    top_level: false,
+                }
                 .fmt(f)?;
             }
         }
 
         if let Some((token, _)) = self
+            .dpl
             .line
             .get_tokens()
-            .get(self.decisions.0.len())
-            .and_then(|token_idx| self.iolf.formatted_tokens.get_token(*token_idx))
+            .get(self.dpl.decisions.0.len())
+            .and_then(|token_idx| self.dpl.iolf.formatted_tokens.get_token(*token_idx))
         {
             write!(f, " [{}]", token.get_content())?;
         }
