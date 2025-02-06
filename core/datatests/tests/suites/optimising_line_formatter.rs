@@ -1,7 +1,9 @@
-use std::{fs::read_to_string, path::Path};
+use std::{error::Error, fs::read_to_string, path::Path};
 
 use itertools::Itertools;
 use pretty_assertions::assert_str_eq;
+
+use crate::suites::get_input_output;
 
 use super::ErrorString;
 use pasfmt_core::prelude::*;
@@ -28,16 +30,32 @@ fn run_test(input: &str) -> datatest_stable::Result<()> {
         ))
         .build();
 
+    let io = get_input_output(input);
+    let input = trim_string(io.input)?;
+    let expected_output = io
+        .output
+        .map(trim_string)
+        .unwrap_or_else(|| Ok(input.clone()))?;
+
+    let formatted_input = formatter.format(&input);
+    assert_str_eq!(formatted_input, expected_output);
+    Ok(())
+}
+
+fn trim_string(input: &str) -> Result<String, Box<dyn Error>> {
+    let mut lines = input.lines();
+    let first_line = lines.next();
+    if first_line != Some("") {
+        return Ok(input.to_string());
+    }
+
     let leading_whitespace = input
         .lines()
         .find_or_first(|line| !line.trim().is_empty())
         .map(|line| line.len() - line.trim_start().len())
         .unwrap_or(0);
-    let trimmed_input = input
-        .lines()
-        .enumerate()
-        .filter(|&(index, line)| !(index == 0 && line.trim().is_empty()))
-        .map(|(_, line)| {
+    Ok(lines
+        .map(|line| {
             let all_whitespace = line.chars().all(char::is_whitespace);
             match line.split_at_checked(leading_whitespace) {
                 None if all_whitespace => Ok(line.trim()),
@@ -53,11 +71,7 @@ fn run_test(input: &str) -> datatest_stable::Result<()> {
             }
         })
         .collect::<Result<Vec<_>, _>>()?
-        .join("\n");
-    let formatted_input = formatter.format(&trimmed_input);
-
-    assert_str_eq!(trimmed_input, formatted_input);
-    Ok(())
+        .join("\n"))
 }
 
 pub fn test_file(path: &Path) -> datatest_stable::Result<()> {

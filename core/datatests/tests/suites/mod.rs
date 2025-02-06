@@ -16,3 +16,22 @@ impl fmt::Display for ErrorString {
     }
 }
 impl Error for ErrorString {}
+
+pub const FILE_SEPARATOR: &str = "!#################################!";
+
+struct InputOutput<'i> {
+    input: &'i str,
+    output: Option<&'i str>,
+}
+fn get_input_output(input: &str) -> InputOutput {
+    match input.split_once(FILE_SEPARATOR) {
+        Some((input, output)) => InputOutput {
+            input,
+            output: Some(output),
+        },
+        None => InputOutput {
+            input,
+            output: None,
+        },
+    }
+}
