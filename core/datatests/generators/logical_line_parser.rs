@@ -2210,148 +2210,134 @@ mod control_flows {
         pub fn generate(root_dir: &Path) {
             generate_test_cases!(
                 root_dir,
-                inline = "
-                    _|begin
-                    _|  if True then
-                    _|    Foo := Bar;
-                    _|end;
-                ",
-                inline_nested = "
-                    _|begin
-                    _|  if True then
-                    _|    if True then
-                    _|      Foo := Bar;
-                    _|end;
-                ",
-                inline_nested_compound = "
-                    _|begin
-                    _|  if True then
-                    _|    if True then begin
-                    _|      Foo := Bar;
-                    _|    end;
-                    _|end;
-                ",
-                inline_else = "
-                    _|begin
-                    _|  if True then
-                    _|    Foo := Bar
-                    _|  else
-                    _|    Bar := Foo;
-                    _|end;
-                ",
-                inline_else_if = "
-                    _|begin
-                    _|  if True then
-                    _|    Foo := Bar
-                    _|  else if True then
-                    _|    Bar := Foo;
-                    _|end;
-                ",
-                inline_else_if_else = "
-                    _|begin
-                    _|  if True then
-                    _|    Foo := Bar
-                    _|  else if True then
-                    _|    Bar := Foo
-                    _|  else
-                    _|    Baz := Flarp;
-                    _|end;
-                ",
-                inline_else_if_else_if = "
-                    _|begin
-                    _|  if True then
-                    _|    Foo := Bar
-                    _|  else if True then
-                    _|    Bar := Foo
-                    _|  else if False then
-                    _|    Baz := Flarp;
-                    _|end;
-                ",
-                inline_dangling_else = "
-                    _|begin
-                    _|  if True then
-                    _|    if True then
-                    _|      Foo := Bar;
-                    _|    else
-                    _|      Bar := Foo;
-                    _|end;
+                statement = "
+                    _  |begin
+                    _1 |  if True then{1}
+                    _^1|    Foo := Bar;
+                    _  |end;
                 ",
                 compound = "
-                    _|begin
-                    _|  if True then begin
-                    _|    Foo := Bar;
-                    _|  end;
-                    _|end;
+                    _  |begin
+                    _1 |  if True then{1}
+                    _^1|    begin
+                    _^1|      Foo := Bar;
+                    _^1|    end;
+                    _  |end;
                 ",
-                compound_else = "
-                    _|begin
-                    _|  if True then begin
-                    _|    Foo := Bar;
-                    _|  end
-                    _|  else begin
-                    _|    Bar := Foo;
-                    _|  end;
-                    _|end;
+                if_if = "
+                    _   |begin
+                    _1  |  if True then{1}
+                    _2^1|    if True then{2}
+                    _^2 |      Foo := Bar;
+                    _   |end;
                 ",
-                compound_else_if = "
-                    _|begin
-                    _|  if True then begin
-                    _|    Foo := Bar;
-                    _|  end
-                    _|  else if True then begin
-                    _|    Bar := Foo;
-                    _|  end;
-                    _|end;
+                if_label_compound = "
+                    _   |begin
+                    _1  |  if True then{1}
+                    _^1 |    lab:
+                    _^1 |    begin
+                    _^1 |      Foo := Bar;
+                    _^1 |    end;
+                    _   |end;
                 ",
-                compound_else_if_else = "
-                    _|begin
-                    _|  if True then begin
-                    _|    Foo := Bar;
-                    _|  end
-                    _|  else if True then begin
-                    _|    Bar := Foo;
-                    _|  end
-                    _|  else begin
-                    _|    Baz := Flarp;
-                    _|  end;
-                    _|end;
+                if_if_compound = "
+                    _   |begin
+                    _1  |  if True then{1}
+                    _2^1|    if True then{2}
+                    _^2 |      begin
+                    _^2 |        Foo := Bar;
+                    _^2 |      end;
+                    _   |end;
                 ",
-                compound_else_if_else_if = "
-                    _|begin
-                    _|  if True then begin
-                    _|    Foo := Bar;
-                    _|  end
-                    _|  else if True then begin
-                    _|    Bar := Foo;
-                    _|  end
-                    _|  else if False then begin
-                    _|    Baz := Flarp;
-                    _|  end;
-                    _|end;
+                if_compound_if = "
+                    _   |begin
+                    _1  |  if True then{1}
+                    _^1 |    begin
+                    _2^1|      if True then{2}
+                    _^2 |        Foo := Bar
+                    _^1 |    end;
+                    _   |end;
+                ",
+                if_compound_if_semicolon = "
+                    _   |begin
+                    _1  |  if True then{1}
+                    _^1 |    begin
+                    _2^1|      if True then{2}
+                    _^2 |        Foo := Bar;
+                    _^1 |    end;
+                    _   |end;
+                ",
+                statement_else_statement = "
+                    _  |begin
+                    _1 |  if True then{1}
+                    _^1|    Foo := Bar
+                    _1 |  else{2}
+                    _^2|    Bar := Foo;
+                    _  |end;
+                ",
+                compound_else_compound = "
+                    _  |begin
+                    _1 |  if True then{1}
+                    _^1|    begin
+                    _^1|      Foo := Bar;
+                    _^1|    end
+                    _1 |  else{2}
+                    _^2|    begin
+                    _^2|      Baz := Flarp;
+                    _^2|    end;
+                    _  |end;
+                ",
+                statement_else_if = "
+                    _   |begin
+                    _1  |  if True then{1}
+                    _^1 |    Foo := Bar
+                    _1  |  else{2}
+                    _2^2|    if True then{3}
+                    _^3 |      Bar := Foo;
+                    _   |end;
+                ",
+                statement_else_if_else = "
+                    _   |begin
+                    _1  |  if True then{1}
+                    _^1 |    Foo := Bar
+                    _1  |  else{2}
+                    _2^2|    if True then{3}
+                    _^3 |      Bar := Foo
+                    _2^2|    else{4}
+                    _^4 |      Foo := Flarp;
+                    _   |end;
+                ",
+                if_if_dangling_else = "
+                    _   |begin
+                    _1  |  if True then{1}
+                    _2^1|    if True then{2}
+                    _^2 |      Foo := Bar
+                    _2^1|    else{3}
+                    _^3 |      Bar := Foo;
+                    _   |end;
                 ",
                 anonymous_clause = "
                     _  |begin
                     1  |  if Foo(procedure begin{1}
                     _^1|    Foo := Bar;
                     _^1|    Result := True;
-                    1  |  end) then begin
-                    _  |    Foo := Bar;
-                    _  |  end;
+                    1  |  end) then{1}
+                    _^1|    begin
+                    _^1|      Foo := Bar;
+                    _^1|    end;
                     _  |end;
                 ",
                 anonymous_clause_nested = "
                     _  |begin
                     1  |  if Foo(procedure begin{1}
-                    _^1|    Foo := Bar;
-                    _^1|    Result := True;
-                    1  |  end) then begin
-                    2  |    if Foo(procedure begin{2}
-                    _^2|      Foo := Bar;
-                    _^2|      Result := True;
-                    2  |    end) then begin
-                    _  |      Foo := Bar;
-                    _  |    end;
-                    _  |  end;
+                    _^1|    Foo := Foo;
+                    1  |  end) then{2}
+                    _^2|    begin
+                    2^2|      if Bar(procedure begin{3}
+                    _^3|        Bar := Bar;
+                    2  |      end) then{4}
+                    _^4|        Baz := Baz
+                    _^2|    end;
                     _  |end;
                 ",
             );
@@ -2367,11 +2353,12 @@ mod control_flows {
                     $root_dir,
                     simple_compound = format!(
                         "
-                            _|begin
-                            _|  {} True {} begin
-                            _|    Foo := Bar;
-                            _|  end;
-                            _|end;
+                            _  |begin
+                            _1 |  {} True {}{{1}}
+                            _^1|    begin
+                            _^1|      Foo := Bar;
+                            _^1|    end;
+                            _  |end;
                         ",
                         $($input,)*
                     ),
@@ -2381,40 +2368,30 @@ mod control_flows {
                             _1 |  {} Foo(procedure begin{{1}}
                             _^1|    Foo := Bar;
                             _^1|    Result := True;
-                            1  |  end) {} begin
-                            _  |    Foo := Bar;
-                            _  |  end;
+                            1  |  end) {}{{2}}
+                            _^2|    begin
+                            _^2|      Foo := Bar;
+                            _^2|    end;
                             _  |end;
                         ",
                         $($input,)*
                     ),
                     inline = format!(
                         "
-                            _|begin
-                            _|  {} True {}
-                            _|    Foo := Bar;
-                            _|end;
+                            _  |begin
+                            _1 |  {} True {}{{1}}
+                            _^1|    Foo := Bar;
+                            _  |end;
                         ",
                         $($input,)*
                     ),
                     inline_nested = format!(
                         "
-                            _|begin
-                            _|  {0} True {1}
-                            _|    {0} True {1}
-                            _|      Foo := Bar;
-                            _|end;
-                        ",
-                        $($input,)*
-                    ),
-                    inline_nested_compound = format!(
-                        "
-                            _|begin
-                            _|  {0} True {1}
-                            _|    {0} True {1} begin
-                            _|      Foo := Bar;
-                            _|    end;
-                            _|end;
+                            _   |begin
+                            _1  |  {0} True {1}{{1}}
+                            _2^1|    {0} True {1}{{2}}
+                            _^2 |      Foo := Bar;
+                            _   |end;
                         ",
                         $($input,)*
                     ),
@@ -2454,14 +2431,16 @@ mod control_flows {
                     3:CaseArm
                 ",
                 no_else_compound = "
-                    1|case True of
-                    2|  Foo: begin
-                    _|    A;
-                    _|  end;
-                    3|  Bar: begin
-                    _|    B;
-                    _|  end;
-                    _|end;
+                    1  |case True of
+                    2  |  Foo:{1}
+                    _^1|    begin
+                    _^1|      A;
+                    _^1|    end;
+                    3  |  Bar:{2}
+                    _^2|    begin
+                    _^2|      B;
+                    _^2|    end;
+                    _  |end;
                     ---
                     1:CaseHeader
                     2:CaseArm
@@ -2494,16 +2473,18 @@ mod control_flows {
                     3:CaseArm
                 ",
                 else_compound = "
-                    1|case True of
-                    2|  Foo: begin
-                    _|    A;
-                    _|  end;
-                    3|  Bar: begin
-                    _|    B;
-                    _|  end;
-                    _|else
-                    _|  A;
-                    _|end;
+                    1  |case True of
+                    2  |  Foo:{1}
+                    _^1|    begin
+                    _^1|      A;
+                    _^1|    end;
+                    3  |  Bar:{2}
+                    _^2|    begin
+                    _^2|      B;
+                    _^2|    end;
+                    _  |else
+                    _  |  A;
+                    _  |end;
                     ---
                     1:CaseHeader
                     2:CaseArm
@@ -2514,9 +2495,10 @@ mod control_flows {
                     _^1|  Bar;
                     _^1|  Baz;
                     1  |end) of
-                    2  |  Foo: begin
-                    _  |    A;
-                    _  |  end;
+                    2  |  Foo:{2}
+                    _^2|    begin
+                    _^2|      A;
+                    _^2|    end;
                     _  |end;
                     ---
                     1:CaseHeader
@@ -2539,43 +2521,46 @@ mod control_flows {
                     _|end;
                 ",
                 except_on = "
-                    _|try
-                    _|  A;
-                    _|except
-                    _|  on Exception do
-                    _|    A;
-                    _|end;
+                    _  |try
+                    _  |  A;
+                    _  |except
+                    _1 |  on Exception do{1}
+                    _^1|    A;
+                    _  |end;
                 ",
                 except_on_multiple = "
-                    _|try
-                    _|  A;
-                    _|except
-                    _|  on TFooException do
-                    _|    B;
-                    _|  on Exception do
-                    _|    A;
-                    _|end;
+                    _  |try
+                    _  |  A;
+                    _  |except
+                    _1 |  on TFooException do{1}
+                    _^1|    B;
+                    _2 |  on Exception do{2}
+                    _^2|    A;
+                    _  |end;
                 ",
                 except_on_compound = "
-                    _|try
-                    _|  A;
-                    _|except
-                    _|  on Exception do begin
-                    _|    A;
-                    _|  end;
-                    _|end;
+                    _  |try
+                    _  |  A;
+                    _  |except
+                    _1 |  on Exception do{1}
+                    _^1|    begin
+                    _^1|      A;
+                    _^1|    end;
+                    _  |end;
                 ",
                 except_on_compound_multiple = "
-                    _|try
-                    _|  A;
-                    _|except
-                    _|  on TFooException do begin
-                    _|    A;
-                    _|  end;
-                    _|  on Exception do begin
-                    _|    B;
-                    _|  end;
-                    _|end;
+                    _  |try
+                    _  |  A;
+                    _  |except
+                    _1 |  on TFooException do{1}
+                    _^1|    begin
+                    _^1|      A;
+                    _^1|    end;
+                    _2 |  on Exception do{2}
+                    _^2|    begin
+                    _^2|      B;
+                    _^2|    end;
+                    _  |end;
                 ",
                 except_else = "
                     _|try
@@ -2587,15 +2572,15 @@ mod control_flows {
                     _|end;
                 ",
                 except_on_else = "
-                    _|try
-                    _|  A;
-                    _|except
-                    _|  on TFooException do
-                    _|    A;
-                    _|else
-                    _|  B;
-                    _|  C;
-                    _|end;
+                    _  |try
+                    _  |  A;
+                    _  |except
+                    _1 |  on TFooException do{1}
+                    _^1|    A;
+                    _  |else
+                    _  |  B;
+                    _  |  C;
+                    _  |end;
                 ",
                 finally = "
                     _|try
@@ -2985,12 +2970,12 @@ mod attributes {
             ",
             fp_array = "_|Foo([a, b, c], [d, e, f]);",
             inside_if_then = "
-                _|if [Foo] Bar and Baz then
-                _|  Action;
+                _1 |if [Foo] Bar and Baz then{1}
+                _^1|  Action;
             ",
             inside_while_do = "
-                _|while [Foo] Bar and Baz do
-                _|  Action;
+                _1 |while [Foo] Bar and Baz do{1}
+                _^1|  Action;
             ",
         );
     }
@@ -3024,22 +3009,22 @@ mod semicolons {
                 _|end;
             ",
             inline_if = "
-                _|begin
-                _|  if True then
-                _|    A{}
-                _|end;
+                _  |begin
+                _1 |  if True then{{1}}
+                _^1|    A{}
+                _  |end;
             ",
             inline_while_loop = "
-                _|begin
-                _|  while True do
-                _|    A{}
-                _|end;
+                _  |begin
+                _1 |  while True do{{1}}
+                _^1|    A{}
+                _  |end;
             ",
             inline_for_loop = "
-                _|begin
-                _|  for A in B do
-                _|    A{}
-                _|end;
+                _  |begin
+                _1 |  for A in B do{{1}}
+                _^1|    A{}
+                _  |end;
             ",
             repeat_until = "
                 _|begin
@@ -3049,30 +3034,31 @@ mod semicolons {
                 _|end;
             ",
             try_except = "
-                _|try
-                _|  for A in B do
-                _|    A{0}
-                _|except
-                _|  on E do
-                _|    B{0}
-                _|else
-                _|  B{0}
-                _|end;
+                _  |try
+                _1 |  for A in B do{{1}}
+                _^1|    A{0}
+                _  |except
+                _2 |  on E do{{2}}
+                _^2|    B{0}
+                _  |else
+                _  |  B{0}
+                _  |end;
             ",
             try_finally = "
-                _|try
-                _|  for A in B do
-                _|    A{0}
-                _|finally
-                _|  B{0}
-                _|end;
+                _  |try
+                _1 |  for A in B do{{1}}
+                _^1|    A{0}
+                _  |finally
+                _  |  B{0}
+                _  |end;
             ",
             case = "
-                _|case A of
-                _|  B: C{0}
-                _|else
-                _|  D{0}
-                _|end;
+                _  |case A of
+                _1 |  B:{{1}}
+                _^1|    C{0}
+                _  |else
+                _  |  D{0}
+                _  |end;
             ",
             anonymous_impl = "
                 _1 |A := procedure

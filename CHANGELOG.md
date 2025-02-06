@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `use_tabs` now controls the character used for indentation.
   - `tab_width` now controls the number of spaces per indentation.
   - `continuation_indents` now controls the number of indentations per continuation.
+- Parsing of `while`, `with`, `on`, `if`, case arm and `for` statements to use
+  child lines for their nested statements.
 
 ### Added
 

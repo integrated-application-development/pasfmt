@@ -3031,6 +3031,44 @@ mod control_flows {
                       Bar;
                     end;
                 ",
+                case_if_else = "
+                    case A of
+                      AAAAAAAAAAAAAA:
+                        if AAAAA then Foo;
+                    else
+                      Bar;
+                    end;
+                    case A of
+                      AAAAAAAAAAAAAA:
+                        if AAAAA then
+                          Foo
+                        else
+                          Bar;
+                    end;
+                    case A of
+                      AAAAAAAAAAAAAA:
+                        if AAAAA then
+                          while BBBBB do Foo;
+                    else
+                      Bar;
+                    end;
+                    case A of
+                      AAAAAAAAAAAAAA:
+                        if AAAAA then
+                          while BBBBB do Foo
+                        else
+                          Bar;
+                    end;
+                    case A of
+                      AAAAAAAAAAAAAA:
+                        if AAAAA then
+                          Foo
+                        else
+                          Bar;
+                    else
+                      Baz;
+                    end;
+                ",
             );
         }
     }
