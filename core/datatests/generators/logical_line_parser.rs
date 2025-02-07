@@ -2421,10 +2421,24 @@ mod control_flows {
             generate_test_cases!(
                 root_dir,
                 no_else = "
-                    1|case True of
-                    2|  Foo:;
-                    3|  Bar:;
-                    _|end;
+                    1  |case True of
+                    2  |  Foo:{1}
+                    _^1|    ;
+                    3  |  Bar:{2}
+                    _^2|    ;
+                    _  |end;
+                    ---
+                    1:CaseHeader
+                    2:CaseArm
+                    3:CaseArm
+                ",
+                no_else_multiple_matches = "
+                    1  |case True of
+                    2  |  Foo, Bar:{1}
+                    _^1|    ;
+                    3  |  Baz..Bazz, Flarp..Flarpp:{2}
+                    _^2|    ;
+                    _  |end;
                     ---
                     1:CaseHeader
                     2:CaseArm
@@ -2448,8 +2462,10 @@ mod control_flows {
                 ",
                 else_block = "
                     1|case True of
-                    2|  Foo:;
-                    3|  Bar:;
+                    2  |  Foo:{1}
+                    _^1|    ;
+                    3  |  Bar:{2}
+                    _^2|    ;
                     _|else
                     _|  A;
                     _|end;
@@ -2460,8 +2476,10 @@ mod control_flows {
                 ",
                 else_block_compound = "
                     1|case True of
-                    2|  Foo:;
-                    3|  Bar:;
+                    2  |  Foo:{1}
+                    _^1|    ;
+                    3  |  Bar:{2}
+                    _^2|    ;
                     _|else
                     _|  begin
                     _|    Baz;
@@ -2717,8 +2735,7 @@ mod statements {
             ($root_dir: expr, $input: expr) => {
                 crate::generate_test_cases!(
                     $root_dir,
-                    individual = format!("_|{}", $input),
-                    in_block = format!(
+                    single = format!(
                         "
                             _|begin
                             _|  {}
@@ -2727,13 +2744,6 @@ mod statements {
                         $input,
                     ),
                     multiple = format!(
-                        "
-                            _|{0};
-                            _|{0}
-                        ",
-                        $input,
-                    ),
-                    multiple_in_block = format!(
                         "
                             _|begin
                             _|  {0};
