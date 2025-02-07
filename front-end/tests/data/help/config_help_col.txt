@@ -3,6 +3,11 @@ Available configuration options:
 [36mwrap_column[0m [3m<unsigned integer>[0m (default: [33m120[0m)
   Target line length before wrapping
 
+[36mbegin_style[0m [3m[auto|always_wrap][0m (default: [33mauto[0m)
+  Places the `begin` after control flow statements (e.g. `if`).
+  If "always_wrap", the `begin` will always be placed on the next line
+  at the same indentation as the statement it is within.
+
 [36mencoding[0m [3mnative | <NAME>[0m (default: [33mnative[0m)
   The encoding to use when reading and writing files.
   If "native":

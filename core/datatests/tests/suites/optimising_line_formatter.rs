@@ -21,6 +21,7 @@ fn run_test(input: &str) -> datatest_stable::Result<()> {
                 // more simple and more concise.
                 max_line_length: 30,
                 iteration_max: 20_000,
+                break_before_begin: false,
             },
             reconstruction_settings.clone(),
         ))
@@ -37,7 +38,7 @@ fn run_test(input: &str) -> datatest_stable::Result<()> {
         .unwrap_or_else(|| Ok(input.clone()))?;
 
     let formatted_input = formatter.format(&input, FileOptions::new());
-    assert_str_eq!(formatted_input, expected_output);
+    assert_str_eq!(expected_output, formatted_input);
     Ok(())
 }
 

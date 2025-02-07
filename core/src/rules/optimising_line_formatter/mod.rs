@@ -2,6 +2,7 @@
 //! (where possible) of the line length limit.
 //!
 
+use std::cell::RefCell;
 use std::collections::BinaryHeap;
 use std::rc::Rc;
 
@@ -27,6 +28,7 @@ use crate::prelude::*;
 pub struct OptimisingLineFormatterSettings {
     pub max_line_length: u32,
     pub iteration_max: u32,
+    pub break_before_begin: bool,
 }
 
 pub struct OptimisingLineFormatter {
@@ -40,14 +42,20 @@ pub struct OptimisingLineFormatter {
 /// a file.
 impl LogicalLineFileFormatter for OptimisingLineFormatter {
     fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &[LogicalLine]) {
-        let mut line_children: FxHashMap<LineParent, Vec<usize>> = FxHashMap::default();
-        input
-            .iter()
-            .enumerate()
-            .filter_map(|(line_index, line)| line.get_parent().map(|parent| (line_index, parent)))
-            .for_each(|(line_index, parent)| {
-                line_children.entry(parent).or_default().push(line_index);
-            });
+        let mut line_children: FxHashMap<LineParent, LineChildren> = FxHashMap::default();
+        for (line_index, line) in input.iter().enumerate() {
+            let mut current_line = Some(line);
+            let mut first_parent = true;
+            while let Some(parent) = current_line.and_then(LogicalLine::get_parent) {
+                let token_children = line_children.entry(parent).or_default();
+                if first_parent {
+                    token_children.line_indices.push(line_index);
+                    first_parent = false;
+                }
+                token_children.descendant_count += 1;
+                current_line = input.get(parent.line_index);
+            }
+        }
 
         let (token_types, token_lengths) = formatted_tokens
             .get_tokens()
@@ -71,6 +79,7 @@ impl LogicalLineFileFormatter for OptimisingLineFormatter {
             line_children: &line_children,
             token_types,
             token_lengths,
+            child_line_cache: Default::default(),
         };
 
         for line in input
@@ -119,17 +128,60 @@ struct TokenLength {
     spaces_before: u32,
     content: u32,
 }
+
+#[derive(Debug, Default)]
+struct LineChildren {
+    line_indices: Vec<usize>,
+    descendant_count: u32,
+}
+
+#[derive(Hash, PartialEq, Eq, Copy, Clone)]
+enum ChildLineOption {
+    ContinueAll,
+    BreakAll(LineWhitespace),
+    ContinueThenBreak(LineWhitespace),
+}
+
+#[derive(Hash, PartialEq, Eq)]
+struct ChildLineInitialConditions {
+    last_line_length: u32,
+    parent: LineParent,
+    child_line_option: ChildLineOption,
+}
+
+struct PenaltyDecision {
+    raw_decision: RawDecision,
+    line_length: u32,
+}
+impl From<&FormattingNode<'_>> for PenaltyDecision {
+    fn from(value: &FormattingNode) -> Self {
+        let token_decision = value.decision.get();
+        Self {
+            raw_decision: token_decision.decision.to_raw(),
+            line_length: token_decision.last_line_length,
+        }
+    }
+}
+
 struct InternalOptimisingLineFormatter<'this, 'token> {
     settings: &'this OptimisingLineFormatterSettings,
     recon_settings: &'this ReconstructionSettings,
     formatted_tokens: &'this mut FormattedTokens<'token>,
     lines: &'this [LogicalLine],
-    line_children: &'this FxHashMap<LineParent, Vec<usize>>,
+    line_children: &'this FxHashMap<LineParent, LineChildren>,
     token_types: Vec<TokenType>,
     /// Pre-calculated length data for each token in the file. This minimises the
     /// time to recalculate this data on repeated passes of tokens. A particular
     /// example of this is in the case of child-lines and their reformatting.
     token_lengths: Vec<TokenLength>,
+    /// Child lines' solutions are recalculated repeatedly for each partial
+    /// solution the parent token. This cache allows those solutions to be
+    /// memoized.
+    ///
+    /// Interior mutability is used to remove the need for `&mut self` which
+    /// has lifetime issues with recursion and looping.
+    child_line_cache:
+        RefCell<FxHashMap<ChildLineInitialConditions, Vec<(usize, FormattingSolution)>>>,
 }
 
 impl<'this> InternalOptimisingLineFormatter<'this, '_> {
@@ -155,7 +207,10 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             },
             line,
             match line.1.get_tokens().first() {
-                Some(0) => FirstDecision::Continue { line_length: 0 },
+                Some(0) => FirstDecision::Continue {
+                    line_length: 0,
+                    can_break: true,
+                },
                 _ => FirstDecision::Break,
             },
         );
@@ -262,12 +317,14 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 starting_ws.len(self.recon_settings) + content_len,
                 true,
             ),
-            FirstDecision::Continue { line_length } => (
+            FirstDecision::Continue {
+                line_length,
+                can_break,
+            } => (
                 Decision::Continue,
                 DR::MustNotBreak,
                 line_length + spaces_before + content_len,
-                // If it is the first token, the line can still be broken
-                first_token_index == 0,
+                can_break,
             ),
         };
 
@@ -283,7 +340,10 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             decision: decision_tree.root(),
             next_line_index: 1,
             context_data: formatting_contexts.get_default_context_data(),
-            penalty: 0,
+            penalty: self.get_decision_penalty(PenaltyDecision {
+                raw_decision: new_line.to_raw(),
+                line_length: last_line_length,
+            }),
         };
         if let Some(base_context) = Rc::make_mut(&mut node.context_data).first_mut() {
             base_context.can_break = base_can_break;
@@ -354,7 +414,11 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                         DebugFormattingNode::new(&node, line.1, &contexts, self)
                     );
 
-                    let last_line_length = node.decision.get().last_line_length;
+                    let last_token_length = node.decision.get().last_line_length;
+                    let last_child_length =
+                        Self::get_last_child_line_len(&node.decision.get().child_solutions)
+                            .unwrap_or_default();
+                    let last_line_length = last_token_length.max(last_child_length);
                     if last_line_length > self.settings.max_line_length {
                         trace!(
                             "Last line length {} > max line length {}, line is too long",
@@ -530,11 +594,15 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 .get(next_node.next_line_index as usize)
                 .copied(),
         );
+        next_node.penalty += self.get_decision_penalty(PenaltyDecision {
+            raw_decision,
+            line_length: token_line_length,
+        });
 
         let child_line_solutions = self.find_optimal_child_lines_solution(
             line,
             &next_node,
-            decision,
+            &contexts.with_data(&next_node),
             token_line_length,
             continuation_count,
         );
@@ -552,11 +620,9 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 let decision = TokenDecision {
                     requirement,
                     decision,
-                    last_line_length: Self::get_last_child_line_len(&child_solutions)
-                        .unwrap_or(token_line_length),
+                    last_line_length: token_line_length,
                     child_solutions,
                 };
-                next_node.penalty += self.get_decision_penalty(&decision);
                 next_node.decision = next_node.decision.add_successor(decision);
                 next_node.next_line_index += 1;
 
@@ -570,57 +636,50 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         &self,
         line: (usize, &LogicalLine),
         node: &FormattingNode,
-        decision: Decision,
+        parent_contexts: &SpecificContextDataStack,
         token_line_length: u32,
         parent_continuations: u16,
     ) -> PotentialSolutions {
         let global_token_index = line.1.get_tokens()[node.next_line_index as usize];
 
-        let Some(child_lines) = self.line_children.get(&LineParent {
+        let line_parent = LineParent {
             line_index: line.0,
             global_token_index,
-        }) else {
+        };
+
+        let Some(line_children) = self.line_children.get(&line_parent) else {
             // There are no child solutions with no child lines
             return PotentialSolutions::One(vec![]);
         };
 
         // Child lines have a base indentation level 1 greater than their parent
-        let child_starting_ws = LineWhitespace {
-            indentations: node.starting_ws.indentations + 1,
-            continuations: parent_continuations,
+        let child_starting_ws = node.starting_ws
+            + LineWhitespace {
+                indentations: 1,
+                continuations: parent_continuations,
+            };
+
+        let get_first_child_token = || {
+            line_children
+                .line_indices
+                .first()
+                .and_then(|line_index| self.lines.get(*line_index))
+                .and_then(|line| line.get_tokens().first())
+                .and_then(|token_index| self.get_token_type(*token_index))
         };
 
-        let starting_options = match (
-            self.get_token_type(global_token_index),
-            child_lines.len(),
-            decision,
-        ) {
-            (Some(TT::Keyword(KK::Begin)), 1, Decision::Continue) => {
-                Potentials::One((LineWhitespace::zero(), RawDecision::Continue))
-            }
-            (Some(TT::Op(OK::LParen)), _, Decision::Continue) => {
-                // Variant record fields
-                if !child_lines
-                    .iter()
-                    .flat_map(|&index| self.lines.get(index))
-                    .map(|line| line.get_line_type())
-                    .any(|typ| typ == LLT::CaseHeader)
-                {
-                    Potentials::Two(
-                        (child_starting_ws, RawDecision::Break),
-                        (LineWhitespace::zero(), RawDecision::Continue),
-                    )
-                } else {
-                    // If there is a nested `case` in the declaration, it must `Break`
-                    Potentials::One((child_starting_ws, RawDecision::Break))
-                }
-            }
-            (_, _, Decision::Continue) => return PotentialSolutions::None,
-            _ => Potentials::One((child_starting_ws, RawDecision::Break)),
-        };
+        // There are some cases, e.g., `then begin` and `else if` that are
+        // special. These cases use the same indentation as their parent's line
+        let parent_base_ws = node.starting_ws;
+        let parent_indented_ws = node.starting_ws
+            + LineWhitespace {
+                indentations: 1,
+                continuations: 0,
+            };
 
         let must_break = matches!(
-            child_lines
+            line_children
+                .line_indices
                 .first()
                 .and_then(|&child_line| self.lines.get(child_line))
                 .and_then(|child_line| self.get_prev_token_type_for_line_index(child_line, 0)),
@@ -634,15 +693,194 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             )
         );
 
-        starting_options.and_then(|(child_starting_ws, first_token_decision)| {
-            if first_token_decision == RawDecision::Continue && must_break {
+        let starting_options = match self.get_token_type(global_token_index) {
+            Some(TT::Keyword(
+                KK::Label | KK::Const(_) | KK::Type | KK::Var(_) | KK::ThreadVar | KK::Begin,
+            )) => {
+                // Anonymous procedure sections
+                match (
+                    parent_contexts
+                        .get_last_context(context_matches!(
+                            ContextType::CommaElem | ContextType::AssignRHS
+                        ))
+                        .and_then(|(_, data)| data.break_anonymous_routine),
+                    line_children.descendant_count,
+                ) {
+                    (Some(false), ..=1) => Potentials::One(ChildLineOption::ContinueAll),
+                    (Some(false), _) => Potentials::None,
+                    _ => Potentials::One(ChildLineOption::BreakAll(child_starting_ws)),
+                }
+            }
+            Some(TT::Op(OK::LParen)) => {
+                // Variant record fields
+                if !line_children
+                    .line_indices
+                    .iter()
+                    .flat_map(|&index| self.lines.get(index))
+                    .map(|line| line.get_line_type())
+                    .any(|typ| typ == LLT::CaseHeader)
+                {
+                    Potentials::Two(
+                        ChildLineOption::BreakAll(child_starting_ws),
+                        ChildLineOption::ContinueAll,
+                    )
+                } else {
+                    // If there is a nested `case` in the declaration, it must `Break`
+                    Potentials::One(ChildLineOption::BreakAll(child_starting_ws))
+                }
+            }
+            Some(TT::Keyword(KK::Else)) => {
+                match (
+                    parent_contexts
+                        .get_last_context(context_matches!(ContextType::ControlFlowBegin))
+                        .map(|(_, data)| data.is_broken),
+                    get_first_child_token(),
+                ) {
+                    // We never want to unwrap an `else`, e.g., `if ... then ... else ...;`
+                    /*
+                        if ... then
+                          ...
+                        else if ... then
+                          ...
+                    */
+                    (_, Some(TT::Keyword(KK::If))) => {
+                        if must_break {
+                            Potentials::One(ChildLineOption::BreakAll(parent_indented_ws))
+                        } else {
+                            Potentials::One(ChildLineOption::ContinueThenBreak(parent_base_ws))
+                        }
+                    }
+                    /*
+                        if ... then
+                          ...
+                        else begin
+                          ...
+                        end
+                    */
+                    (_, Some(TT::Keyword(KK::Begin))) => {
+                        if self.settings.break_before_begin || must_break {
+                            Potentials::One(ChildLineOption::BreakAll(parent_base_ws))
+                        } else {
+                            Potentials::One(ChildLineOption::ContinueThenBreak(parent_base_ws))
+                        }
+                    }
+                    /*
+                        if ... then
+                          ...
+                        else
+                          ...
+                    */
+                    _ => Potentials::One(ChildLineOption::BreakAll(child_starting_ws)),
+                }
+            }
+            Some(TT::Keyword(KK::Then | KK::Do)) => {
+                match (
+                    parent_contexts
+                        .get_last_context(context_matches!(
+                            ContextType::ControlFlow | ContextType::ForLoop
+                        ))
+                        .map(|(_, data)| data.is_broken),
+                    get_first_child_token(),
+                    line_children.descendant_count,
+                ) {
+                    (Some(false), Some(TT::Keyword(KK::Begin)), _) => {
+                        if self.settings.break_before_begin || must_break {
+                            Potentials::One(ChildLineOption::BreakAll(parent_base_ws))
+                        } else {
+                            Potentials::Two(
+                                ChildLineOption::BreakAll(parent_base_ws),
+                                ChildLineOption::ContinueThenBreak(parent_base_ws),
+                            )
+                        }
+                    }
+                    (_, Some(TT::Keyword(KK::Begin)), _) => {
+                        Potentials::One(ChildLineOption::BreakAll(parent_base_ws))
+                    }
+                    _ => Potentials::One(ChildLineOption::BreakAll(parent_indented_ws)),
+                    /*
+                        TODO: Add setting and heuristic for unwrapping single child line
+                        e.g., `if ... then ...;`
+                    */
+                }
+            }
+            Some(TT::Op(OK::Colon)) => {
+                match (get_first_child_token(), line_children.descendant_count) {
+                    (Some(TT::Keyword(KK::Begin)), _) => {
+                        if self.settings.break_before_begin || must_break {
+                            Potentials::One(ChildLineOption::BreakAll(parent_base_ws))
+                        } else {
+                            Potentials::Two(
+                                ChildLineOption::BreakAll(parent_base_ws),
+                                ChildLineOption::ContinueThenBreak(parent_base_ws),
+                            )
+                        }
+                    }
+                    (Some(TT::Op(OK::Semicolon)), 1) if !must_break => {
+                        // Exception for empty body case, e.g., `A:;`
+                        Potentials::One(ChildLineOption::ContinueAll)
+                    }
+                    _ => Potentials::One(ChildLineOption::BreakAll(parent_indented_ws)),
+                    /*
+                        TODO: Add setting and heuristic for unwrapping single child line
+                        e.g., `A: ...;`
+                    */
+                }
+            }
+            _ => {
+                if parent_contexts
+                    .get_last_context(context_matches!(_))
+                    .map(|(_, data)| data.is_broken | data.is_child_broken)
+                    == Some(true)
+                {
+                    Potentials::One(ChildLineOption::BreakAll(child_starting_ws))
+                } else {
+                    Potentials::None
+                }
+            }
+        };
+
+        starting_options.and_then(|option| {
+            if matches!(
+                option,
+                ChildLineOption::ContinueAll | ChildLineOption::ContinueThenBreak(_)
+            ) && must_break
+            {
                 return None;
             }
-            let mut child_solutions = Vec::with_capacity(child_lines.len());
+            let child_starting_ws = match option {
+                ChildLineOption::ContinueAll => LineWhitespace::zero(),
+                ChildLineOption::BreakAll(starting_ws)
+                | ChildLineOption::ContinueThenBreak(starting_ws) => starting_ws,
+            };
+            let get_first_token_decision = |index, line_length| match option {
+                ChildLineOption::ContinueAll => FirstDecision::Continue {
+                    line_length,
+                    can_break: false,
+                },
+                ChildLineOption::BreakAll(_) => FirstDecision::Break,
+                ChildLineOption::ContinueThenBreak(_) if index == 0 => FirstDecision::Continue {
+                    line_length,
+                    can_break: true,
+                },
+                ChildLineOption::ContinueThenBreak(_) => FirstDecision::Break,
+            };
+
+            let cache_key = ChildLineInitialConditions {
+                last_line_length: token_line_length,
+                parent: line_parent,
+                child_line_option: option,
+            };
+            if let Some(sol) = self.child_line_cache.borrow().get(&cache_key) {
+                return Some(sol.clone());
+            }
+
+            let mut child_solutions = Vec::with_capacity(line_children.line_indices.len());
             let mut last_line_length = token_line_length;
-            for line in child_lines
+            for (child_line_index, line) in line_children
+                .line_indices
                 .iter()
                 .map(|&child_line| (child_line, &self.lines[child_line]))
+                .enumerate()
             {
                 let child_solution = self
                     .find_optimal_solution(
@@ -652,12 +890,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                                 continuations: 0,
                             },
                         line,
-                        match first_token_decision {
-                            NL::Break => FirstDecision::Break,
-                            NL::Continue => FirstDecision::Continue {
-                                line_length: last_line_length,
-                            },
-                        },
+                        get_first_token_decision(child_line_index, last_line_length),
                     )
                     .map(|solution| (line.0, solution))
                     .ok()?;
@@ -671,6 +904,10 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 }
                 child_solutions.push(child_solution);
             }
+
+            self.child_line_cache
+                .borrow_mut()
+                .insert(cache_key, child_solutions.clone());
             Some(child_solutions)
         })
     }
@@ -695,7 +932,10 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             token_index.and_then(|index| self.token_lengths.get(index)),
         ) {
             (Decision::Continue, parent, Some(&token_length)) => {
-                parent.last_line_length + token_length.spaces_before + token_length.content
+                Self::get_last_child_line_len(&parent.child_solutions)
+                    .unwrap_or(parent.last_line_length)
+                    + token_length.spaces_before
+                    + token_length.content
             }
             (Decision::Break { continuations }, _, Some(&token_length)) => {
                 (starting_ws
@@ -710,12 +950,11 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         }
     }
 
-    fn get_decision_penalty(&self, decision: &TokenDecision) -> u64 {
-        match decision.decision {
-            Decision::Break { continuations: _ } => 3,
-            Decision::Continue if decision.last_line_length > self.settings.max_line_length => {
-                999999
-            }
+    fn get_decision_penalty(&self, decision: impl Into<PenaltyDecision>) -> u64 {
+        let decision = decision.into();
+        match decision.raw_decision {
+            RawDecision::Break => 3,
+            RawDecision::Continue if decision.line_length > self.settings.max_line_length => 999999,
             _ => 0,
         }
     }

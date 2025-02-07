@@ -109,6 +109,11 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 ),
                 Some(TT::Op(OK::LParen | OK::LBrack | OK::LessThan(ChK::Generic))),
             ) => DR::MustNotBreak,
+            (Some(TT::Op(OK::Colon)), Some(TT::Op(OK::LParen)))
+                if line.get_line_type() == LLT::VariantRecordCaseArm =>
+            {
+                DR::MustNotBreak
+            }
             (Some(TT::Op(OK::LParen | OK::LBrack | OK::LessThan(ChK::Generic))), _) => {
                 contexts_data
                     .get_last_context(context_matches!(CT::Brackets(_, _)))
@@ -199,7 +204,18 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 .get_last_context(CT::ControlFlowBegin)
                 .map(|(_, data)| data.is_child_broken)
                 .if_else_or_default(DR::MustBreak, DR::Indifferent),
-            (Some(_), Some(TT::Keyword(KK::Begin))) => contexts_data
+            (_, Some(TT::Keyword(KK::Else))) => DR::MustBreak,
+            (
+                Some(_),
+                Some(TT::Keyword(
+                    KK::Label
+                    | KK::Const(DeclKind::AnonSection)
+                    | KK::Type
+                    | KK::Var(DeclKind::AnonSection)
+                    | KK::ThreadVar
+                    | KK::Begin,
+                )),
+            ) => contexts_data
                 .get_last_context(context_matches!(CT::CommaElem | CT::AssignRHS))
                 .and_then(|(_, data)| data.break_anonymous_routine)
                 .if_else_or_default(DR::MustBreak, DR::MustNotBreak),

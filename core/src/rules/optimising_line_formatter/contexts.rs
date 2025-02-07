@@ -508,12 +508,21 @@ impl<'a> SpecificContextStack<'a> {
                     data.is_broken |= is_break;
                 });
             }
+            (Some(TT::Keyword(KK::Else)), _) => {
+                self.update_last_matching_context(node, CT::ControlFlowBegin, |_, data| {
+                    data.is_broken |= is_break;
+                });
+            }
             (_, Some(TT::Keyword(KK::Begin | KK::End))) => {
                 self.update_last_matching_context(node, CT::ControlFlowBegin, |_, data| {
                     data.is_broken |= is_break;
                 });
                 self.update_last_matching_context(node, CT::CommaElem, |_, data| {
                     data.can_break &= is_break;
+                    data.break_anonymous_routine.get_or_insert(is_break);
+                });
+                self.update_last_matching_context(node, CT::AssignRHS, |_, data| {
+                    data.break_anonymous_routine.get_or_insert(is_break);
                 });
             }
             (Some(TT::Keyword(KK::For)), _)
@@ -674,21 +683,17 @@ impl<'a> SpecificContextStack<'a> {
             .flat_map(|(_, solution)| &solution.decisions)
             .any(|decision| matches!(decision.decision, Decision::Break { .. }))
         {
-            if let Some(data) = self
-                .ctx_iter_indices()
-                .find(|(_, context)| {
-                    matches!(
-                        context.context_type,
-                        CT::Brackets(BracketKind::Round, BracketStyle::BreakClose)
-                    )
-                })
-                .map(|(index, _)| {
-                    Rc::make_mut(&mut node.context_data).get_mut(index).expect(
-                        "FormattingContext at Brackets(Round, BreakClose) index should exist",
-                    )
-                })
-            {
+            self.ctx_iter_indices().for_each(|(index, _)| {
+                let data = Rc::make_mut(&mut node.context_data)
+                    .get_mut(index)
+                    .expect("FormattingContext in context stack should exist");
                 data.is_child_broken = true;
+            });
+        } else if !child_solutions.is_empty() {
+            if let Some((_, context)) =
+                self.get_last_matching_context_mut(node, CT::ControlFlowBegin)
+            {
+                context.can_break = false;
             }
         }
     }
@@ -1018,6 +1023,9 @@ impl<'a> LineFormattingContexts<'a> {
                 TT::Keyword(KK::If | KK::While | KK::With | KK::On) => {
                     contexts.push_utility((CT::ControlFlowBegin, 0));
                     contexts.push(CT::ControlFlow);
+                }
+                TT::Keyword(KK::Else) => {
+                    contexts.pop_until(CT::ControlFlowBegin);
                 }
                 TT::Keyword(KK::Case | KK::Until) => {
                     contexts.push(CT::ControlFlow);
@@ -2102,33 +2110,15 @@ mod tests {
                 1 Base          ^---------
                 1 ControlFlow   ^---------
             "},
-            compound_if = {"
-                                    if AA then begin end;
-                1 Base              ^---------------
-                0 ControlFlowBegin  ^---------------
-                1 ControlFlow       ^--------$
-            "},
             inline_while = {"
                                 while AA do;
                 1 Base          ^----------
                 1 ControlFlow   ^----------
             "},
-            compound_while = {"
-                                    while AA do begin end;
-                1 Base              ^----------------
-                0 ControlFlowBegin  ^----------------
-                1 ControlFlow       ^---------$
-            "},
             inline_on = {"
                                 try except on AA do end;
                 1 Base                     ^-------
                 1 ControlFlow              ^-------
-            "},
-            compound_on = {"
-                                    try except on AA do begin end end;
-                1 Base                         ^-------------
-                0 ControlFlowBegin             ^-------------
-                1 ControlFlow                  ^------$
             "},
         )]
         fn control_flow(input: &str) -> Result<(), DslParseError> {
@@ -2140,12 +2130,6 @@ mod tests {
                                 with AA do;
                 1 Base          ^---------
                 1 ControlFlow   ^---------
-            "},
-            compound = {"
-                                    with AA do begin end;
-                1 Base              ^---------------
-                0 ControlFlowBegin  ^---------------
-                1 ControlFlow       ^--------$
             "},
             multi = {"
                                     with AA, BB, CC do;
@@ -2201,13 +2185,6 @@ mod tests {
                 1 ForLoop       ^--------------
                 1 Subject              ^---$
             "},
-            for_in_compound = {"
-                                    for AA in BB do begin end;
-                1 Base              ^--------------------
-                0 ControlFlowBegin  ^--------------------
-                1 ForLoop           ^-------------$
-                1 Subject                  ^---$
-            "},
             for_to_inline = {"
                                 for AA := BB to CC do;
                 1 Base          ^--------------------
@@ -2215,28 +2192,12 @@ mod tests {
                 1 Subject           ^------$
                 1 Subject                    ^---$
             "},
-            for_to_compound = {"
-                                    for AA := BB to CC do begin end;
-                1 Base              ^--------------------------
-                0 ControlFlowBegin  ^--------------------------
-                1 ForLoop           ^-------------------$
-                1 Subject               ^------$
-                1 Subject                        ^---$
-            "},
             for_downto_inline = {"
                                 for AA := BB downto CC do;
                 1 Base          ^------------------------
                 1 ForLoop       ^------------------------
                 1 Subject           ^------$
                 1 Subject                    ^-------$
-            "},
-            for_downto_compound = {"
-                                    for AA := BB downto CC do begin end;
-                1 Base              ^------------------------------
-                0 ControlFlowBegin  ^------------------------------
-                1 ForLoop           ^-----------------------$
-                1 Subject               ^------$
-                1 Subject                        ^-------$
             "},
         )]
         fn for_loop(input: &str) -> Result<(), DslParseError> {

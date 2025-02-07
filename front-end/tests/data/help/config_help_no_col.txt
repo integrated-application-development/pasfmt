@@ -3,6 +3,11 @@ Available configuration options:
 wrap_column <unsigned integer> (default: 120)
   Target line length before wrapping
 
+begin_style [auto|always_wrap] (default: auto)
+  Places the `begin` after control flow statements (e.g. `if`).
+  If "always_wrap", the `begin` will always be placed on the next line
+  at the same indentation as the statement it is within.
+
 encoding native | <NAME> (default: native)
   The encoding to use when reading and writing files.
   If "native":

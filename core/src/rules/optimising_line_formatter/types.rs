@@ -92,8 +92,9 @@ pub(super) enum FirstDecision {
     /// The logical line start by continuing the previous line.
     ///
     /// Used in the formatting of child lines, the current length of the line is
-    /// used to inform the solution.
-    Continue { line_length: u32 },
+    /// used to inform the solution. Additionally whether the whole line can
+    /// break.
+    Continue { line_length: u32, can_break: bool },
 }
 
 /// Used to represent the global indentation and continuation for a line.
@@ -101,7 +102,7 @@ pub(super) enum FirstDecision {
 /// There can be both `indentation`s and `continuation`s when the line in
 /// question is a child of another. In that case, the `continuation`s relate to
 /// the parent lines' decisions.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(super) struct LineWhitespace {
     pub(super) indentations: u16,
     pub(super) continuations: u16,

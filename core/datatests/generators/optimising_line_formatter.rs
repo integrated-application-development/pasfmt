@@ -269,6 +269,70 @@ mod comments {
                         end
                     );
                 ",
+                if_else = "
+                    if AAAAAA then //
+                      BBBBBBB;
+                    if AAAAAA then //
+                    begin
+                    end;
+                    if AAAAAA then //
+                      BBBBBBB
+                    else
+                      CCCCCCC;
+                    if AAAAAA then //
+                    begin
+                    end
+                    else //
+                      CCCCCCC;
+                    if AAAAAA then //
+                      BBBBBBB
+                    else //
+                    begin
+                    end;
+                ",
+                after_do = "
+                    try
+                    except
+                      on AAAAAAAA do //
+                        BBBBBBB;
+                      on AAAAAAAA do //
+                      begin
+                      end;
+                    end;
+                    while AAAAAAAA do //
+                      BBBBBBB;
+                    while AAAAAAAA do //
+                    begin
+                    end;
+                    with AAAAAAAA do //
+                      BBBBBBB;
+                    with AAAAAAAA do //
+                    begin
+                    end;
+                    for AAAAAAAA in BBBBBB do //
+                      CCCCCCCC;
+                    for AAAAAAAA in BBBBBB do //
+                    begin
+                    end;
+                ",
+                after_colon = "
+                    case AAAAA of
+                      BBBBB: //
+                        BBBBBBB;
+                      CCCCC: //
+                      begin
+                      end;
+                    end;
+                ",
+                after_lparen = "
+                    type
+                      A = record
+                      case AAA of
+                        BBB: ( //
+                          F: FFF;
+                        )
+                      end;
+                ",
             );
         }
     }
@@ -1032,8 +1096,7 @@ mod type_decls {
                                           Q: R;
                                           case
                                               W of
-                                            D:
-                                            (
+                                            D: (
                                               S: T;
                                             );
                                         );
@@ -2976,18 +3039,18 @@ mod control_flows {
                       AAAAAAAAAAAAAA:;
                       AAAAAAAAAAAA, BBBBBBBBBB:;
                       AAAAAAAA, BBBBBBB, CCCCCCC:;
-                      AAAAAAAAAAAA,
+                      AAAAAAAAAAAAA,
                       BBBBBBBBBBBBB:;
                       AAAAAAAAA,
-                      BBBBBBB,
+                      BBBBBBBB,
                       CCCCCCC:;
                       AAAA..BBBB, CCC..DDD:;
                       A..B, C..D, E..F:;
                       AAAAAA..BBBBBB,
-                      CCCCC..DDDD:;
+                      CCCCC..DDDDD:;
                       AAA..BBB,
                       CCC..DDD,
-                      EEE..FF:;
+                      EEE..FFF:;
                       AAAAAAAAAAAA
                           ..BBBBBBBBBBBBBB,
                       CCCC,
@@ -3006,35 +3069,37 @@ mod control_flows {
                       AAAAAAAAAAAAAA: begin
                         Foo;
                       end;
-                      AAAAAAAAAAAAAA: if A then
-                        Foo;
-                      // This is incorrect, issue #120 has been raised to fix it.
                       AAAAAAAAAAAAAA:
-                      if AAAAA then
-                        Foo;
+                        if AAAAA then
+                          Foo;
+                      AAAAAAAAAAAAAA:
+                        if AAAAA then
+                          Fooooooooooo;
                       AAAAAAA, BBBBB: begin
                       end;
                       AAAAAAAAAAA, BBBBBBBBB:
                       begin
                       end;
-                      [AAA..BBB], [CC..DD]: begin
+                      AAAA..BBBB, CCC..DDD: begin
                       end;
-                      [AAA..BBB], [CCC..DDD]:
+                      AAAA..BBBB, CCCC..DDDD:
                       begin
                       end;
-                      // This is also incorrect, the else should be related to the if. #120 to fix also.
                       AAAAAAAAAAAAAA:
-                      if AAAAA then begin
-                        Foo
-                      end
+                        if AAAAA then begin
+                          Foo
+                        end
+                        else
+                          Bar;
                     else
-                      Bar;
+                      Baz;
                     end;
                 ",
                 case_if_else = "
                     case A of
                       AAAAAAAAAAAAAA:
-                        if AAAAA then Foo;
+                        if AAAAA then
+                          Foo;
                     else
                       Bar;
                     end;
@@ -3048,14 +3113,16 @@ mod control_flows {
                     case A of
                       AAAAAAAAAAAAAA:
                         if AAAAA then
-                          while BBBBB do Foo;
+                          while BBBBB do
+                            Foo;
                     else
                       Bar;
                     end;
                     case A of
                       AAAAAAAAAAAAAA:
                         if AAAAA then
-                          while BBBBB do Foo
+                          while BBBBB do
+                            Foo
                         else
                           Bar;
                     end;
@@ -3083,7 +3150,7 @@ mod control_flows {
                     try
                     except
                       on AAAAAAAA do
-                        A;
+                        AAAAAAAAAAAAA;
                       on AAAAAAAAAAAAAAAA do begin
                         A;
                       end;

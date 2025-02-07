@@ -534,6 +534,7 @@ mod tests {
                     OptimisingLineFormatterSettings {
                         max_line_length: 30,
                         iteration_max: 1000,
+                        break_before_begin: false,
                     },
                     recon.clone(),
                 ))

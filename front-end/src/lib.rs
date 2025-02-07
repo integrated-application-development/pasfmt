@@ -108,6 +108,15 @@ impl<'de> Deserialize<'de> for InternalEncoding {
     }
 }
 
+#[cfg_attr(feature = "__demo", derive(serde::Serialize), serde(untagged))]
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum BeginStyle {
+    Auto,
+    #[allow(non_camel_case_types)]
+    Always_Wrap,
+}
+
 #[cfg_attr(feature = "__demo", derive(serde::Serialize))]
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -119,6 +128,7 @@ pub struct FormattingConfig {
     continuation_indents: u8,
 
     wrap_column: u32,
+    begin_style: BeginStyle,
 
     encoding: InternalEncoding,
 }
@@ -154,6 +164,10 @@ fn default_wrap_column() -> u32 {
     120
 }
 
+fn default_begin_style() -> BeginStyle {
+    BeginStyle::Auto
+}
+
 impl Default for FormattingConfig {
     fn default() -> Self {
         Self {
@@ -163,6 +177,7 @@ impl Default for FormattingConfig {
             continuation_indents: default_continuation_indents(),
             encoding: default_encoding(),
             wrap_column: default_wrap_column(),
+            begin_style: default_begin_style(),
         }
     }
 }
@@ -195,6 +210,7 @@ impl From<&FormattingConfig> for OptimisingLineFormatterSettings {
         Self {
             max_line_length: value.wrap_column,
             iteration_max: 20_000,
+            break_before_begin: matches!(value.begin_style, BeginStyle::Always_Wrap),
         }
     }
 }
@@ -207,6 +223,16 @@ impl Configuration for FormattingConfig {
                 description: "Target line length before wrapping",
                 hint: "<unsigned integer>",
                 default: default_wrap_column().to_string(),
+            },
+            ConfigItem {
+                name: "begin_style",
+                description: "\
+Places the `begin` after control flow statements (e.g. `if`).
+If \"always_wrap\", the `begin` will always be placed on the next line
+at the same indentation as the statement it is within.\
+                    ",
+                hint: "[auto|always_wrap]",
+                default: format!("{:?}", default_begin_style()).to_lowercase(),
             },
             ConfigItem {
                 name: "encoding",
