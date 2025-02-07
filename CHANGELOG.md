@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for inline assembly instruction formatting. Instructions lines are ignored.
 - `RemoveRepeatedNewlines`, `ImportClauseConsolidator`, and `UsesClauseFormatter` in favour of `OptimisingLineFormatter`
 - `Formatter::format_into_buf` function.
+- `Reconstructor::reconstruct_into_buf` trait method (renamed).
 
 ### Changed
 
@@ -31,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wrap CLI help at the smallest of the terminal width and 120 characters.
 - Parameters to the `Formatter::format` function, allowing per-file options to be passed in
   (e.g. cursors to track).
+- `Reconstructor::reconstruct` to have the signiture of the old `Reconstructor::reconstruct_into_buf`.
 
 ### Added
 

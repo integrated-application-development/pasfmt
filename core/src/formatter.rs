@@ -126,8 +126,7 @@ impl Formatter {
 
         cursors.relocate_cursors(&formatted_tokens);
 
-        self.reconstructor
-            .reconstruct_into_buf(formatted_tokens, buf);
+        self.reconstructor.reconstruct(formatted_tokens, buf);
     }
 }
 

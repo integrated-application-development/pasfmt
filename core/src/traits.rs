@@ -41,12 +41,7 @@ pub trait CursorTracker {
 }
 
 pub trait LogicalLinesReconstructor {
-    fn reconstruct_into_buf(&self, formatted_tokens: FormattedTokens, out: &mut String);
-    fn reconstruct(&self, formatted_tokens: FormattedTokens) -> String {
-        let mut out = String::new();
-        self.reconstruct_into_buf(formatted_tokens, &mut out);
-        out
-    }
+    fn reconstruct(&self, formatted_tokens: FormattedTokens, out: &mut String);
 
     fn process_cursors<'cursor>(
         &'cursor self,

@@ -44,7 +44,7 @@ enum TokPos {
 }
 
 impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
-    fn reconstruct_into_buf(&self, formatted_tokens: FormattedTokens, buf: &mut String) {
+    fn reconstruct(&self, formatted_tokens: FormattedTokens, buf: &mut String) {
         formatted_tokens
             .get_tokens()
             .iter()
@@ -327,7 +327,8 @@ mod tests {
             )
             .unwrap(),
         };
-        let output = reconstructor.reconstruct(input);
+        let mut output = String::new();
+        reconstructor.reconstruct(input, &mut output);
         assert_that(&output).is_equal_to(expected_output.to_string());
     }
 
