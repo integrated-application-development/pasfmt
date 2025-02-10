@@ -3930,6 +3930,11 @@ mod expressions {
                                     bbbbbb)
                             + cccc
                             + dddd;
+                    ABC :=
+                        applesssssss.bananasss(
+                            CCCCCCCC()
+                                and DDDDDDD()
+                        );
                 ",
                 parens_maths = "
                     (aaaaa + bbbbb) + cccc + dddd;

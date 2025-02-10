@@ -33,7 +33,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
 
         let requirement = match self.get_token_type_window(line_index, line) {
             (Some(TT::Op(OK::LParen)), Some(TT::Op(OK::RParen))) => contexts_data
-                .get_last_context(CT::Brackets(BracketKind::Round, BracketStyle::BreakClose))
+                .get_last_context(context_matches!(CT::Brackets(BracketKind::Round, _)))
                 .map(|(_, data)| data.is_child_broken | data.is_broken)
                 .if_else_or(DR::MustBreak, DR::MustNotBreak, DR::MustNotBreak),
             (Some(TT::Op(OK::LBrack)), Some(TT::Op(OK::RBrack))) => DR::MustNotBreak,
