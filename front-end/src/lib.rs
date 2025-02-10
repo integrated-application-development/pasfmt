@@ -218,8 +218,67 @@ impl Default for OlfConfig {
     }
 }
 
-pub fn format(config: PasFmtConfiguration, err_handler: impl ErrHandler) {
-    let formatting_settings = match config.get_config_object::<FormattingConfig>() {
+impl Configuration for FormattingConfig {
+    fn docs() -> impl IntoIterator<Item = ConfigItem> {
+        vec![
+            ConfigItem {
+                name: "encoding",
+                description: "\
+The encoding to use when reading and writing files.
+If \"native\":
+  * on Windows, the system ANSI codepage is used
+  * otherwise, UTF-8 is used
+
+In all cases a detected BOM will override the configured encoding.\
+                    ",
+                hint: "native | <NAME>",
+                default: format!("{:?}", default_encoding()).to_lowercase(),
+            },
+            ConfigItem {
+                name: "use_tabs",
+                description: "Use tab characters for indentation",
+                hint: "<boolean>",
+                default: default_use_tabs().to_string(),
+            },
+            ConfigItem {
+                name: "tab_width",
+                description: "Number of spaces per indentation (ignored if use_tabs=true)",
+                hint: "<unsigned integer>",
+                default: default_tab_width().to_string(),
+            },
+            ConfigItem {
+                name: "continuation_indents",
+                description: "\
+Width of continuations, measured as a multiple of the configured indentation.
+Continuations are used to futher indent the wrapped lines from a \"logical line\".
+Indentations are used to indent the base of a \"logical line\".
+",
+                hint: "<unsigned integer>",
+                default: default_continuation_indents().to_string(),
+            },
+            ConfigItem {
+                name: "line_ending",
+                description: "\
+Line ending character sequence.
+If \"native\":
+  * on Windows, \"crlf\" is used
+  * otherwise, \"lf\" is used\
+                    ",
+                hint: "[lf|crlf|native]",
+                default: format!("{:?}", default_line_ending()).to_lowercase(),
+            },
+            ConfigItem {
+                name: "olf.max_line_length",
+                description: "Target line length before wrapping",
+                hint: "<unsigned integer>",
+                default: default_max_line_length().to_string(),
+            },
+        ]
+    }
+}
+
+pub fn format(config: PasFmtConfiguration<FormattingConfig>, err_handler: impl ErrHandler) {
+    let formatting_settings = match config.get_config_object() {
         Ok(formatting_settings) => formatting_settings,
         Err(e) => {
             err_handler(e);

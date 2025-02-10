@@ -3,12 +3,12 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
 use log::error;
-use pasfmt::format;
+use pasfmt::{format, FormattingConfig};
 use pasfmt_orchestrator::predule::*;
 
 pasfmt_config!(
     #[command(bin_name = "pasfmt")]
-    Config
+    Config<FormattingConfig>
 );
 
 fn main() -> ExitCode {

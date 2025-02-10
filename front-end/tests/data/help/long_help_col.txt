@@ -15,7 +15,9 @@
 
   [96m-C[0m[37m [0m[37m<KEY=VALUE>[0m
           Override one configuration option using KEY=VALUE. This takes precedence over
-          `--config-file`
+          `--config-file`.
+          
+          To list available options, use `-C help`.
 
   [96m-m[0m, [96m--mode[0m[37m [0m[37m<MODE>[0m
           The mode of operation

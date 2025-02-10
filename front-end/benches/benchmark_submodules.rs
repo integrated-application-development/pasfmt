@@ -12,10 +12,10 @@ use walkdir::WalkDir;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use pasfmt::format;
+use pasfmt::{format, FormattingConfig};
 use pasfmt_orchestrator::predule::*;
 
-pasfmt_config!(Config);
+pasfmt_config!(Config<FormattingConfig>);
 
 fn bench_format_submodules(submodules: &[(&str, &PathBuf)], c: &mut Criterion) {
     let mut group = c.benchmark_group("format_submodules");

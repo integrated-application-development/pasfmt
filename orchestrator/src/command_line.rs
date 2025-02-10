@@ -1,6 +1,7 @@
 use std::{
     borrow::{Borrow, Cow},
     error::Error,
+    fmt::Display,
     fs::read_to_string,
     path::{Path, PathBuf},
     str::FromStr,
@@ -10,57 +11,118 @@ use anstyle::AnsiColor;
 use anyhow::Context;
 pub use clap::{self, error::ErrorKind, CommandFactory, Parser};
 use clap::{
-    builder::PossibleValuesParser, builder::Styles, builder::TypedValueParser, Args, ValueEnum,
+    builder::{PossibleValuesParser, StyledStr, Styles, TypedValueParser},
+    Args, ValueEnum,
 };
 
 use config::{Config, File, FileFormat};
 use log::{debug, LevelFilter};
-use serde::Deserialize;
 
 use crate::formatting_orchestrator::FormatterConfiguration;
 
 const DEFAULT_CONFIG_FILE_NAME: &str = "pasfmt.toml";
 
+#[derive(Debug)]
+pub enum CliError {
+    Clap(clap::Error),
+    ConfigHelp,
+}
+
+impl Display for CliError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CliError::Clap(error) => error.fmt(f),
+            CliError::ConfigHelp => f.write_str("ConfigHelp"),
+        }
+    }
+}
+
+impl Error for CliError {}
+
+pub trait CliWrapper: clap::Parser {
+    type Config: Configuration;
+    fn inner(&self) -> &PasFmtConfiguration<Self::Config>;
+    fn into_inner(self) -> PasFmtConfiguration<Self::Config>;
+}
+
+pub trait CliWrapperImpl: CliWrapper {
+    fn validate(self) -> Result<PasFmtConfiguration<Self::Config>, CliError>;
+    fn try_create() -> Result<PasFmtConfiguration<Self::Config>, CliError>;
+    fn create() -> PasFmtConfiguration<Self::Config>;
+}
+
 #[macro_export]
 macro_rules! pasfmt_config {
-    ($(#[$attr: meta])* $type_name: ident) => {
-        #[derive(clap::Parser, Debug)]
+    ($(#[$attr: meta])* $type_name:ident <$config_type_name:ident>) => {
+        #[derive($crate::command_line::clap::Parser, Debug)]
         #[command(author, about, version, long_about = None)]
         #[clap(max_term_width = 120)]
         $(#[$attr])*
         struct $type_name {
             #[command(flatten)]
-            config: PasFmtConfiguration,
+            config: $crate::command_line::PasFmtConfiguration<$config_type_name>,
         }
-        impl $type_name {
-            #[allow(unused)]
-            pub fn validate(self) -> Result<PasFmtConfiguration, clap::Error> {
-                if matches!(self.config.mode(), FormatMode::Files) && self.config.is_stdin() {
-                    return Err(Self::command().error(
-                        ErrorKind::ArgumentConflict,
-                        "files mode not supported when reading from stdin",
-                    ));
-                }
 
-                Ok(self.config)
+        impl $crate::command_line::CliWrapper for $type_name {
+            type Config = $config_type_name;
+
+            #[inline]
+            fn inner(&self) -> &$crate::command_line::PasFmtConfiguration<Self::Config> {
+                &self.config
             }
 
-            #[allow(unused)]
-            pub fn try_create() -> Result<PasFmtConfiguration, clap::Error> {
-                Self::try_parse()?.validate()
-            }
-
-            #[allow(unused)]
-            pub fn create() -> PasFmtConfiguration {
-                match Self::try_create() {
-                    Ok(config) => config,
-                    Err(err) => err.exit(),
-                }
+            #[inline]
+            fn into_inner(self) -> $crate::command_line::PasFmtConfiguration<Self::Config> {
+                self.config
             }
         }
     };
 }
+
 pub use pasfmt_config;
+
+impl<T: CliWrapper> CliWrapperImpl for T {
+    fn validate(self) -> Result<PasFmtConfiguration<Self::Config>, CliError> {
+        if self.inner().config_help_requested() {
+            return Err(CliError::ConfigHelp);
+        }
+
+        if matches!(self.inner().mode(), FormatMode::Files) && self.inner().is_stdin() {
+            return Err(CliError::Clap(Self::command().error(
+                ErrorKind::ArgumentConflict,
+                "files mode not supported when reading from stdin",
+            )));
+        }
+
+        Ok(self.into_inner())
+    }
+
+    fn try_create() -> Result<PasFmtConfiguration<Self::Config>, CliError> {
+        Self::try_parse().map_err(CliError::Clap)?.validate()
+    }
+
+    fn create() -> PasFmtConfiguration<Self::Config> {
+        match Self::try_create() {
+            Ok(config) => config,
+            Err(CliError::Clap(err)) => err.exit(),
+            Err(CliError::ConfigHelp) => {
+                // This method seems a bit convoluted, but it makes sure that the output
+                // stream and exit code used is consistent with the inbuilt --help option.
+                // It would be simpler if we could create an error via Command::error
+                // that looks just like the one used for --help, but the required functions
+                // are not public.
+                let _ = Self::command()
+                    .override_help(PasFmtConfiguration::<Self::Config>::config_help())
+                    .print_help();
+                std::process::exit(
+                    Self::command()
+                        .error(ErrorKind::DisplayHelp, "")
+                        .exit_code(),
+                );
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq, Eq)]
 pub enum FormatMode {
@@ -73,22 +135,32 @@ pub enum FormatMode {
     Check,
 }
 
-fn parse_key_val<K, V>(s: &str) -> Result<(K, V), Box<dyn Error + Send + Sync + 'static>>
-where
-    K: std::str::FromStr,
-    K::Err: Error + Send + Sync + 'static,
-    V: std::str::FromStr,
-    V::Err: Error + Send + Sync + 'static,
-{
+fn parse_override(s: &str) -> Result<ConfigOverride, Box<dyn Error + Send + Sync + 'static>> {
+    if s.eq_ignore_ascii_case("help") {
+        return Ok(ConfigOverride::Help);
+    }
+
     let pos = s
         .find('=')
         .ok_or_else(|| format!("invalid KEY=value: no `=` found in `{s}`"))?;
-    Ok((s[..pos].parse()?, s[pos + 1..].parse()?))
+    Ok(ConfigOverride::Set {
+        key: s[..pos].parse()?,
+        val: s[pos + 1..].parse()?,
+    })
+}
+
+#[derive(Debug, Clone)]
+enum ConfigOverride {
+    Help,
+    Set { key: String, val: String },
 }
 
 #[derive(Args, Debug)]
 #[command(styles = get_styles())]
-pub struct PasFmtConfiguration {
+pub struct PasFmtConfiguration<C: Configuration> {
+    #[clap(skip)]
+    marker: std::marker::PhantomData<C>,
+
     /// Paths that will be formatted. Can be a path/dir/glob. If no paths are
     /// specified, stdin is read.
     #[arg(index = 1, num_args = 0..)]
@@ -106,8 +178,10 @@ pub struct PasFmtConfiguration {
 
     /// Override one configuration option using KEY=VALUE. This takes
     /// precedence over `--config-file`.
-    #[arg(short = 'C', value_parser = parse_key_val::<String, String>, value_name = "KEY=VALUE")]
-    overrides: Vec<(String, String)>,
+    ///
+    /// To list available options, use `-C help`.
+    #[arg(short = 'C', value_parser = parse_override, value_name = "KEY=VALUE")]
+    overrides: Vec<ConfigOverride>,
 
     /// The mode of operation
     ///
@@ -174,7 +248,18 @@ fn get_styles() -> Styles {
         .placeholder(AnsiColor::White.on_default())
 }
 
-impl PasFmtConfiguration {
+pub struct ConfigItem {
+    pub name: &'static str,
+    pub description: &'static str,
+    pub hint: &'static str,
+    pub default: String,
+}
+
+pub trait Configuration: for<'de> ::serde::Deserialize<'de> {
+    fn docs() -> impl IntoIterator<Item = ConfigItem>;
+}
+
+impl<C: Configuration> PasFmtConfiguration<C> {
     fn find_config_file(search_dir: PathBuf) -> Option<PathBuf> {
         let mut path = search_dir;
         loop {
@@ -194,10 +279,41 @@ impl PasFmtConfiguration {
         }
     }
 
-    fn get_config_object_from_file<T>(&self, config_file: Option<Cow<Path>>) -> anyhow::Result<T>
-    where
-        T: for<'de> Deserialize<'de>,
-    {
+    fn config_help_requested(&self) -> bool {
+        self.overrides
+            .iter()
+            .any(|o| matches!(o, ConfigOverride::Help))
+    }
+
+    fn config_help() -> StyledStr {
+        use std::fmt::Write;
+
+        let cyan = AnsiColor::Cyan.on_default();
+        let yellow = AnsiColor::Yellow.on_default();
+        let reset = anstyle::Reset;
+        let italic = anstyle::Style::new().italic();
+
+        let mut out = String::new();
+        out.push_str("Available configuration options:\n\n");
+        for item in C::docs() {
+            writeln!(
+                out,
+                "{cyan}{}{reset} {italic}{}{reset} (default: {yellow}{}{reset})",
+                item.name, item.hint, item.default
+            )
+            .unwrap();
+
+            for line in item.description.lines() {
+                writeln!(out, "  {line}").unwrap();
+            }
+
+            writeln!(out).unwrap();
+        }
+
+        out.into()
+    }
+
+    fn get_config_object_from_file(&self, config_file: Option<Cow<Path>>) -> anyhow::Result<C> {
         let mut builder = Config::builder();
 
         if let Some(f) = config_file {
@@ -205,20 +321,24 @@ impl PasFmtConfiguration {
             builder = builder.add_source(File::from(f.borrow()).format(FileFormat::Toml));
         }
 
-        for (key, val) in &self.overrides {
-            builder = builder.set_override(key, val.as_ref())?;
+        for item in &self.overrides {
+            match item {
+                ConfigOverride::Set { key, val } => {
+                    builder = builder.set_override(key, val.as_ref())?;
+                }
+                ConfigOverride::Help => {
+                    // Do nothing; this is handled in CliWrapperImpl::validate
+                }
+            }
         }
 
         builder
             .build()?
-            .try_deserialize::<T>()
+            .try_deserialize::<C>()
             .context("failed to construct configuration")
     }
 
-    pub fn get_config_object<T>(&self) -> anyhow::Result<T>
-    where
-        T: for<'de> Deserialize<'de>,
-    {
+    pub fn get_config_object(&self) -> anyhow::Result<C> {
         let config_file = match &self.config_file {
             Some(file) => Some(Cow::Borrowed(file.as_path())),
             None => Self::find_config_file(std::env::current_dir()?).map(Cow::Owned),
@@ -227,7 +347,7 @@ impl PasFmtConfiguration {
     }
 }
 
-impl FormatterConfiguration for PasFmtConfiguration {
+impl<C: Configuration> FormatterConfiguration for PasFmtConfiguration<C> {
     fn get_paths(&self) -> anyhow::Result<Cow<[String]>> {
         let mut paths = Cow::Borrowed(&self.paths[..]);
         if let Some(arg_file) = &self.files_from {
@@ -270,12 +390,49 @@ impl FormatterConfiguration for PasFmtConfiguration {
 mod tests {
     use super::*;
     use assert_fs::{prelude::*, TempDir};
+    use serde::Deserialize;
     use spectral::prelude::*;
 
-    pasfmt_config!(Config);
+    pasfmt_config!(Config<Settings>);
 
-    fn config(args: &[&str]) -> Result<PasFmtConfiguration, clap::Error> {
-        Config::try_parse_from(args)?.validate()
+    #[derive(Deserialize, PartialEq, Eq, Debug)]
+    enum SettingEnum {
+        A,
+        B,
+    }
+
+    #[derive(Deserialize, PartialEq, Eq, Default, Debug)]
+    #[serde(deny_unknown_fields)]
+    struct Nested {
+        #[serde(default)]
+        bar: i32,
+        #[serde(default)]
+        baz: Option<SettingEnum>,
+    }
+
+    #[derive(Deserialize, Debug, PartialEq, Eq, Default)]
+    #[serde(deny_unknown_fields)]
+    struct Settings {
+        #[serde(default)]
+        foo: String,
+        #[serde(default)]
+        bar: i32,
+        #[serde(default)]
+        baz: Option<SettingEnum>,
+        #[serde(default)]
+        nested: Nested,
+    }
+
+    impl Configuration for Settings {
+        fn docs() -> impl IntoIterator<Item = ConfigItem> {
+            []
+        }
+    }
+
+    fn config(args: &[&str]) -> Result<PasFmtConfiguration<Settings>, CliError> {
+        Config::try_parse_from(args)
+            .map_err(CliError::Clap)?
+            .validate()
     }
 
     #[test]
@@ -401,34 +558,6 @@ mod tests {
     mod cfg {
         use super::*;
         use indoc::indoc;
-
-        #[derive(Deserialize, Debug, PartialEq, Eq)]
-        enum SettingEnum {
-            A,
-            B,
-        }
-
-        #[derive(Deserialize, Debug, Default, PartialEq, Eq)]
-        #[serde(deny_unknown_fields)]
-        struct Nested {
-            #[serde(default)]
-            bar: i32,
-            #[serde(default)]
-            baz: Option<SettingEnum>,
-        }
-
-        #[derive(Deserialize, Debug, PartialEq, Eq)]
-        #[serde(deny_unknown_fields)]
-        struct Settings {
-            #[serde(default)]
-            foo: String,
-            #[serde(default)]
-            bar: i32,
-            #[serde(default)]
-            baz: Option<SettingEnum>,
-            #[serde(default)]
-            nested: Nested,
-        }
 
         #[test]
         fn config_file_cannot_be_directory() -> Result<(), Box<dyn Error>> {
@@ -570,9 +699,7 @@ mod tests {
                 ),
             ] {
                 let config = config(&["", "-C", arg])?;
-                let err = config
-                    .get_config_object_from_file::<Settings>(None)
-                    .unwrap_err();
+                let err = config.get_config_object_from_file(None).unwrap_err();
 
                 assert_eq!(
                     format!("{}", err),
@@ -630,6 +757,18 @@ mod tests {
             );
 
             Ok(())
+        }
+
+        #[test]
+        fn config_help() {
+            for args in [
+                &["", "-Chelp"][..],
+                &["", "-C", "help"],
+                &["", "-Cfoo=a", "-Cbar=0", "-Chelp"],
+            ] {
+                let cfg = config(args);
+                assert!(matches!(cfg.unwrap_err(), CliError::ConfigHelp));
+            }
         }
     }
 }

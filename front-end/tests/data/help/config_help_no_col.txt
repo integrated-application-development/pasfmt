@@ -1,0 +1,29 @@
+Available configuration options:
+
+encoding native | <NAME> (default: native)
+  The encoding to use when reading and writing files.
+  If "native":
+    * on Windows, the system ANSI codepage is used
+    * otherwise, UTF-8 is used
+  
+  In all cases a detected BOM will override the configured encoding.
+
+use_tabs <boolean> (default: false)
+  Use tab characters for indentation
+
+tab_width <unsigned integer> (default: 2)
+  Number of spaces per indentation (ignored if use_tabs=true)
+
+continuation_indents <unsigned integer> (default: 2)
+  Width of continuations, measured as a multiple of the configured indentation.
+  Continuations are used to futher indent the wrapped lines from a "logical line".
+  Indentations are used to indent the base of a "logical line".
+
+line_ending [lf|crlf|native] (default: native)
+  Line ending character sequence.
+  If "native":
+    * on Windows, "crlf" is used
+    * otherwise, "lf" is used
+
+olf.max_line_length <unsigned integer> (default: 120)
+  Target line length before wrapping

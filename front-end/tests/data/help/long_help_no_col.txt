@@ -15,7 +15,9 @@ Options:
 
   -C <KEY=VALUE>
           Override one configuration option using KEY=VALUE. This takes precedence over
-          `--config-file`
+          `--config-file`.
+          
+          To list available options, use `-C help`.
 
   -m, --mode <MODE>
           The mode of operation

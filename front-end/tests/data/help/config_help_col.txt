@@ -1,0 +1,29 @@
+Available configuration options:
+
+[36mencoding[0m [3mnative | <NAME>[0m (default: [33mnative[0m)
+  The encoding to use when reading and writing files.
+  If "native":
+    * on Windows, the system ANSI codepage is used
+    * otherwise, UTF-8 is used
+  
+  In all cases a detected BOM will override the configured encoding.
+
+[36muse_tabs[0m [3m<boolean>[0m (default: [33mfalse[0m)
+  Use tab characters for indentation
+
+[36mtab_width[0m [3m<unsigned integer>[0m (default: [33m2[0m)
+  Number of spaces per indentation (ignored if use_tabs=true)
+
+[36mcontinuation_indents[0m [3m<unsigned integer>[0m (default: [33m2[0m)
+  Width of continuations, measured as a multiple of the configured indentation.
+  Continuations are used to futher indent the wrapped lines from a "logical line".
+  Indentations are used to indent the base of a "logical line".
+
+[36mline_ending[0m [3m[lf|crlf|native][0m (default: [33mnative[0m)
+  Line ending character sequence.
+  If "native":
+    * on Windows, "crlf" is used
+    * otherwise, "lf" is used
+
+[36molf.max_line_length[0m [3m<unsigned integer>[0m (default: [33m120[0m)
+  Target line length before wrapping
