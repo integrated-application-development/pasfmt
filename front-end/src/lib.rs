@@ -7,36 +7,28 @@ use serde::Deserialize;
 
 #[cfg(windows)]
 fn get_windows_default_encoding() -> &'static Encoding {
-    // SAFETY: yes it's a foreign function, but it's a simple one from the WinAPI that we
-    // can assume to be safe.
-    let ansi_codepage = unsafe { windows_sys::Win32::Globalization::GetACP() };
-    let encoding = ansi_codepage
-        .try_into()
-        .ok()
-        .and_then(|cp: u16| codepage::to_encoding(cp))
-        .unwrap_or_else(|| {
-            log::warn!(
-                "failed to convert system codepage {} to encoding, defaulting to UTF-8",
-                ansi_codepage
-            );
-            encoding_rs::UTF_8
-        });
-    log::debug!("encoding from system ANSI codepage: {}", encoding.name());
-    encoding
-}
-
-fn default_encoding() -> &'static Encoding {
-    #[cfg(windows)]
-    {
-        use std::sync::LazyLock;
-
-        static WINDOWS_DEFAULT_ENCODING: LazyLock<&'static Encoding> =
-            LazyLock::new(get_windows_default_encoding);
-
-        *WINDOWS_DEFAULT_ENCODING
+    fn inner() -> &'static Encoding {
+        // SAFETY: yes it's a foreign function, but it's a simple one from the WinAPI that we
+        // can assume to be safe.
+        let ansi_codepage = unsafe { windows_sys::Win32::Globalization::GetACP() };
+        let encoding = ansi_codepage
+            .try_into()
+            .ok()
+            .and_then(|cp: u16| codepage::to_encoding(cp))
+            .unwrap_or_else(|| {
+                log::warn!(
+                    "failed to convert system codepage {} to encoding, defaulting to UTF-8",
+                    ansi_codepage
+                );
+                encoding_rs::UTF_8
+            });
+        log::debug!("encoding from system ANSI codepage: {}", encoding.name());
+        encoding
     }
-    #[cfg(not(windows))]
-    encoding_rs::UTF_8
+
+    use std::sync::LazyLock;
+    static WINDOWS_DEFAULT_ENCODING: LazyLock<&'static Encoding> = LazyLock::new(inner);
+    *WINDOWS_DEFAULT_ENCODING
 }
 
 #[cfg_attr(feature = "__demo", derive(serde::Serialize))]
@@ -65,6 +57,57 @@ impl From<LineEnding> for pasfmt_core::lang::LineEnding {
     }
 }
 
+#[cfg_attr(feature = "__demo", derive(serde::Serialize), serde(untagged))]
+#[derive(Debug, Clone, Copy)]
+enum InternalEncoding {
+    #[cfg_attr(feature = "__demo", serde(rename = "lowercase"))]
+    Native,
+    Named(&'static Encoding),
+}
+
+impl From<InternalEncoding> for &'static Encoding {
+    fn from(value: InternalEncoding) -> Self {
+        match value {
+            InternalEncoding::Named(encoding) => encoding,
+            #[cfg(windows)]
+            InternalEncoding::Native => get_windows_default_encoding(),
+            #[cfg(not(windows))]
+            InternalEncoding::Native => encoding_rs::UTF_8,
+        }
+    }
+}
+
+struct InternalEncodingVisitor;
+impl serde::de::Visitor<'_> for InternalEncodingVisitor {
+    type Value = InternalEncoding;
+
+    fn expecting(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
+        formatter.write_str("\"native\" or a valid encoding label")
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        if value.eq_ignore_ascii_case("native") {
+            Ok(InternalEncoding::Native)
+        } else if let Some(enc) = Encoding::for_label(value.as_bytes()) {
+            Ok(InternalEncoding::Named(enc))
+        } else {
+            Err(E::invalid_value(serde::de::Unexpected::Str(value), &self))
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for InternalEncoding {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_str(InternalEncodingVisitor)
+    }
+}
+
 #[cfg_attr(feature = "__demo", derive(serde::Serialize))]
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -82,7 +125,7 @@ pub struct FormattingConfig {
     olf: OlfConfig,
 
     #[serde(default = "default_encoding")]
-    encoding: &'static Encoding,
+    encoding: InternalEncoding,
 }
 
 impl FormattingConfig {
@@ -90,6 +133,10 @@ impl FormattingConfig {
     pub fn max_line_length(&self) -> u32 {
         self.olf.max_line_length
     }
+}
+
+fn default_encoding() -> InternalEncoding {
+    InternalEncoding::Native
 }
 
 fn default_line_ending() -> LineEnding {
@@ -181,7 +228,7 @@ pub fn format(config: PasFmtConfiguration, err_handler: impl ErrHandler) {
     };
     log::debug!("Configuration:\n{:#?}", formatting_settings);
 
-    let encoding = formatting_settings.encoding;
+    let encoding: &'static Encoding = formatting_settings.encoding.into();
     let formatter = make_formatter(&formatting_settings);
     let file_formatter = FileFormatter::new(formatter, encoding);
     FormattingOrchestrator::run(file_formatter, config, err_handler)

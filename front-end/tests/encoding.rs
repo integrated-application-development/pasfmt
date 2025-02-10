@@ -127,7 +127,9 @@ mod codepages {
             .arg("-Cencoding=cpASDF")
             .assert()
             .failure()
-            .stderr(predicate::str::contains("invalid encoding label: cpASDF"));
+            .stderr(predicate::str::contains(
+                r#"invalid value: string "cpASDF", expected "native" or a valid encoding label"#,
+            ));
 
         Ok(())
     }
