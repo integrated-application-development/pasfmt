@@ -42,36 +42,36 @@ fn default_encoding() -> &'static Encoding {
 #[cfg_attr(feature = "__demo", derive(serde::Serialize))]
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
-pub struct FormattingSettings {
-    #[serde(default = "Reconstruction::default")]
-    reconstruction: Reconstruction,
-    #[serde(default = "Olf::default")]
-    olf: Olf,
+pub struct FormattingConfig {
+    #[serde(default = "Default::default")]
+    reconstruction: ReconstructionConfig,
+    #[serde(default = "Default::default")]
+    olf: OlfConfig,
     #[serde(default = "default_encoding")]
     encoding: &'static Encoding,
 }
 
-impl FormattingSettings {
+impl FormattingConfig {
     #[cfg(feature = "__demo")]
     pub fn max_line_length(&self) -> u32 {
         self.olf.max_line_length
     }
 }
 
-impl Default for FormattingSettings {
+impl Default for FormattingConfig {
     fn default() -> Self {
         Self {
             reconstruction: Default::default(),
             encoding: default_encoding(),
-            olf: Olf::default(),
+            olf: OlfConfig::default(),
         }
     }
 }
 
-impl TryFrom<Reconstruction> for ReconstructionSettings {
+impl TryFrom<ReconstructionConfig> for ReconstructionSettings {
     type Error = InvalidReconstructionSettingsError;
 
-    fn try_from(val: Reconstruction) -> Result<Self, Self::Error> {
+    fn try_from(val: ReconstructionConfig) -> Result<Self, Self::Error> {
         ReconstructionSettings::new(
             val.eol,
             val.indentation.clone(),
@@ -83,7 +83,7 @@ impl TryFrom<Reconstruction> for ReconstructionSettings {
 #[cfg_attr(feature = "__demo", derive(serde::Serialize))]
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-struct Reconstruction {
+struct ReconstructionConfig {
     #[serde(default = "default_eol")]
     eol: String,
     #[serde(default = "default_indentation")]
@@ -103,9 +103,9 @@ fn default_continuation() -> Option<String> {
     Some("    ".to_owned())
 }
 
-impl Default for Reconstruction {
+impl Default for ReconstructionConfig {
     fn default() -> Self {
-        Reconstruction {
+        ReconstructionConfig {
             eol: default_eol(),
             indentation: default_indentation(),
             continuation: default_continuation(),
@@ -116,7 +116,7 @@ impl Default for Reconstruction {
 #[cfg_attr(feature = "__demo", derive(serde::Serialize))]
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-struct Olf {
+struct OlfConfig {
     #[serde(default = "default_max_line_length")]
     max_line_length: u32,
 }
@@ -124,24 +124,24 @@ fn default_max_line_length() -> u32 {
     120
 }
 
-impl From<Olf> for OptimisingLineFormatterSettings {
-    fn from(value: Olf) -> Self {
+impl From<OlfConfig> for OptimisingLineFormatterSettings {
+    fn from(value: OlfConfig) -> Self {
         Self {
             max_line_length: value.max_line_length,
             iteration_max: 20_000,
         }
     }
 }
-impl Default for Olf {
+impl Default for OlfConfig {
     fn default() -> Self {
-        Olf {
+        OlfConfig {
             max_line_length: default_max_line_length(),
         }
     }
 }
 
 pub fn format(config: PasFmtConfiguration, err_handler: impl ErrHandler) {
-    let formatting_settings = match config.get_config_object::<FormattingSettings>() {
+    let formatting_settings = match config.get_config_object::<FormattingConfig>() {
         Ok(formatting_settings) => formatting_settings,
         Err(e) => {
             err_handler(e);
@@ -164,7 +164,7 @@ pub fn format(config: PasFmtConfiguration, err_handler: impl ErrHandler) {
 }
 
 pub fn make_formatter(
-    settings: &FormattingSettings,
+    settings: &FormattingConfig,
 ) -> Result<Formatter, InvalidReconstructionSettingsError> {
     let reconstruction_settings: ReconstructionSettings =
         settings.reconstruction.clone().try_into()?;
