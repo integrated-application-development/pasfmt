@@ -111,20 +111,15 @@ impl<'de> Deserialize<'de> for InternalEncoding {
 #[cfg_attr(feature = "__demo", derive(serde::Serialize))]
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
+#[serde(default)]
 pub struct FormattingConfig {
-    #[serde(default = "default_line_ending")]
     line_ending: LineEnding,
-    #[serde(default = "default_use_tabs")]
     use_tabs: bool,
-    #[serde(default = "default_tab_width")]
     tab_width: u8,
-    #[serde(default = "default_continuation_indents")]
     continuation_indents: u8,
 
-    #[serde(default = "Default::default")]
     olf: OlfConfig,
 
-    #[serde(default = "default_encoding")]
     encoding: InternalEncoding,
 }
 
@@ -194,8 +189,8 @@ impl From<&FormattingConfig> for ReconstructionSettings {
 #[cfg_attr(feature = "__demo", derive(serde::Serialize))]
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
+#[serde(default)]
 struct OlfConfig {
-    #[serde(default = "default_max_line_length")]
     max_line_length: u32,
 }
 fn default_max_line_length() -> u32 {
