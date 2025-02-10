@@ -10,13 +10,18 @@ autotests = false
 encoding_rs = { workspace = true, features = ["serde"] }
 pasfmt-core = { path = "../core" }
 pasfmt-orchestrator = { path = "../orchestrator" }
-serde = { workspace = true, features= ["derive"] }
+serde = { workspace = true, features = ["derive"] }
 stderrlog = { workspace = true }
 log = { workspace = true }
 anyhow = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { workspace = true, features = ["Win32_Globalization", "Win32_System_IO"] }
+windows-sys = { workspace = true, features = [
+  "Win32_Globalization",
+  "Win32_System_IO",
+  "Win32_Storage",
+  "Win32_Storage_FileSystem",
+] }
 codepage = { workspace = true }
 
 [dev-dependencies]

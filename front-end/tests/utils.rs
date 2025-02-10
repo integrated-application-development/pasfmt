@@ -35,14 +35,7 @@ pub mod windows {
         let handle = std::fs::OpenOptions::new().write(true).open(path)?;
         unsafe {
             let mut overlapped: OVERLAPPED = std::mem::zeroed();
-            let ret = LockFileEx(
-                handle.as_raw_handle() as isize,
-                flags,
-                0,
-                !0,
-                !0,
-                &mut overlapped,
-            );
+            let ret = LockFileEx(handle.as_raw_handle(), flags, 0, !0, !0, &mut overlapped);
 
             if ret == 0 {
                 return Err(Box::new(std::io::Error::last_os_error()));
