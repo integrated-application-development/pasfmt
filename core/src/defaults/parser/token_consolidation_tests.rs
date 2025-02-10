@@ -733,7 +733,21 @@ const OCONST: TokenType = TokenType::Keyword(KK::Const(DK::Other));
         &[PVAR, PCONST, AVAR, ACONST, IVAR, ICONST]
     },
     section = { "var A: B; const C = D;", &[SVAR, SCONST] },
-    inline = { "begin var A := B; const C = D; end;", &[IVAR, ICONST] },
+    compound_inline = { "begin var A := B; const C = D; end;", &[IVAR, ICONST] },
+    repeat_inline = { "repeat var A := B; const C = D; until;", &[IVAR, ICONST] },
+    try_finally_inline = {
+        "try var A := B; const C = D; finally var E := F; const G := H; end;",
+        &[IVAR, ICONST, IVAR, ICONST]
+    },
+    try_bare_except_inline = { "try except var A := B; const C := D; end;", &[IVAR, ICONST] },
+    try_except_on_inline = {
+        "try except on A do var B := C; on D do const E := F; end;",
+        &[IVAR, ICONST]
+    },
+    initialization_finalization_inline = {
+        "initialization var A := B; const C = D; finalization var E := F; const G := H; end.",
+        &[IVAR, ICONST, IVAR, ICONST]
+    },
     param = { "procedure A(var B; const C);", &[PVAR, PCONST] },
     for_loop = { "for var A := B to C do", &[IVAR] },
     other = { "type A = array of const;", &[OCONST] },

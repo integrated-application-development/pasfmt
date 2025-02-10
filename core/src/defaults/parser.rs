@@ -525,7 +525,9 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     | KK::Label
                     | KK::Type),
                 ) => {
-                    if let Some(ContextType::Statement(_)) = self.get_last_context_type() {
+                    if let Some(ContextType::Statement(_) | ContextType::StatementBlock(_)) =
+                        self.get_last_context_type()
+                    {
                         // Inline declaration
                         self.set_logical_line_type(LLT::InlineDeclaration);
                         self.set_current_decl_kind(DK::Inline);

@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parent line attribution of parent lines whose line number changes with conditional compilation.
 - `LogicalLineType` of inline assembly instructions without leading new line.
 - `LogicalLineType::Declaration` attribution for declarations in a visibility section.
+- Inline declaration parsing in various statement lists.
 
 ## [0.3.0] - 2024-05-29
 
