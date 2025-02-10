@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RemoveRepeatedNewlines`, `ImportClauseConsolidator`, and `UsesClauseFormatter` in favour of `OptimisingLineFormatter`
 - `Formatter::format_into_buf` function.
 - `Reconstructor::reconstruct_into_buf` trait method (renamed).
+- `reconstruction` configuration field.
 
 ### Changed
 
@@ -34,6 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (e.g. cursors to track).
 - `Reconstructor::reconstruct` to have the signiture of the old `Reconstructor::reconstruct_into_buf`.
 - Renamed `FormattingSettings` to `FormattingConfig`.
+- Whitespace configuration
+  - `line_ending` now controls the end-of-line sequence (previously `reconstruction.eol`).
+  - `use_tabs` now controls the character used for indentation.
+  - `tab_width` now controls the number of spaces per indentation.
+  - `continuation_indents` now controls the number of indentations per continuation.
 
 ### Added
 

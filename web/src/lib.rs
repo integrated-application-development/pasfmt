@@ -27,9 +27,6 @@ pub fn default_settings_toml() -> String {
 }
 
 #[wasm_bindgen]
-pub fn fmt(src: &str, settings: &SettingsWrapper) -> Result<String, String> {
-    let formatter = make_formatter(&settings.config).map_err(|e| e.to_string())?;
-
-    Ok(formatter.format(src, FileOptions::new()))
-
+pub fn fmt(src: &str, settings: &SettingsWrapper) -> String {
+    make_formatter(&settings.config).format(src, FileOptions::new())
 }

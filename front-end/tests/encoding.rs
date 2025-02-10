@@ -175,21 +175,4 @@ mod malformed {
     fn invalid_utf16le() -> TestResult {
         test_malformed_data(b"\xFF\xFE", b"\x00\xD8", "UTF-16LE")
     }
-
-    #[test]
-    fn invalid_output() -> TestResult {
-        // Set the EOL sequence to U+3000 and try to encode it as win1252
-        // it should fail to encode
-        pasfmt()?
-            .write_stdin("")
-            .arg("-Creconstruction.eol=\u{3000}")
-            .arg("-Cencoding=windows-1252")
-            .assert()
-            .failure()
-            .stderr(predicate::str::contains("ERROR failed to write to stdout"))
-            .stderr(predicate::str::contains(
-                "Formatting result contains data that cannot be encoded as windows-1252",
-            ));
-        Ok(())
-    }
 }

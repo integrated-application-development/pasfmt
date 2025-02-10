@@ -321,11 +321,11 @@ mod tests {
     fn run_test(input: FormattedTokens, expected_output: &str) {
         let reconstructor = DelphiLogicalLinesReconstructor {
             reconstruction_settings: ReconstructionSettings::new(
-                "\n".to_owned(),
-                "  ".to_owned(),
-                "  ".to_owned(),
-            )
-            .unwrap(),
+                LineEnding::Lf,
+                TabKind::Soft,
+                2,
+                2,
+            ),
         };
         let mut output = String::new();
         reconstructor.reconstruct(input, &mut output);
@@ -522,7 +522,7 @@ mod tests {
         }
 
         fn formatter() -> Formatter {
-            let recon = ReconstructionSettings::new("\n", "  ", "    ").unwrap();
+            let recon = ReconstructionSettings::new(LineEnding::Lf, TabKind::Soft, 2, 4);
             Formatter::builder()
                 .lexer(DelphiLexer {})
                 .parser(DelphiLogicalLineParser {})

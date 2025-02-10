@@ -40,13 +40,47 @@ fn default_encoding() -> &'static Encoding {
 }
 
 #[cfg_attr(feature = "__demo", derive(serde::Serialize))]
+#[derive(Deserialize, Debug, Clone, Copy)]
+#[serde(rename_all = "lowercase")]
+enum LineEnding {
+    #[serde(alias = "CRLF")]
+    Crlf,
+    #[serde(alias = "LF")]
+    Lf,
+    Native,
+}
+
+impl From<LineEnding> for pasfmt_core::lang::LineEnding {
+    fn from(value: LineEnding) -> Self {
+        use pasfmt_core::lang::LineEnding as CoreLineEnding;
+
+        match value {
+            LineEnding::Crlf => CoreLineEnding::Crlf,
+            LineEnding::Lf => CoreLineEnding::Lf,
+            #[cfg(windows)]
+            LineEnding::Native => CoreLineEnding::Crlf,
+            #[cfg(not(windows))]
+            LineEnding::Native => CoreLineEnding::Lf,
+        }
+    }
+}
+
+#[cfg_attr(feature = "__demo", derive(serde::Serialize))]
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct FormattingConfig {
-    #[serde(default = "Default::default")]
-    reconstruction: ReconstructionConfig,
+    #[serde(default = "default_line_ending")]
+    line_ending: LineEnding,
+    #[serde(default = "default_use_tabs")]
+    use_tabs: bool,
+    #[serde(default = "default_tab_width")]
+    tab_width: u8,
+    #[serde(default = "default_continuation_indents")]
+    continuation_indents: u8,
+
     #[serde(default = "Default::default")]
     olf: OlfConfig,
+
     #[serde(default = "default_encoding")]
     encoding: &'static Encoding,
 }
@@ -58,58 +92,55 @@ impl FormattingConfig {
     }
 }
 
+fn default_line_ending() -> LineEnding {
+    LineEnding::Native
+}
+
+fn default_use_tabs() -> bool {
+    false
+}
+
+fn default_tab_width() -> u8 {
+    2
+}
+
+fn default_continuation_indents() -> u8 {
+    2
+}
+
 impl Default for FormattingConfig {
     fn default() -> Self {
         Self {
-            reconstruction: Default::default(),
+            line_ending: default_line_ending(),
+            use_tabs: default_use_tabs(),
+            tab_width: default_tab_width(),
+            continuation_indents: default_continuation_indents(),
             encoding: default_encoding(),
             olf: OlfConfig::default(),
         }
     }
 }
 
-impl TryFrom<ReconstructionConfig> for ReconstructionSettings {
-    type Error = InvalidReconstructionSettingsError;
+impl From<&FormattingConfig> for ReconstructionSettings {
+    fn from(val: &FormattingConfig) -> Self {
+        // The core measures indents and continuations in counts of spaces or tabs, whereas here
+        // it's measured as a count of 'indentations', so we have to convert.
+        let (indent_width, continuation_width, tab) = if val.use_tabs {
+            (1, val.continuation_indents, TabKind::Hard)
+        } else {
+            (
+                val.tab_width,
+                val.continuation_indents.saturating_mul(val.tab_width),
+                TabKind::Soft,
+            )
+        };
 
-    fn try_from(val: ReconstructionConfig) -> Result<Self, Self::Error> {
         ReconstructionSettings::new(
-            val.eol,
-            val.indentation.clone(),
-            val.continuation.unwrap_or(val.indentation),
+            val.line_ending.into(),
+            tab,
+            indent_width,
+            continuation_width,
         )
-    }
-}
-
-#[cfg_attr(feature = "__demo", derive(serde::Serialize))]
-#[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
-struct ReconstructionConfig {
-    #[serde(default = "default_eol")]
-    eol: String,
-    #[serde(default = "default_indentation")]
-    indentation: String,
-    #[serde(default = "default_continuation")]
-    continuation: Option<String>,
-}
-
-fn default_eol() -> String {
-    "\r\n".to_owned()
-}
-
-fn default_indentation() -> String {
-    "  ".to_owned()
-}
-fn default_continuation() -> Option<String> {
-    Some("    ".to_owned())
-}
-
-impl Default for ReconstructionConfig {
-    fn default() -> Self {
-        ReconstructionConfig {
-            eol: default_eol(),
-            indentation: default_indentation(),
-            continuation: default_continuation(),
-        }
     }
 }
 
@@ -151,27 +182,17 @@ pub fn format(config: PasFmtConfiguration, err_handler: impl ErrHandler) {
     log::debug!("Configuration:\n{:#?}", formatting_settings);
 
     let encoding = formatting_settings.encoding;
-    let formatter = match make_formatter(&formatting_settings) {
-        Ok(f) => f,
-        Err(e) => {
-            err_handler(anyhow::Error::from(e));
-            return;
-        }
-    };
-
+    let formatter = make_formatter(&formatting_settings);
     let file_formatter = FileFormatter::new(formatter, encoding);
     FormattingOrchestrator::run(file_formatter, config, err_handler)
 }
 
-pub fn make_formatter(
-    settings: &FormattingConfig,
-) -> Result<Formatter, InvalidReconstructionSettingsError> {
-    let reconstruction_settings: ReconstructionSettings =
-        settings.reconstruction.clone().try_into()?;
+pub fn make_formatter(config: &FormattingConfig) -> Formatter {
+    let reconstruction_settings: ReconstructionSettings = config.into();
 
     let eof_newline_formatter = &EofNewline {};
 
-    Ok(Formatter::builder()
+    Formatter::builder()
         .lexer(DelphiLexer {})
         .parser(DelphiLogicalLineParser {})
         .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
@@ -186,11 +207,11 @@ pub fn make_formatter(
             },
         ))
         .file_formatter(OptimisingLineFormatter::new(
-            settings.olf.clone().into(),
+            config.olf.clone().into(),
             reconstruction_settings.clone(),
         ))
         .reconstructor(DelphiLogicalLinesReconstructor::new(
             reconstruction_settings,
         ))
-        .build())
+        .build()
 }

@@ -9,8 +9,7 @@ use super::ErrorString;
 use pasfmt_core::prelude::*;
 
 fn run_test(input: &str) -> datatest_stable::Result<()> {
-    let reconstruction_settings =
-        ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "    ".to_owned()).unwrap();
+    let reconstruction_settings = ReconstructionSettings::new(LineEnding::Lf, TabKind::Soft, 2, 4);
     let formatter = Formatter::builder()
         .lexer(DelphiLexer {})
         .parser(DelphiLogicalLineParser {})

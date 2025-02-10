@@ -22,7 +22,7 @@ pub fn default_test_reconstructor() -> DelphiLogicalLinesReconstructor {
 }
 
 pub fn default_test_reconstruction_settings() -> ReconstructionSettings {
-    ReconstructionSettings::new("\n".to_owned(), "  ".to_owned(), "  ".to_owned()).unwrap()
+    ReconstructionSettings::new(LineEnding::Lf, TabKind::Soft, 2, 2)
 }
 
 fn ws_len(whitespace_and_content: &str) -> u32 {
