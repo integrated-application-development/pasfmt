@@ -118,7 +118,7 @@ pub struct FormattingConfig {
     tab_width: u8,
     continuation_indents: u8,
 
-    olf: OlfConfig,
+    wrap_column: u32,
 
     encoding: InternalEncoding,
 }
@@ -126,7 +126,7 @@ pub struct FormattingConfig {
 impl FormattingConfig {
     #[cfg(feature = "__demo")]
     pub fn max_line_length(&self) -> u32 {
-        self.olf.max_line_length
+        self.wrap_column
     }
 }
 
@@ -150,6 +150,10 @@ fn default_continuation_indents() -> u8 {
     2
 }
 
+fn default_wrap_column() -> u32 {
+    120
+}
+
 impl Default for FormattingConfig {
     fn default() -> Self {
         Self {
@@ -158,7 +162,7 @@ impl Default for FormattingConfig {
             tab_width: default_tab_width(),
             continuation_indents: default_continuation_indents(),
             encoding: default_encoding(),
-            olf: OlfConfig::default(),
+            wrap_column: default_wrap_column(),
         }
     }
 }
@@ -186,29 +190,11 @@ impl From<&FormattingConfig> for ReconstructionSettings {
     }
 }
 
-#[cfg_attr(feature = "__demo", derive(serde::Serialize))]
-#[derive(Deserialize, Debug, Clone)]
-#[serde(deny_unknown_fields)]
-#[serde(default)]
-struct OlfConfig {
-    max_line_length: u32,
-}
-fn default_max_line_length() -> u32 {
-    120
-}
-
-impl From<OlfConfig> for OptimisingLineFormatterSettings {
-    fn from(value: OlfConfig) -> Self {
+impl From<&FormattingConfig> for OptimisingLineFormatterSettings {
+    fn from(value: &FormattingConfig) -> Self {
         Self {
-            max_line_length: value.max_line_length,
+            max_line_length: value.wrap_column,
             iteration_max: 20_000,
-        }
-    }
-}
-impl Default for OlfConfig {
-    fn default() -> Self {
-        OlfConfig {
-            max_line_length: default_max_line_length(),
         }
     }
 }
@@ -216,6 +202,12 @@ impl Default for OlfConfig {
 impl Configuration for FormattingConfig {
     fn docs() -> impl IntoIterator<Item = ConfigItem> {
         vec![
+            ConfigItem {
+                name: "wrap_column",
+                description: "Target line length before wrapping",
+                hint: "<unsigned integer>",
+                default: default_wrap_column().to_string(),
+            },
             ConfigItem {
                 name: "encoding",
                 description: "\
@@ -262,12 +254,6 @@ If \"native\":
                 hint: "[lf|crlf|native]",
                 default: format!("{:?}", default_line_ending()).to_lowercase(),
             },
-            ConfigItem {
-                name: "olf.max_line_length",
-                description: "Target line length before wrapping",
-                hint: "<unsigned integer>",
-                default: default_max_line_length().to_string(),
-            },
         ]
     }
 }
@@ -308,7 +294,7 @@ pub fn make_formatter(config: &FormattingConfig) -> Formatter {
             },
         ))
         .file_formatter(OptimisingLineFormatter::new(
-            config.olf.clone().into(),
+            config.into(),
             reconstruction_settings.clone(),
         ))
         .reconstructor(DelphiLogicalLinesReconstructor::new(

@@ -1,5 +1,8 @@
 Available configuration options:
 
+[36mwrap_column[0m [3m<unsigned integer>[0m (default: [33m120[0m)
+  Target line length before wrapping
+
 [36mencoding[0m [3mnative | <NAME>[0m (default: [33mnative[0m)
   The encoding to use when reading and writing files.
   If "native":
@@ -24,6 +27,3 @@ Available configuration options:
   If "native":
     * on Windows, "crlf" is used
     * otherwise, "lf" is used
-
-[36molf.max_line_length[0m [3m<unsigned integer>[0m (default: [33m120[0m)
-  Target line length before wrapping

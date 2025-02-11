@@ -1,5 +1,8 @@
 Available configuration options:
 
+wrap_column <unsigned integer> (default: 120)
+  Target line length before wrapping
+
 encoding native | <NAME> (default: native)
   The encoding to use when reading and writing files.
   If "native":
@@ -24,6 +27,3 @@ line_ending [lf|crlf|native] (default: native)
   If "native":
     * on Windows, "crlf" is used
     * otherwise, "lf" is used
-
-olf.max_line_length <unsigned integer> (default: 120)
-  Target line length before wrapping

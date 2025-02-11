@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `LogicalLineType::Declaration` to represent `label`, `type`, `const` etc. declarations.
 - Debug logging for time taken to format each file.
 - `OptimisingLineFormatter` to reflow all kinds of logical lines.
+  - Configuration option `wrap_column` controls the line length.
 - Method `process_cursor` to the `LogicalLinesReconstructor` trait.
 - Trait `CursorMetadata`.
 - Cursor tracking, via the `--cursor` CLI option.
