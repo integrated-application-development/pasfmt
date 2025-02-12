@@ -3,7 +3,7 @@ Available configuration options:
 wrap_column <unsigned integer> (default: 120)
   Target line length before wrapping
 
-begin_style [auto|always_wrap] (default: auto)
+begin_style [ auto | always_wrap ] (default: auto)
   Places the `begin` after control flow statements (e.g. `if`).
   If "always_wrap", the `begin` will always be placed on the next line
   at the same indentation as the statement it is within.
@@ -27,7 +27,7 @@ continuation_indents <unsigned integer> (default: 2)
   Continuations are used to further indent the wrapped lines from a "logical line".
   Indentations are used to indent the base of a "logical line".
 
-line_ending [lf|crlf|native] (default: native)
+line_ending [ lf | crlf | native ] (default: native)
   Line ending character sequence.
   If "native":
     * on Windows, "crlf" is used

@@ -207,7 +207,7 @@ Places the `begin` after control flow statements (e.g. `if`).
 If \"always_wrap\", the `begin` will always be placed on the next line
 at the same indentation as the statement it is within.\
                     ",
-                hint: "[auto|always_wrap]",
+                hint: "[ auto | always_wrap ]",
                 default: format!("{:?}", defaults.begin_style).to_lowercase(),
             },
             ConfigItem {
@@ -253,7 +253,7 @@ If \"native\":
   * on Windows, \"crlf\" is used
   * otherwise, \"lf\" is used\
                     ",
-                hint: "[lf|crlf|native]",
+                hint: "[ lf | crlf | native ]",
                 default: format!("{:?}", defaults.line_ending).to_lowercase(),
             },
         ]
