@@ -32,13 +32,14 @@ fn get_windows_default_encoding() -> &'static Encoding {
 }
 
 #[cfg_attr(feature = "__demo", derive(serde::Serialize))]
-#[derive(Deserialize, Debug, Clone, Copy)]
+#[derive(Deserialize, Debug, Clone, Copy, Default)]
 #[serde(rename_all = "lowercase")]
 enum LineEnding {
     #[serde(alias = "CRLF")]
     Crlf,
     #[serde(alias = "LF")]
     Lf,
+    #[default]
     Native,
 }
 
@@ -58,9 +59,10 @@ impl From<LineEnding> for pasfmt_core::lang::LineEnding {
 }
 
 #[cfg_attr(feature = "__demo", derive(serde::Serialize), serde(untagged))]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 enum InternalEncoding {
     #[cfg_attr(feature = "__demo", serde(rename = "lowercase"))]
+    #[default]
     Native,
     Named(&'static Encoding),
 }
@@ -109,9 +111,10 @@ impl<'de> Deserialize<'de> for InternalEncoding {
 }
 
 #[cfg_attr(feature = "__demo", derive(serde::Serialize), serde(untagged))]
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 enum BeginStyle {
+    #[default]
     Auto,
     #[allow(non_camel_case_types)]
     Always_Wrap,
@@ -140,44 +143,16 @@ impl FormattingConfig {
     }
 }
 
-fn default_encoding() -> InternalEncoding {
-    InternalEncoding::Native
-}
-
-fn default_line_ending() -> LineEnding {
-    LineEnding::Native
-}
-
-fn default_use_tabs() -> bool {
-    false
-}
-
-fn default_tab_width() -> u8 {
-    2
-}
-
-fn default_continuation_indents() -> u8 {
-    2
-}
-
-fn default_wrap_column() -> u32 {
-    120
-}
-
-fn default_begin_style() -> BeginStyle {
-    BeginStyle::Auto
-}
-
 impl Default for FormattingConfig {
     fn default() -> Self {
         Self {
-            line_ending: default_line_ending(),
-            use_tabs: default_use_tabs(),
-            tab_width: default_tab_width(),
-            continuation_indents: default_continuation_indents(),
-            encoding: default_encoding(),
-            wrap_column: default_wrap_column(),
-            begin_style: default_begin_style(),
+            line_ending: LineEnding::default(),
+            use_tabs: false,
+            tab_width: 2,
+            continuation_indents: 2,
+            encoding: InternalEncoding::default(),
+            wrap_column: 120,
+            begin_style: BeginStyle::default(),
         }
     }
 }
@@ -217,12 +192,13 @@ impl From<&FormattingConfig> for OptimisingLineFormatterSettings {
 
 impl Configuration for FormattingConfig {
     fn docs() -> impl IntoIterator<Item = ConfigItem> {
+        let defaults = Self::default();
         vec![
             ConfigItem {
                 name: "wrap_column",
                 description: "Target line length before wrapping",
                 hint: "<unsigned integer>",
-                default: default_wrap_column().to_string(),
+                default: defaults.wrap_column.to_string(),
             },
             ConfigItem {
                 name: "begin_style",
@@ -232,7 +208,7 @@ If \"always_wrap\", the `begin` will always be placed on the next line
 at the same indentation as the statement it is within.\
                     ",
                 hint: "[auto|always_wrap]",
-                default: format!("{:?}", default_begin_style()).to_lowercase(),
+                default: format!("{:?}", defaults.begin_style).to_lowercase(),
             },
             ConfigItem {
                 name: "encoding",
@@ -245,29 +221,29 @@ If \"native\":
 In all cases a detected BOM will override the configured encoding.\
                     ",
                 hint: "native | <NAME>",
-                default: format!("{:?}", default_encoding()).to_lowercase(),
+                default: format!("{:?}", defaults.encoding).to_lowercase(),
             },
             ConfigItem {
                 name: "use_tabs",
                 description: "Use tab characters for indentation",
                 hint: "<boolean>",
-                default: default_use_tabs().to_string(),
+                default: defaults.use_tabs.to_string(),
             },
             ConfigItem {
                 name: "tab_width",
                 description: "Number of spaces per indentation (ignored if use_tabs=true)",
                 hint: "<unsigned integer>",
-                default: default_tab_width().to_string(),
+                default: defaults.tab_width.to_string(),
             },
             ConfigItem {
                 name: "continuation_indents",
                 description: "\
 Width of continuations, measured as a multiple of the configured indentation.
-Continuations are used to futher indent the wrapped lines from a \"logical line\".
+Continuations are used to further indent the wrapped lines from a \"logical line\".
 Indentations are used to indent the base of a \"logical line\".
 ",
                 hint: "<unsigned integer>",
-                default: default_continuation_indents().to_string(),
+                default: defaults.continuation_indents.to_string(),
             },
             ConfigItem {
                 name: "line_ending",
@@ -278,7 +254,7 @@ If \"native\":
   * otherwise, \"lf\" is used\
                     ",
                 hint: "[lf|crlf|native]",
-                default: format!("{:?}", default_line_ending()).to_lowercase(),
+                default: format!("{:?}", defaults.line_ending).to_lowercase(),
             },
         ]
     }

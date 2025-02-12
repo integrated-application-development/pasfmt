@@ -24,7 +24,7 @@ Available configuration options:
 
 [36mcontinuation_indents[0m [3m<unsigned integer>[0m (default: [33m2[0m)
   Width of continuations, measured as a multiple of the configured indentation.
-  Continuations are used to futher indent the wrapped lines from a "logical line".
+  Continuations are used to further indent the wrapped lines from a "logical line".
   Indentations are used to indent the base of a "logical line".
 
 [36mline_ending[0m [3m[lf|crlf|native][0m (default: [33mnative[0m)

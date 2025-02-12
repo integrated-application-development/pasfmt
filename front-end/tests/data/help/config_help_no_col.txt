@@ -24,7 +24,7 @@ tab_width <unsigned integer> (default: 2)
 
 continuation_indents <unsigned integer> (default: 2)
   Width of continuations, measured as a multiple of the configured indentation.
-  Continuations are used to futher indent the wrapped lines from a "logical line".
+  Continuations are used to further indent the wrapped lines from a "logical line".
   Indentations are used to indent the base of a "logical line".
 
 line_ending [lf|crlf|native] (default: native)
