@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use crate::prelude::*;
 
 use crate::prelude::KeywordKind::*;
@@ -24,12 +26,18 @@ impl TokenIgnorer for IgnoreNonUnitImportClauses {
             lines
                 .iter()
                 .filter(|line| line.get_line_type() == LogicalLineType::ImportClause)
-                .for_each(|line| {
-                    line.get_tokens().iter().for_each(|token| {
-                        token_marker.mark(*token);
-                    })
-                });
+                .for_each(|line| self.ignore_clause_line(line, token_marker));
         };
+    }
+}
+impl IgnoreNonUnitImportClauses {
+    fn ignore_clause_line(&self, line: &LogicalLine, token_marker: &mut TokenMarker) {
+        let Some((&start, &end)) = line.get_tokens().iter().minmax().into_option() else {
+            return;
+        };
+        for token in start..=end {
+            token_marker.mark(token);
+        }
     }
 }
 
@@ -138,7 +146,25 @@ mod tests {
                             uses a,b,c;
                             "
                         )
-                    }
+                    },
+                    containing_conditional_directives = {
+                        indoc::concatdoc!(
+                            stringify!($typ),
+                            "
+                             foo;
+                            uses a, {$ifdef A},  b  {$endif};
+                            (a,b,c);
+                            "
+                        ),
+                        indoc::concatdoc!(
+                            stringify!($typ),
+                            "
+                             foo;
+                            uses a, {$ifdef A},  b  {$endif};
+                            (a, b, c);
+                            "
+                        )
+                    },
                 );
             }
         };
