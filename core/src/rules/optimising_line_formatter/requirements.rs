@@ -62,6 +62,10 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                     .if_else_or_default(DR::MustBreak, DR::MustNotBreak)
             }
             (Some(TT::Op(OK::Comma)), _) => {
+                let import_requirement =
+                    matches!(line.get_line_type(), LLT::ImportClause | LLT::ExportClause)
+                        .then_some(DR::MustBreak);
+
                 let comma_list_requirement = contexts_data
                     .get_last_context(CT::CommaList)
                     .and_then(|(_, data)| data.one_element_per_line)
@@ -74,7 +78,8 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                     })
                     .if_else_map(DR::MustBreak, DR::Indifferent);
 
-                comma_list_requirement
+                import_requirement
+                    .or(comma_list_requirement)
                     .or(parens_requirement)
                     .unwrap_or_default()
             }

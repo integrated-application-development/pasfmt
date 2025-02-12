@@ -543,7 +543,9 @@ mod import_exports {
                 uses = "
                     program A;
                     uses
-                      AAAA.AAAA, BBB.BBB, CCCCCCC;
+                      AAAA.AAAA,
+                      BBB.BBB,
+                      CCCCCCC;
                     uses
                       AAAAA.AAA,
                       BBB.BBB,
@@ -552,7 +554,8 @@ mod import_exports {
                 uses_in = "
                     program A;
                     uses
-                      AA.AA in 'a', BBBBBB in 'b';
+                      AA.AA in 'a',
+                      BBBBBB in 'b';
                     uses
                       AAAAAA in 'a',
                       BB.BBB in 'b';
@@ -585,7 +588,9 @@ mod import_exports {
                 requires = "
                     package A;
                     requires
-                      AAAAAA, BBB.BB, CCCCC;
+                      AAAAAA,
+                      BBB.BB,
+                      CCCCC;
                     requires
                       AAAAA.AAA,
                       BBBBBBB,
@@ -609,7 +614,9 @@ mod import_exports {
                 contains = "
                     package A;
                     contains
-                      AAAAA, BBB.BB, CCCCCC;
+                      AAAAA,
+                      BBB.BB,
+                      CCCCCC;
                     contains
                       AAAA.AAAA,
                       BBBBBBB,
@@ -618,7 +625,8 @@ mod import_exports {
                 contains_in = "
                     package A;
                     contains
-                      AA.AA in 'a', BBB.BB in 'b';
+                      AA.AA in 'a',
+                      BBB.BB in 'b';
                     contains
                       AA.AAA in 'a',
                       BBBBBB in 'b';
@@ -650,7 +658,9 @@ mod import_exports {
                 root_dir,
                 ident = "
                     exports
-                      AAAAAA, BBBBBB, CCCCCC;
+                      AAAAAA,
+                      BBBBBB,
+                      CCCCCC;
                     exports
                       AAAAAAAA,
                       BBBBBBBB,
@@ -660,7 +670,8 @@ mod import_exports {
                     exports
                       AAAAAAAAA index BBBBBB;
                     exports
-                      AA index BB, C index D;
+                      AA index BB,
+                      C index D;
                     exports
                       AAA index BBB,
                       CCC index DDD;
@@ -684,7 +695,8 @@ mod import_exports {
                     exports
                       AAAAAAAAA name BBBBBBB;
                     exports
-                      AA name BB, CC name DD;
+                      AA name BB,
+                      CC name DD;
                     exports
                       AAAA name BBB,
                       CCCC name DDD;
