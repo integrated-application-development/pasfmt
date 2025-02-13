@@ -1,4 +1,10 @@
-# pasfmt
+<h1 id="pasfmt">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/pasfmt-title-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/images/pasfmt-title-light.png">
+    <img alt="pasfmt" src="docs/images/pasfmt-title-light.png"/>
+  </picture>
+</h1>
 
 `pasfmt` is a complete and opinionated formatter for Delphi code.
 

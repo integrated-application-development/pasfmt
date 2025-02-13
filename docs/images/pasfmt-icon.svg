@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="256"
+   height="256"
+   viewBox="0 0 256 256"
+   version="1.1"
+   id="svg321"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs318" />
+  <g
+     id="layer1">
+    <rect
+       style="fill:#fff5e7;fill-opacity:1;stroke-width:4.13491;paint-order:stroke markers fill;stop-color:#000000"
+       id="rect4085-9-7-7"
+       width="256"
+       height="256"
+       x="0"
+       y="0" />
+    <g
+       id="g4299"
+       transform="translate(46.000111,44.000368)">
+      <rect
+         style="display:inline;fill:#925fc3;fill-opacity:1;stroke-width:1.04381;paint-order:stroke markers fill;stop-color:#000000"
+         id="rect1233-7-8-4-8"
+         width="165"
+         height="36"
+         x="0"
+         y="-3.8146973e-06" />
+      <rect
+         style="display:inline;fill:#f39e57;fill-opacity:1;stroke-width:0.726815;paint-order:stroke markers fill;stop-color:#000000"
+         id="rect1233-0-3-3-8-5-6-5"
+         width="80"
+         height="36"
+         x="94.999779"
+         y="-82.395737"
+         transform="rotate(90)" />
+      <rect
+         style="display:inline;fill:#c1627c;fill-opacity:1;stroke-width:1.04381;paint-order:stroke markers fill;stop-color:#000000"
+         id="rect1233-0-0-8-4-6"
+         width="165"
+         height="36"
+         x="0"
+         y="83.365829" />
+      <path
+         d="m 47.094054,42.473373 h 64.137906 q 14.28281,0 27.21819,2.964357 12.93537,2.69487 22.63691,9.701532 9.70153,6.737175 15.36075,18.055629 5.92872,11.048967 5.92872,27.487679 0,16.16922 -5.92872,27.75716 -5.65922,11.58794 -15.36075,19.13357 -9.70154,7.27615 -22.36743,11.04897 -12.66588,3.50333 -26.40972,3.50333 H 93.445818 v 55.51432 H 47.094054 Z m 63.059956,83.001997 q 13.74384,0 20.21153,-6.46769 6.73717,-6.46769 6.73717,-18.32511 0,-11.857433 -7.27615,-16.708199 -7.27615,-4.850766 -20.7505,-4.850766 H 93.445818 v 46.351765 z"
+         id="path3512"
+         style="font-weight:900;font-size:269.487px;font-family:'Source Sans Pro';-inkscape-font-specification:'Source Sans Pro Heavy';display:inline;fill:#534a3e;stroke-width:4.21069;paint-order:stroke markers fill;stop-color:#000000"
+         transform="matrix(1.0009509,0,0,0.99905002,-47.138947,-42.433392)" />
+    </g>
+  </g>
+</svg>
