@@ -1,0 +1,126 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get the release version from the tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
+      - name: Show the version
+        run: |
+          echo "version is: $VERSION"
+
+      - name: Check that tag version and Cargo.toml version are the same
+        shell: bash
+        run: |
+          if ! grep -q "version = \"$VERSION\"" front-end/Cargo.toml; then
+            echo "version does not match Cargo.toml" >&2
+            exit 1
+          fi
+
+      - name: Get changelog release info
+        id: changelog
+        uses: release-flow/keep-a-changelog-action@v3
+        with:
+          command: query
+          version: ${{ env.VERSION }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ steps.changelog.outputs.version }}
+          body: ${{ steps.changelog.outputs.release-notes }}
+          tag_name: ${{ github.ref_name }}
+          draft: true
+
+    outputs:
+      version: ${{ env.VERSION }}
+
+  build-release:
+    name: Build Release
+    needs: ['create-release']
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - os: ubuntu-latest
+          target: x86_64-unknown-linux-gnu
+        - os: windows-latest
+          target: x86_64-pc-windows-msvc
+
+    runs-on: ${{ matrix.os }}
+    steps:
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Build release
+        shell: bash
+        run: |
+          cargo build --verbose --release --target ${{ matrix.target }}
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            bin="target/${{ matrix.target }}/release/pasfmt.exe"
+          else
+            bin="target/${{ matrix.target }}/release/pasfmt"
+          fi
+          echo "BIN=$bin" >> $GITHUB_ENV
+
+      - name: Determine archive name
+        shell: bash
+        run: |
+          version="${{ needs.create-release.outputs.version }}"
+          echo "ARCHIVE=pasfmt-$version-${{ matrix.target }}" >> $GITHUB_ENV
+
+      - name: Creating directory for archive
+        shell: bash
+        run: |
+          mkdir -p "$ARCHIVE"
+          cp "$BIN" "$ARCHIVE"/
+          cp {README.md,LICENSE.txt,NOTICE.txt} "$ARCHIVE"/
+
+      - name: Build archive (Windows)
+        shell: bash
+        if: matrix.os == 'windows-latest'
+        run: |
+          7z a "$ARCHIVE.zip" "$ARCHIVE"
+          certutil -hashfile "$ARCHIVE.zip" SHA256 > "$ARCHIVE.zip.sha256"
+          echo "ASSET=$ARCHIVE.zip" >> $GITHUB_ENV
+          echo "ASSET_SUM=$ARCHIVE.zip.sha256" >> $GITHUB_ENV
+
+      - name: Build archive (Unix)
+        shell: bash
+        if: matrix.os != 'windows-latest'
+        run: |
+          tar czf "$ARCHIVE.tar.gz" "$ARCHIVE"
+          shasum -a 256 "$ARCHIVE.tar.gz" > "$ARCHIVE.tar.gz.sha256"
+          echo "ASSET=$ARCHIVE.tar.gz" >> $GITHUB_ENV
+          echo "ASSET_SUM=$ARCHIVE.tar.gz.sha256" >> $GITHUB_ENV
+
+      - name: Upload release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          version="${{ needs.create-release.outputs.version }}"
+          gh release upload "$GITHUB_REF_NAME" ${{ env.ASSET }} ${{ env.ASSET_SUM }}
