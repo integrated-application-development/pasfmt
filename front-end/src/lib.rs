@@ -143,15 +143,15 @@ enum BeginStyle {
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct FormattingConfig {
-    line_ending: LineEnding,
-    use_tabs: bool,
-    tab_width: u8,
-    continuation_indents: u8,
-
     wrap_column: u32,
     begin_style: BeginStyle,
 
     encoding: InternalEncoding,
+
+    use_tabs: bool,
+    tab_width: u8,
+    continuation_indents: u8,
+    line_ending: LineEnding,
 }
 
 impl FormattingConfig {
