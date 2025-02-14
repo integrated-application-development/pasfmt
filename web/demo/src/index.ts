@@ -148,9 +148,9 @@ const createDiffEditor = (): monaco.editor.IStandaloneDiffEditor => {
   return diffEditor;
 };
 
-// Start with the diff editor loaded
+// Start with the diff editor loaded, but not active
 var diffEditor = createDiffEditor();
-let isDiffView = true;
+let isDiffView = false;
 
 const renderEditors = () => {
   if (isDiffView) {
