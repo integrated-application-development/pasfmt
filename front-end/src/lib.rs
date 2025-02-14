@@ -58,13 +58,15 @@ impl From<LineEnding> for pasfmt_core::lang::LineEnding {
     }
 }
 
-#[cfg_attr(feature = "__demo", derive(serde::Serialize), serde(untagged))]
 #[derive(Debug, Clone, Copy, Default)]
 enum InternalEncoding {
-    #[cfg_attr(feature = "__demo", serde(rename = "lowercase"))]
     #[default]
     Native,
     Named(&'static Encoding),
+}
+
+impl InternalEncoding {
+    const NATIVE_ENCODING_NAME: &str = "native";
 }
 
 impl From<InternalEncoding> for &'static Encoding {
@@ -79,19 +81,35 @@ impl From<InternalEncoding> for &'static Encoding {
     }
 }
 
+#[cfg(feature = "__demo")]
+impl serde::Serialize for InternalEncoding {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(match self {
+            InternalEncoding::Native => Self::NATIVE_ENCODING_NAME,
+            InternalEncoding::Named(encoding) => encoding.name(),
+        })
+    }
+}
+
 struct InternalEncodingVisitor;
 impl serde::de::Visitor<'_> for InternalEncodingVisitor {
     type Value = InternalEncoding;
 
     fn expecting(&self, formatter: &mut core::fmt::Formatter) -> core::fmt::Result {
-        formatter.write_str("\"native\" or a valid encoding label")
+        formatter.write_fmt(format_args!(
+            "\"{}\" or a valid encoding label",
+            InternalEncoding::NATIVE_ENCODING_NAME
+        ))
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
     {
-        if value.eq_ignore_ascii_case("native") {
+        if value.eq_ignore_ascii_case(InternalEncoding::NATIVE_ENCODING_NAME) {
             Ok(InternalEncoding::Native)
         } else if let Some(enc) = Encoding::for_label(value.as_bytes()) {
             Ok(InternalEncoding::Named(enc))
@@ -110,7 +128,7 @@ impl<'de> Deserialize<'de> for InternalEncoding {
     }
 }
 
-#[cfg_attr(feature = "__demo", derive(serde::Serialize), serde(untagged))]
+#[cfg_attr(feature = "__demo", derive(serde::Serialize))]
 #[derive(Debug, Clone, Copy, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 enum BeginStyle {
