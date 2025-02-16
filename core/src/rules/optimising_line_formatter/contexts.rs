@@ -1189,10 +1189,11 @@ impl<'a> LineFormattingContexts<'a> {
             formatting_contexts: self,
             stack: self
                 .update_indices
-                .iter()
-                .rev()
-                .find(|&&(context_token_index, _)| context_token_index <= line_index)
-                .map(|(_, indices)| indices),
+                .partition_point(|&(context_token_index, _)| context_token_index <= line_index)
+                // partition_point returns the index of the first element that doesn't satisfy the predicate, but
+                // we want the last element that does
+                .checked_sub(1)
+                .map(|idx| &self.update_indices[idx].1),
         }
     }
 }
