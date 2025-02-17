@@ -292,11 +292,33 @@ mod comments {
                         ",
                         $comment
                     ),
-                    before_type_def = format!(
+                    inside_type_def = format!(
                         "
                             _|type
-                            _|  {}
+                            _|  {0}
                             _|  TFoo = Bar;
+                            _|  {0}
+                            _|  TFoo2 = Bar;
+                        ",
+                        $comment
+                    ),
+                    inside_const_def = format!(
+                        "
+                            _|const
+                            _|  {0}
+                            _|  A = B;
+                            _|  {0}
+                            _|  A2 = B;
+                        ",
+                        $comment
+                    ),
+                    inside_var_def = format!(
+                        "
+                            _|var
+                            _|  {0}
+                            _|  A;
+                            _|  {0}
+                            _|  A2;
                         ",
                         $comment
                     ),
@@ -304,7 +326,28 @@ mod comments {
                         "
                             _|type
                             _|  TFoo = Bar;
-                            _|{}
+                            _|{0}
+                            _|{0}
+                            _|procedure Foo;
+                        ",
+                        $comment
+                    ),
+                    after_const_def_before_routine = format!(
+                        "
+                            _|const
+                            _|  A = B;
+                            _|{0}
+                            _|{0}
+                            _|procedure Foo;
+                        ",
+                        $comment
+                    ),
+                    after_var_def_before_routine = format!(
+                        "
+                            _|var
+                            _|  A;
+                            _|{0}
+                            _|{0}
                             _|procedure Foo;
                         ",
                         $comment
