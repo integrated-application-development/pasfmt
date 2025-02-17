@@ -733,7 +733,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 match (
                     parent_contexts
                         .get_last_context(context_matches!(ContextType::ControlFlowBegin))
-                        .map(|(_, data)| data.is_broken),
+                        .map(|(_, data)| data.is_broken | data.is_child_broken),
                     get_first_child_token(),
                 ) {
                     // We never want to unwrap an `else`, e.g., `if ... then ... else ...;`
@@ -779,7 +779,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                         .get_last_context(context_matches!(
                             ContextType::ControlFlow | ContextType::ForLoop
                         ))
-                        .map(|(_, data)| data.is_broken),
+                        .map(|(_, data)| data.is_broken | data.is_child_broken),
                     get_first_child_token(),
                     line_children.descendant_count,
                 ) {

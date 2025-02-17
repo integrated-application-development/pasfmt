@@ -158,22 +158,22 @@ mod comments {
                         var A //
                             := 0 //
                         to //
-                            1 //
+                        1 //
                         do
                       ;
                     for //
                         var A //
                         in //
-                            B //
+                        B //
                         do
                       ;
                 ",
                 if_then = "
                     if //
-                        (AAA.BBB.CCC
-                                and DDDDDDDDDDDDD)
-                            or EEEEEEEEEEEEEEEEEE
-                                and FFFFFFFFFFFF then
+                    (AAA.BBB.CCC
+                            and DDDDDDDDDDDDD)
+                        or EEEEEEEEEEEEEEEEEE
+                            and FFFFFFFFFFFF then
                       ;
                 ",
             );
@@ -237,11 +237,10 @@ mod comments {
                         CCCCCCCCC;
                 ",
                 if_then = "
-                    if {}
-                        (AAA.BBB.CCC
-                                and DDDDDDDDDDDDD)
-                            or EEEEEEEEEEEEEEEEEE
-                                and FFFFFFFFFFFF then
+                    if {} (AAA.BBB.CCC
+                            and DDDDDDDDDDDDD)
+                        or EEEEEEEEEEEEEEEEEE
+                            and FFFFFFFFFFFF then
                       ;
                 ",
             );
@@ -1106,8 +1105,7 @@ mod type_decls {
                                       case X of
                                         C: (
                                           Q: R;
-                                          case
-                                              W of
+                                          case W of
                                             D: (
                                               S: T;
                                             );
@@ -2322,22 +2320,19 @@ mod control_flows {
                 inline = "
                     if AAAAAAAA and BBBBBBBBB then
                       Bar;
-                    if
-                        AAAAAAAA
-                            and BBBBBBBBBB then
+                    if AAAAAAAA
+                        and BBBBBBBBBB then
                       Bar;
-                    if
-                        AAAAAAAAAA
-                            and BBBBBBBBBB
-                            and CCCCCCCCCC then
+                    if AAAAAAAAAA
+                        and BBBBBBBBBB
+                        and CCCCCCCCCC then
                       Bar;
                     if AAA(AAAA, BBBBBB, CCC) then
                       Bar;
-                    if
-                        AAA(
-                            AAAA,
-                            BBBBBB,
-                            CCCC) then
+                    if AAA(
+                        AAAA,
+                        BBBBBB,
+                        CCCC) then
                       Bar;
                 ",
                 compound = "
@@ -2348,16 +2343,14 @@ mod control_flows {
                     begin
                       Bar;
                     end;
-                    if
-                        AAAAAAAAAA
-                            and BBBBBBBB then
+                    if AAAAAAAAAA
+                        and BBBBBBBB then
                     begin
                       Bar;
                     end;
-                    if
-                        AAAAAAAAAA
-                            and BBBBBBBBBB
-                            and CCCCCCCCCC then
+                    if AAAAAAAAAA
+                        and BBBBBBBBBB
+                        and CCCCCCCCCC then
                     begin
                       Bar;
                     end;
@@ -2368,11 +2361,10 @@ mod control_flows {
                     begin
                       Bar;
                     end;
-                    if
-                        AAA(
-                            AAAA,
-                            BBBBBB,
-                            CCCC) then
+                    if AAA(
+                        AAAA,
+                        BBBBBB,
+                        CCCC) then
                     begin
                       Bar;
                     end;
@@ -2391,22 +2383,19 @@ mod control_flows {
                     if A then
                     else if AAAAAA and BBBBBB then
                       Bar;
-                    else if
-                        AAAAAAAAA
-                            and BBBBBBBBB then
+                    else if AAAAAAAAA
+                        and BBBBBBBBB then
                       Bar;
-                    else if
-                        AAAAAAAAAA
-                            and BBBBBBBBBB
-                            and CCCCCCCCCC then
+                    else if AAAAAAAAAA
+                        and BBBBBBBBBB
+                        and CCCCCCCCCC then
                       Bar;
                     else if Foo(AAA, BB, CCC) then
                       Bar;
-                    else if
-                        Foo(
-                            AAAA,
-                            BBBBBB,
-                            CCCC) then
+                    else if Foo(
+                        AAAA,
+                        BBBBBB,
+                        CCCC) then
                       Bar;
                 ",
                 compound = "
@@ -2419,16 +2408,14 @@ mod control_flows {
                     begin
                       Bar;
                     end
-                    else if
-                        AAAAAAAAAAA
-                            and BBBBBBBBB then
+                    else if AAAAAAAAAAA
+                        and BBBBBBBBB then
                     begin
                       Bar;
                     end
-                    else if
-                        AAAAAAAAAA
-                            and BBBBBBBBBB
-                            and CCCCCCCCCC then
+                    else if AAAAAAAAAA
+                        and BBBBBBBBBB
+                        and CCCCCCCCCC then
                     begin
                       Bar;
                     end
@@ -2439,11 +2426,10 @@ mod control_flows {
                     begin
                       Bar;
                     end
-                    else if
-                        AAA(
-                            AAAA,
-                            BBBBB,
-                            CCCCC) then
+                    else if AAA(
+                        AAAA,
+                        BBBBB,
+                        CCCCC) then
                     begin
                       Bar;
                     end
@@ -2461,36 +2447,26 @@ mod control_flows {
                 inline = "
                     while AAAAAAAAA = BBBBBBBBB do
                       Bar;
-                    while
-                        AAAAAAAAAA = BBBBBBBBBB do
+                    while AAAAAAAAAAA
+                        = BBBBBBBBBB do
                       Bar;
-                    while
-                        AAAAAAAAAAA
-                            = BBBBBBBBBB do
-                      Bar;
-                    while
-                        AAAAAAAAAA
-                            = BBBBBBBBBB
-                                + CCCCCCCCCC do
+                    while AAAAAAAAAA
+                        = BBBBBBBBBB
+                            + CCCCCCCCCC do
                       Bar;
                     while AAA(AAAA, BBBB, CCCC) do
                       Bar;
-                    while
-                        AAAA(AAAA, BBBB, CCCC) do
-                      Bar;
-                    while
-                        AAAAAA(
-                            AAAA,
-                            BBBB,
-                            CCCC) do
+                    while AAAAAA(
+                        AAAA,
+                        BBBB,
+                        CCCC) do
                       Bar;
 
                     while not not A and B and C do
                       ;
-                    while
-                        not not AA
-                            and BB
-                            and CC do
+                    while not not AA
+                        and BB
+                        and CC do
                       ;
                 ",
                 compound = "
@@ -2499,19 +2475,13 @@ mod control_flows {
                     while AAAAAAA = BBBBBB do
                     begin
                     end;
-                    while
-                        AAAAAAAAAAA = BBBBBBBB do
+                    while AAAAAAAAAAA
+                        = BBBBBBBBBB do
                     begin
                     end;
-                    while
-                        AAAAAAAAAAA
-                            = BBBBBBBBBB do
-                    begin
-                    end;
-                    while
-                        AAAAAAAAAA
-                            = BBBBBBBBBB
-                                + CCCCCCCCCC do
+                    while AAAAAAAAAA
+                        = BBBBBBBBBB
+                            + CCCCCCCCCC do
                     begin
                     end;
                     while AA(AA, BB, CCC) do begin
@@ -2519,15 +2489,10 @@ mod control_flows {
                     while AAAAAA(AAA, BBB, CCC) do
                     begin
                     end;
-                    while
-                        AAAAAAA(AAA, BBB, CCC) do
-                    begin
-                    end;
-                    while
-                        AAAAAAAAA(
-                            AAA,
-                            BBB,
-                            CCC) do
+                    while AAAAAAAAA(
+                        AAA,
+                        BBB,
+                        CCC) do
                     begin
                     end;
                 ",
@@ -2543,6 +2508,10 @@ mod control_flows {
                 root_dir,
                 inline = "
                     with AAAAAAA(BBBBBBB, CCCC) do
+                      Bar;
+                    with AAAAAAA(
+                        BBBBBBB,
+                        CCCCC) do
                       Bar;
                     with AAAAAA, BBBBBB, CCCCCC do
                       Bar;
@@ -2592,14 +2561,9 @@ mod control_flows {
                     with AAAAA(BBBB, CCCC) do
                     begin
                     end;
-                    with
-                        AAAAAAA(BBBBBBB, CCCCC) do
-                    begin
-                    end;
-                    with
-                        AAAAAAA(
-                            BBBBBBB,
-                            CCCCCC) do
+                    with AAAAAAA(
+                        BBBBBBB,
+                        CCCCCC) do
                     begin
                     end;
                     with AAAA, BBBB, CCCC do begin
@@ -2683,30 +2647,26 @@ mod control_flows {
                         to CCCCC do
                       A;
                     for AAAAAAAAAA := BBBBBBBB
-                        to
-                            CCCCCCCCC(
-                                0000,
-                                1111) do
+                        to CCCCCCCCC(
+                            0000,
+                            1111) do
                       A;
                     for AAAAAAAAAA := BBBBBBBB
-                        to
-                            CCCCCCCC.DDDDDDDD
-                                + 1 do
+                        to CCCCCCCC.DDDDDDDD
+                            + 1 do
                       A;
                     for AAAAAAAAAA := BBBBBBBB
-                        to
-                            CCCCCCCCCCC
-                                    .DDDDDDDDDDD
-                                + 1 do
+                        to CCCCCCCCCCCC
+                                .DDDDDDDDDDD
+                            + 1 do
                       A;
                     for AAAAAAAAAA :=
                             BBBBBBBB(
                                 000000,
                                 11111)
-                        to
-                            CCCCCCCCC(
-                                0000,
-                                1111) do
+                        to CCCCCCCCC(
+                            0000,
+                            1111) do
                       A;
                     for AAAAAAAAAAAAAAAAAAAA :=
                             BBBBBBBBB
@@ -2729,19 +2689,17 @@ mod control_flows {
                         downto CCCCC do
                       A;
                     for AAAAAAAAAA := BBBBBBBB
-                        downto
-                            CCCCCCCCC(
-                                0000,
-                                1111) do
+                        downto CCCCCCCCC(
+                            0000,
+                            1111) do
                       A;
                     for AAAAAAAAAA :=
                             BBBBBBBB(
                                 000000,
                                 11111)
-                        downto
-                            CCCCCCCCC(
-                                0000,
-                                1111) do
+                        downto CCCCCCCCC(
+                            0000,
+                            1111) do
                       A;
                     for AAAAAAAAAAAAAAAAAAAA :=
                             BBBBBBBBB
@@ -2764,19 +2722,17 @@ mod control_flows {
                         to CCCCC do
                       A;
                     for var AAAAAAAAAA := BBBBBBBB
-                        to
-                            CCCCCCCCC(
-                                0000,
-                                1111) do
+                        to CCCCCCCCC(
+                            0000,
+                            1111) do
                       A;
                     for var AAAAAAAAAA :=
                             BBBBBBBB(
                                 000000,
                                 11111)
-                        to
-                            CCCCCCCCC(
-                                0000,
-                                1111) do
+                        to CCCCCCCCC(
+                            0000,
+                            1111) do
                       A;
                     for var AAAAAAAAAAAAAAAAAAAA :=
                             BBBBBBBBB
@@ -2810,10 +2766,9 @@ mod control_flows {
                             BBBBBBBB(
                                 000000,
                                 11111)
-                        to
-                            CCCCCCCCC(
-                                0000,
-                                1111) do
+                        to CCCCCCCCC(
+                            0000,
+                            1111) do
                       A;
                     for var AAAAAAAAAA:
                                 AAAAAAAA :=
@@ -2843,20 +2798,18 @@ mod control_flows {
                     begin
                     end;
                     for var AAAAAAAAAA := BBBBBBBB
-                        to
-                            CCCCCCCCC(
-                                0000,
-                                1111) do
+                        to CCCCCCCCC(
+                            0000,
+                            1111) do
                     begin
                     end;
                     for var AAAAAAAAAA :=
                             BBBBBBBB(
                                 000000,
                                 11111)
-                        to
-                            CCCCCCCCC(
-                                0000,
-                                1111) do
+                        to CCCCCCCCC(
+                            0000,
+                            1111) do
                     begin
                     end;
                     for var AAAAAAAAAAAAAAAAAAAA :=
@@ -2882,16 +2835,14 @@ mod control_flows {
                         in BBBBBB(00000, 11111) do
                       A;
                     for AAAAAAAAAA
-                        in
-                            BBBBBBB(
-                                00000,
-                                11111) do
+                        in BBBBBBB(
+                            00000,
+                            11111) do
                       A;
                     for AAAAAAAAAAAAAAAAAAAAAAAAAAA
-                        in
-                            BBBBBBB(
-                                00000,
-                                11111) do
+                        in BBBBBBB(
+                            00000,
+                            11111) do
                       A;
                 ",
                 untyped_var = "
@@ -2904,16 +2855,14 @@ mod control_flows {
                         in BBBBBB(00000, 11111) do
                       A;
                     for var AAAAAAAAAA
-                        in
-                            BBBBBBB(
-                                00000,
-                                11111) do
+                        in BBBBBBB(
+                            00000,
+                            11111) do
                       A;
                     for var AAAAAAAAAAAAAAAAAAAAAA
-                        in
-                            BBBBBBB(
-                                00000,
-                                11111) do
+                        in BBBBBBB(
+                            00000,
+                            11111) do
                       A;
                 ",
                 typed_var = "
@@ -2928,10 +2877,9 @@ mod control_flows {
                       A;
                     for var AAAAAAAAAA:
                             AAAAAAAAAAA
-                        in
-                            BBBBBBB(
-                                00000,
-                                11111) do
+                        in BBBBBBB(
+                            00000,
+                            11111) do
                       A;
                 ",
                 for_in_compound = "
@@ -2945,33 +2893,29 @@ mod control_flows {
                     begin
                     end;
                     for AAAAAAAAAA
-                        in
-                            BBBBBBB(
-                                00000,
-                                11111) do
+                        in BBBBBBB(
+                            00000,
+                            11111) do
                     begin
                     end;
                     for AAAAAAAAAAAAAAAAAAAAAAAAAAA
-                        in
-                            BBBBBBB(
-                                00000,
-                                11111) do
+                        in BBBBBBB(
+                            00000,
+                            11111) do
                     begin
                     end;
                     for var AAAAAAAAAAAAAAAAAAAAAAA
-                        in
-                            BBBBBBB(
-                                00000,
-                                11111) do
+                        in BBBBBBB(
+                            00000,
+                            11111) do
                     begin
                     end;
                 ",
                 many_ins = "
                     for aaaaaaaaaa
-                        in
-                            [
-                                aa in [aa, bbb],
-                                bbbb] do
+                        in [
+                            aa in [aa, bbb],
+                            bbbb] do
                 "
             );
         }
@@ -2986,21 +2930,18 @@ mod control_flows {
                 header = "
                     case AAAAA.BBBBBB(CCC, DDD) of
                     end;
-                    case
-                        AAAAAA
-                            .BBBBBBB(CCC, DDD) of
+                    case AAAAAA
+                        .BBBBBBB(CCC, DDD) of
                     end;
-                    case
-                        AAAAA.BBBBBBB(
-                            CCCCCC,
-                            DDDDDD) of
+                    case AAAAA.BBBBBBB(
+                        CCCCCC,
+                        DDDDDD) of
                     end;
-                    case
-                        AAAAA
-                            .BBBBBBB(
-                                CCCCCC,
-                                DDDDDD)
-                            .EEEEEEEE(FFFFFFFF) of
+                    case AAAAA
+                        .BBBBBBBB(
+                            CCCCCCC,
+                            DDDDDDD)
+                        .EEEEEEEE(FFFFFFFF) of
                     end;
                 ",
                 case_arm = "
@@ -3129,9 +3070,8 @@ mod control_flows {
                       end;
                       on AAAAAAAAA.AAAAAAAAAAAA do
                         B;
-                      on
-                          AAAAAAAAA
-                              .AAAAAAAAAAAAA do
+                      on AAAAAAAAA
+                          .AAAAAAAAAAAAA do
                         B;
                       on AAAAAAAA.AAAAAAA do begin
                         B;
@@ -3140,18 +3080,16 @@ mod control_flows {
                       begin
                         B;
                       end;
-                      on
-                          AAAAAAAAAAAA
-                              .AAAAAAAAAA do
+                      on AAAAAAAAAAAA
+                          .AAAAAAAAAA do
                       begin
                         B;
                       end;
                       on AAAAAA.AAAAAAAA.AAAAAA do
                         B;
-                      on
-                          AAAAAA
-                              .AAAAAAAA
-                              .AAAAAAA do
+                      on AAAAAA
+                          .AAAAAAAA
+                          .AAAAAAA do
                         B;
                       on AAAAA.AAAAA.AAAA do begin
                         B;
@@ -3160,10 +3098,9 @@ mod control_flows {
                       begin
                         B;
                       end;
-                      on
-                          AAAAAAA
-                              .AAAAAAA
-                              .AAAAAAA do
+                      on AAAAAAA
+                          .AAAAAAA
+                          .AAAAAAA do
                       begin
                         B;
                       end;
@@ -3183,38 +3120,32 @@ mod control_flows {
                     repeat
                     until AAAAAAAAAAAAAAAAAAAAAAA;
                     repeat
-                    until
-                        AAAAAAAAAAAAAAAAAAAAAAAAAA;
+                    until AAAAAAAAAAAAAAAAAAAAAAAAAA;
                     repeat
                     until AAAAAAAAAAA.BBBBBBBBBBB;
                     repeat
-                    until
-                        AAAAAAAAAAA.BBBBBBBBBBBB;
+                    until AAAAAAAAAAA
+                        .BBBBBBBBBBBB;
                     repeat
                     until AAAAAAAAAAA.BBBBBB(111);
                     repeat
-                    until
-                        AAAAAAAAAAA.BBBBBBB(1111);
+                    until AAAAAAAAAAA.BBBBBBB(
+                        1111);
                     repeat
-                    until
-                        AAAAAAAAAAAA
-                            .BBBBBBBBBBBBB;
+                    until AAAAAAAAAAAA
+                        .BBBBBBBBBBBBB;
                     repeat
-                    until
-                        AAAAAAAAAAA.BBBBBBBBB(
-                            111);
+                    until AAAAAAAAAAA.BBBBBBBBB(
+                        111);
                     repeat
-                    until
-                        AAAAAAAAAAA.BBBBBBBB(
-                            11111,
-                            11111);
+                    until AAAAAAAAAAA
+                        .BBBBBBBB(11111, 11111);
                     repeat
-                    until
-                        AAAAAAAAAAA
-                            .BBBBBBBB(
-                                11111,
-                                11111)
-                            .CCC;
+                    until AAAAAAAAAAA
+                        .BBBBBBBBBBBB(
+                            111111,
+                            111111)
+                        .CCC;
                 ",
             );
         }
@@ -3534,32 +3465,21 @@ mod statements {
                 raise = "
                     raise;
                     raise AAAAAAAAAAAAAAAAAAAAAAA;
-                    raise
-                        AAAAAAAAAAAAAAAAAAAAAAAA;
-                    raise
-                        AAAAAAAAAAAAAAAAAAAAAAAAAA;
+                    raise AAAAAAAAAAAAAAAAAAAAAAAA;
                     raise AAAAAAAAAA(BBBB, CCCCC);
-                    raise
-                        AAAAAAAAAA(BBBBB, CCCCC);
-                    raise
-                        AAAAAAAAAAAA(
-                            BBBBB,
-                            CCCCC);
+                    raise AAAAAAAAAAAA(
+                        BBBBB,
+                        CCCCC);
                     raise AAAAAA.AAAAAA(BBB, CCC);
-                    raise
-                        AAAAAAA.AAAAAA(BBB, CCC);
-                    raise
-                        AAAAAAAA
-                            .AAAAAAA(BBB, CCC);
-                    raise
-                        AAAAAAA.AAAAAAAAAAAAAAA(
+                    raise AAAAAAAA
+                        .AAAAAAA(BBB, CCC);
+                    raise AAAAAAA.AAAAAAAAAAAAAAA(
+                        BBB,
+                        CCC);
+                    raise AAAAAAAA
+                        .AAAAAAAAAAAAAAAAA(
                             BBB,
                             CCC);
-                    raise
-                        AAAAAAAA
-                            .AAAAAAAAAAAAAAAAA(
-                                BBB,
-                                CCC);
                 ",
                 raise_at = "
                     raise AAAAAAAAAA at AAAAAAAAA;
@@ -3569,39 +3489,28 @@ mod statements {
                     raise A.A(BBB, CCC) at DDDDDD;
                     raise AA.A(B, C) at DDD + DDD;
 
-                    raise
-                        AAAAAAAAAAA
+                    raise AAAAAAAAAAA
                         at AAAAAAAAA;
-                    raise
-                        AAAAAAAAAAA
+                    raise AAAAAAAAAAA
                         at AAA + AAA;
-                    raise
-                        AAAAAAAAAAA
-                        at
-                            AAAAAAAAAA
-                                + AAAAAAAAAA;
-                    raise
-                        AAAAAAAAAAA
-                        at
-                            AAAAAAAAAA(
-                                BBBBB,
-                                CCCCC);
-                    raise
-                        AA(BB, CC)
+                    raise AAAAAAAAAAA
+                        at AAAAAAAAAA
+                            + AAAAAAAAAA;
+                    raise AAAAAAAAAAA
+                        at AAAAAAAAAA(
+                            BBBBB,
+                            CCCCC);
+                    raise AA(BB, CC)
                         at AAAAAAAAAA;
-                    raise
-                        AAAAAAAAAAA(
+                    raise AAAAAAAAAAA(
                             BBBBBB,
                             CCCCCC)
                         at AAAAAAAAAA;
-                    raise
-                        AAA(BB, CC)
+                    raise AAA(BB, CC)
                         at AAA + AAA;
-                    raise
-                        AA.A(BBB, CCC)
+                    raise AA.A(BBB, CCC)
                         at DDDDDD;
-                    raise
-                        AAA.A(B, C)
+                    raise AAA.A(B, C)
                         at DDD + DDD;
                 ",
             );

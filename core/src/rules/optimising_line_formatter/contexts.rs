@@ -75,6 +75,7 @@ pub(super) enum ContextType {
     Base,
     InlineDeclaration,
     Raise,
+    RaiseAt,
     PropDec,
     RoutineHeader,
     DirectivesLine,
@@ -500,11 +501,22 @@ impl<'a> SpecificContextStack<'a> {
             (Some(TT::Op(OK::Colon)), _) => {
                 self.update_last_matching_context(node, context_matches!(_), apply_pivotal_break);
             }
-            (
-                Some(TT::Keyword(KK::If | KK::While | KK::Until | KK::With | KK::On | KK::Case)),
-                _,
-            ) => {
-                self.update_last_matching_context(node, CT::ControlFlow, apply_pivotal_break);
+            (Some(TT::Keyword(KK::If | KK::While | KK::Until | KK::On | KK::Case)), _) => {
+                self.update_last_matching_context(node, CT::ControlFlowBegin, |_, data| {
+                    data.is_broken |= is_break;
+                });
+            }
+            (Some(TT::Keyword(KK::With)), _) => {
+                if let Some(state) = self
+                    .ctx_iter_indices()
+                    .find(|(_, ctx)| matches!(ctx.context_type, CT::CommaList | CT::GuardClause))
+                    .filter(|(_, ctx)| matches!(ctx.context_type, CT::CommaList))
+                    .and_then(|(index, _)| Rc::make_mut(&mut node.context_data).get_mut(index))
+                {
+                    state.is_broken |= is_break;
+                    state.can_break &= is_break;
+                    self.update_last_matching_context(node, CT::ControlFlow, apply_pivotal_break);
+                }
                 self.update_last_matching_context(node, CT::ControlFlowBegin, |_, data| {
                     data.is_broken |= is_break;
                 });
@@ -577,18 +589,12 @@ impl<'a> SpecificContextStack<'a> {
             (_, Some(TT::Keyword(KK::In(InKind::ForLoop) | KK::To | KK::Downto))) => {
                 self.update_last_matching_context(node, CT::ForLoop, apply_pivotal_break);
             }
-            (Some(TT::Keyword(KK::In(InKind::ForLoop) | KK::To | KK::Downto)), _) => {
-                self.update_last_matching_context(node, context_matches!(_), apply_pivotal_break);
-            }
-            (Some(TT::Keyword(KK::Raise)), _) => {
-                self.update_last_matching_context(node, CT::Raise, apply_pivotal_break);
-            }
+            (Some(TT::Keyword(KK::In(InKind::ForLoop) | KK::To | KK::Downto)), _) => {}
+            (Some(TT::Keyword(KK::Raise)), _) => {}
             (_, Some(TT::Keyword(KK::At))) => {
-                self.update_last_matching_context(node, CT::Raise, apply_pivotal_break);
+                self.update_last_matching_context(node, CT::RaiseAt, apply_pivotal_break);
             }
-            (Some(TT::Keyword(KK::At)), _) => {
-                self.update_last_matching_context(node, CT::Subject, apply_pivotal_break);
-            }
+            (Some(TT::Keyword(KK::At)), _) => {}
             (Some(TT::Keyword(KK::Type)), Some(tt)) if tt != TT::Keyword(KK::Of) => {
                 self.update_last_matching_context(node, context_matches!(_), apply_pivotal_break);
             }
@@ -651,7 +657,9 @@ impl<'a> SpecificContextStack<'a> {
         {
             if let Some(data) = Rc::make_mut(&mut node.context_data).get_mut(ctx_index) {
                 match ctx.context_type {
-                    CT::TypedAssignment | CT::ForLoop => data.is_broken |= data.is_child_broken,
+                    CT::TypedAssignment | CT::ForLoop | CT::RaiseAt => {
+                        data.is_broken |= data.is_child_broken
+                    }
                     CT::AssignLHS
                         if self.formatting_contexts.line.get_line_type() == LLT::Assignment =>
                     {
@@ -1049,6 +1057,7 @@ impl<'a> LineFormattingContexts<'a> {
                 }
                 TT::Keyword(KK::At) => {
                     contexts.pop_until(CT::Raise);
+                    contexts.last_context_mut().context_type = CT::RaiseAt;
                     contexts.push(CT::Subject);
                 }
                 TT::Op(OK::Dot) => {
@@ -1457,7 +1466,7 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
                     }
                     if matches!(
                         context.context_type,
-                        CT::GuardClause | CT::Raise | CT::ForLoop
+                        CT::GuardClause | CT::Raise | CT::RaiseAt | CT::ForLoop
                     ) {
                         return true;
                     }
@@ -1729,6 +1738,7 @@ mod tests {
                     "RoutineHeader" => Ok(CT::RoutineHeader),
                     "PropDec" => Ok(CT::PropDec),
                     "Raise" => Ok(CT::Raise),
+                    "RaiseAt" => Ok(CT::RaiseAt),
                     "DirectivesLine" => Ok(CT::DirectivesLine),
                     "DirectiveList" => Ok(CT::DirectiveList),
                     "Directive" => Ok(CT::Directive),
@@ -2243,7 +2253,7 @@ mod tests {
             raise_at = {"
                           raise AA.BB at CC + DD;
                 1 Base    ^----------------------
-                1 Raise   ^--------------------$
+                1 RaiseAt ^--------------------$
                 1 MemberAccess  ^---$
                 1 Subject             ^--------$
                 1 Precedence(3)          ^-----$

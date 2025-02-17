@@ -163,12 +163,14 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 .get_last_context(CT::ForLoop)
                 .map(|(_, data)| data.is_child_broken)
                 .if_else_or_default(DR::MustBreak, DR::Indifferent),
-            (Some(TT::Keyword(KK::In(InKind::ForLoop) | KK::To | KK::Downto)), _) => {
-                DR::Indifferent
+            (Some(TT::Keyword(KK::In(InKind::ForLoop) | KK::To | KK::Downto)), _)
+                if line.get_line_type() == LLT::ForLoop =>
+            {
+                DR::MustNotBreak
             }
             (_, Some(TT::Keyword(KK::At))) => contexts_data
-                .get_last_context(CT::Raise)
-                .map(|(_, data)| data.is_broken)
+                .get_last_context(CT::RaiseAt)
+                .map(|(_, data)| data.is_broken | data.is_child_broken)
                 .if_else_or_default(DR::MustBreak, DR::Indifferent),
             (prev, Some(op @ (TT::Op(_) | TT::Keyword(_))))
                 if get_operator_precedence(op).is_some() && is_binary(op, prev) =>
@@ -204,6 +206,20 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 .get_last_context(context_matches!(CT::CommaElem | CT::AssignRHS))
                 .and_then(|(_, data)| data.break_anonymous_routine)
                 .if_else_or_default(DR::MustBreak, DR::MustNotBreak),
+            (Some(TT::Keyword(KK::If | KK::Case | KK::While | KK::Until | KK::On)), _) => {
+                DR::MustNotBreak
+            }
+            /*
+                `with` has special handling based on whether there is a comma
+                list of elements. If so, treat it more like a `uses` clause,
+                otherwise treat it more like an `if` statement.
+            */
+            (Some(TT::Keyword(KK::With)), _) => contexts_data
+                .iter()
+                .find(|(ctx, _)| matches!(ctx.context_type(), CT::CommaList | CT::GuardClause))
+                .map(|(ctx, _)| ctx.context_type() == CT::CommaList)
+                .if_else_or_default(DR::Indifferent, DR::MustNotBreak),
+            (Some(TT::Keyword(KK::Raise | KK::At)), _) => DR::MustNotBreak,
             (_, Some(TT::Keyword(KK::Then | KK::Do | KK::Of))) => DR::MustNotBreak,
             (Some(TT::Keyword(KK::Then | KK::Do)), Some(TT::Keyword(KK::Begin))) => contexts_data
                 .get_last_context(CT::ControlFlowBegin)
