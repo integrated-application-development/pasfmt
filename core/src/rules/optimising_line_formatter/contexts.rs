@@ -101,6 +101,7 @@ pub(super) enum ContextType {
     // `MemberAccess` allows non-fluent calls to be on the same line
     MemberAccess,
     Subject,
+    GuardClause,
     AnonHeader,
 }
 use ContextType as CT;
@@ -849,9 +850,11 @@ impl<'a> LineFormattingContexts<'a> {
                             contexts.push_expression();
                         }
                         TT::Keyword(KK::If | KK::While | KK::On | KK::Until | KK::Case) => {
+                            contexts.push(CT::GuardClause);
                             contexts.push_expression();
                         }
                         TT::Keyword(KK::With) => {
+                            contexts.push(CT::GuardClause);
                             contexts.push_utility((CT::CommaList, 0));
                             contexts.push_utility(CT::CommaElem);
                             contexts.push_expression();
@@ -1426,8 +1429,8 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
                         && matches!(ctx.context_type, CT::CommaList | CT::Assignment)
             }));
 
-        // If an `Brackets` context is in an expression, then the ending token
-        // must not be broken before.
+        // If an `Brackets` context is in an expression or guard clause, then
+        // the ending token must not be broken before.
         for context in self.contexts {
             use BracketStyle as BS;
             let new_context_type = match context.get().context_type {
@@ -1435,15 +1438,33 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
                 CT::Brackets(kind, BS::BreakClose) => CT::Brackets(kind, BS::ContClose),
                 _ => continue,
             };
-            if let Some(CT::Precedence(_) | CT::Brackets(_, BracketStyle::Invisible)) = context
-                .walk_parents()
-                .skip(1)
-                .find(|ctx| {
-                    !self.contexts_to_remove.contains(ctx)
-                        && ctx.get().context_type != CT::MemberAccess
-                })
-                .map(|ctx| ctx.get().context_type)
-            {
+            let in_precedence_or_invisible = matches!(
+                context
+                    .walk_parents()
+                    .skip(1)
+                    .find(|ctx| {
+                        !self.contexts_to_remove.contains(ctx)
+                            && !matches!(ctx.get().context_type, CT::MemberAccess | CT::AssignRHS)
+                    })
+                    .map(|ctx| ctx.get().context_type),
+                Some(CT::Precedence(_) | CT::Brackets(_, BracketStyle::Invisible))
+            );
+            let in_guard_clause = || {
+                for context in context.walk_parents().skip(1) {
+                    let context = context.get();
+                    if matches!(context.context_type, CT::Brackets(_, _)) {
+                        break;
+                    }
+                    if matches!(
+                        context.context_type,
+                        CT::GuardClause | CT::Raise | CT::ForLoop
+                    ) {
+                        return true;
+                    }
+                }
+                false
+            };
+            if in_precedence_or_invisible || in_guard_clause() {
                 context.get_mut().context_type = new_context_type;
             }
         }
@@ -1699,6 +1720,7 @@ mod tests {
                     "AssignRHS" => Ok(CT::AssignRHS),
 
                     "ControlFlow" => Ok(CT::ControlFlow),
+                    "GuardClause" => Ok(CT::GuardClause),
                     "ControlFlowBegin" => Ok(CT::ControlFlowBegin),
                     "MemberAccess" => Ok(CT::MemberAccess),
                     "ForLoop" => Ok(CT::ForLoop),
@@ -2106,14 +2128,18 @@ mod tests {
 
         #[yare::parameterized(
             inline_if = {"
-                                if AA then;
-                1 Base          ^---------
-                1 ControlFlow   ^---------
+                                if AA = BB then;
+                1 Base          ^--------------
+                1 ControlFlow   ^--------------
+                1 GuardClause      ^-----$
+                1 Precedence(4)    ^-----$
             "},
             inline_while = {"
-                                while AA do;
-                1 Base          ^----------
-                1 ControlFlow   ^----------
+                                while AA = BB do;
+                1 Base          ^---------------
+                1 ControlFlow   ^---------------
+                1 GuardClause         ^-----$
+                1 Precedence(4)       ^-----$
             "},
             inline_on = {"
                                 try except on AA do end;
@@ -2135,6 +2161,7 @@ mod tests {
                                     with AA, BB, CC do;
                 1 Base              ^-----------------
                 1 ControlFlow       ^-----------------
+                1 GuardClause            ^--------$
                 0 CommaList              ^--------$
             "},
         )]
@@ -2152,8 +2179,9 @@ mod tests {
                                     case AA.BB(CC) of end;
                 1 Base              ^----------------
                 1 ControlFlow       ^----------------
+                1 GuardClause            ^-------$
                 1 MemberAccess           ^-------$
-                1 BParens                     ^--$
+                1 CParens                     ^--$
             "},
         )]
         fn case(input: &str) -> Result<(), DslParseError> {
@@ -2170,8 +2198,9 @@ mod tests {
                                     repeat until AA.BB(CC);
                 1 Base                     ^---------------
                 1 ControlFlow              ^-------------$
+                1 GuardClause                    ^-------$
                 1 MemberAccess                   ^-------$
-                1 BParens                             ^--$
+                1 CParens                             ^--$
             "},
         )]
         fn until(input: &str) -> Result<(), DslParseError> {
