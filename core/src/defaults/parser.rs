@@ -169,6 +169,7 @@ struct InternalDelphiLogicalLineParser<'a, 'b> {
     pass_index: usize,
     context: ParserContexts,
     unfinished_comment_lines: Vec<LogicalLineRef>,
+    current_line_is_unfinished: bool,
     paren_level: u32,
     brack_level: u32,
     generic_level: u32,
@@ -195,6 +196,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             pass_index: 0,
             context: ParserContexts::default(),
             unfinished_comment_lines: vec![],
+            current_line_is_unfinished: false,
             paren_level: 0,
             brack_level: 0,
             generic_level: 0,
@@ -261,8 +263,6 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     if let TT::CompilerDirective = kind {
                         self.set_logical_line_type(LLT::CompilerDirective);
                     }
-                    let line_ref = self.get_current_logical_line_ref();
-                    self.finish_logical_line();
                     /*
                         The lines are considered "unfinished" if their level is determined by the
                         code that follows.
@@ -280,11 +280,10 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         end;
                         ```
                     */
-                    if matches!(
-                        self.get_last_context_type(),
-                        Some(ContextType::SubRoutine | ContextType::TypeBlock)
-                    ) {
-                        self.unfinished_comment_lines.push(line_ref);
+                    if self.is_in_statement_list() {
+                        self.finish_logical_line();
+                    } else {
+                        self.make_unfinished_line();
                     }
                 }
                 TT::Keyword(
@@ -320,9 +319,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     // If there is a `[` at the start of a line, it must be an attribute
                     self.skip_pair();
                     self.set_logical_line_type(LogicalLineType::Attribute);
-                    let line_ref = self.get_current_logical_line_ref();
-                    self.finish_logical_line();
-                    self.unfinished_comment_lines.push(line_ref);
+                    self.make_unfinished_line();
                 }
                 TT::Keyword(
                     keyword_kind @ (KK::Interface
@@ -1175,6 +1172,12 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         self.parse_statement();
         self.context.pop();
     }
+    fn is_in_statement_list(&self) -> bool {
+        let mut contexts = self.context.contexts.iter().rev().map(|c| c.context_type);
+
+        matches!(contexts.next(), Some(ContextType::Statement(_)))
+            && matches!(contexts.next(), Some(ContextType::StatementBlock(_)))
+    }
     fn parse_statement_list_block(&mut self, context: ParserContext) {
         self.parse_statement_block_with_kind(context, StatementKind::Normal);
     }
@@ -1733,6 +1736,13 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         self.get_current_logical_line().tokens.is_empty()
     }
 
+    fn make_unfinished_line(&mut self) {
+        let line_ref = self.get_current_logical_line_ref();
+        self.current_line_is_unfinished = true;
+        self.unfinished_comment_lines.push(line_ref);
+        self.finish_logical_line();
+    }
+
     fn finish_logical_line(&mut self) {
         if self.is_at_start_of_line() {
             self.get_current_logical_line_mut().line_type = LLT::Unknown;
@@ -1749,11 +1759,14 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         }
         let (parent, context_level) = self.get_context_level();
 
-        for unfinished_line in self.unfinished_comment_lines.drain(..).collect_vec() {
-            if let Some(line) = self.get_logical_line_from_ref_mut(unfinished_line) {
-                line.level = context_level;
+        if !self.current_line_is_unfinished {
+            for unfinished_line in self.unfinished_comment_lines.drain(..).collect_vec() {
+                if let Some(line) = self.get_logical_line_from_ref_mut(unfinished_line) {
+                    line.level = context_level;
+                }
             }
-        }
+        };
+        self.current_line_is_unfinished = false;
 
         let line_ref = *self.current_line.last();
 
@@ -2010,10 +2023,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         self.context.contexts.last()
     }
     fn get_last_context_type(&self) -> Option<ContextType> {
-        self.context
-            .contexts
-            .last()
-            .map(|&ParserContext { context_type, .. }| context_type)
+        self.context.contexts.last().map(|ctx| ctx.context_type)
     }
     fn get_context_level(&self) -> (Option<LineParent>, u16) {
         /*

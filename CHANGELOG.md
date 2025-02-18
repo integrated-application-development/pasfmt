@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `continuation_indents` now controls the number of indentations per continuation.
 - Parsing of `while`, `with`, `on`, `if`, case arm and `for` statements to use
   child lines for their nested statements.
+- Indentation level of comments in various edge cases.
 
 ### Added
 
