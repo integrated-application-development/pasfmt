@@ -1849,8 +1849,9 @@ mod routines {
                 one_param_function = "
                     interface
                     function AA(Booo: Carrots): D;
-                    function AAA(Booo: Carrots):
-                        D;
+                    function AAA(
+                        Booo: Carrots
+                    ): D;
                     function AAA(
                         Boooooo: Carrots
                     ): D;
@@ -1992,6 +1993,11 @@ mod routines {
                     procedure Apple.Booooo.Caaaaaa(
                         A: B
                     );
+                    function Apple.Booooo.Caaaaaaa(
+                        AAAAAAAAAA:
+                            BBBBBBBBBBBBB
+                                .BBBBBBBBB
+                    ): AAAAAAAAAAAA.AAAAAAAAAAAAA;
                     function Apple.Booooo.Caaaaaaa(
                         AAAAAAAAAA:
                             BBBBBBBBBBBBB
@@ -2179,6 +2185,18 @@ mod routines {
                                 + 111111
                                 + 11111
                     );
+                    function AAAAAAAAAAAAAAA(
+                        AAAAAAAAAAAAA:
+                                BBBBBBBBBB =
+                            CCCCCCCCCCCCCCC(DDDDD)
+                    ): EEEEEEEEEE;
+                    function AAAAAAAAAAAAAAA(
+                        AAAAAAAAAAAAA:
+                                BBBBBBBBBB =
+                            CCCCCCCCCCCCCCC(
+                                DDDDDD
+                            )
+                    ): EEEEEEEEEE;
                 ",
                 constructor = "
                     interface
@@ -2218,7 +2236,10 @@ mod routines {
                     procedure Applesssss;
                         overload;
                     function Appless: B; overload;
-                    function Applesss: B;
+                    function Applesss:
+                        B; overload;
+                    function Applesss:
+                        BBBBBBBBBBBBBBBB;
                         overload;
                 ",
                 many = "
@@ -2234,8 +2255,9 @@ mod routines {
                 with_params = "
                     interface
                     function A(B: C): D; overload;
-                    function AA(B: C): D;
-                        overload;
+                    function AA(
+                        B: C
+                    ): D; overload;
                     function AA(B: C): D;
                         overload; static; static;
                     function AA(B: C): D;
@@ -2246,10 +2268,15 @@ mod routines {
                 with_args = "
                     interface
                     procedure A(B: C); message 11;
-                    procedure A(B: C);
-                        message 111;
-                    procedure A(B: C);
-                        message 1111 + 1111111;
+                    class procedure A(
+                        B: C
+                    ); static;
+                    procedure A(
+                        B: C
+                    ); message 111;
+                    procedure A(
+                        B: C
+                    ); message 1111 + 1111111;
                     procedure A(B: C);
                         message
                             1111 + 11111 + 1111;
@@ -2263,8 +2290,9 @@ mod routines {
                                     aaaaaa,
                                     bbbbbbb)
                                 + 1111;
-                    procedure A(B: C);
-                        message 11; deprecated '';
+                    procedure A(
+                        B: C
+                    ); message 11; deprecated '';
                     procedure A(B: C);
                         message 11;
                         deprecated '';

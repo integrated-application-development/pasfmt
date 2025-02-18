@@ -152,6 +152,8 @@ struct ChildLineInitialConditions {
 struct PenaltyDecision<'s> {
     raw_decision: RawDecision,
     line_length: u32,
+    line_index: u32,
+    line: &'s LogicalLine,
     stack: &'s SpecificContextStack<'s>,
 }
 
@@ -335,6 +337,8 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             penalty: self.get_decision_penalty(PenaltyDecision {
                 raw_decision: new_line.to_raw(),
                 line_length: last_line_length,
+                line_index: 0,
+                line: line.1,
                 stack: &formatting_contexts.get_specific_context_stack(0),
             }),
         };
@@ -590,6 +594,8 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         next_node.penalty += self.get_decision_penalty(PenaltyDecision {
             raw_decision,
             line_length: token_line_length,
+            line_index,
+            line: line.1,
             stack: contexts,
         });
 
@@ -949,10 +955,25 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             RawDecision::Break => match decision
                 .stack
                 .ctx_iter_indices()
-                .next()
+                .find(|(_, ctx)| ctx.is_active_at_token(decision.line_index))
                 .map(|(_, ctx)| ctx.context_type())
             {
                 Some(ContextType::Brackets(BracketKind::Angle, _)) => 2u64.pow(10),
+                Some(ContextType::DirectivesLine)
+                    if decision.line.get_line_type() == LLT::RoutineHeader =>
+                {
+                    2u64.pow(9)
+                }
+                _ if decision.line.get_line_type() == LLT::RoutineHeader
+                    && self
+                        .get_prev_token_type_for_line_index(decision.line, decision.line_index)
+                        == Some(TT::Op(OK::Colon))
+                    && !decision.stack.ctx_iter_indices().any(|(_, ctx)| {
+                        matches!(ctx.context_type(), ContextType::Brackets(_, _))
+                    }) =>
+                {
+                    2u64.pow(8)
+                }
                 _ => 3,
             },
             RawDecision::Continue if decision.line_length > self.settings.max_line_length => {
