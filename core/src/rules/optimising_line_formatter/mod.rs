@@ -149,18 +149,10 @@ struct ChildLineInitialConditions {
     child_line_option: ChildLineOption,
 }
 
-struct PenaltyDecision {
+struct PenaltyDecision<'s> {
     raw_decision: RawDecision,
     line_length: u32,
-}
-impl From<&FormattingNode<'_>> for PenaltyDecision {
-    fn from(value: &FormattingNode) -> Self {
-        let token_decision = value.decision.get();
-        Self {
-            raw_decision: token_decision.decision.to_raw(),
-            line_length: token_decision.last_line_length,
-        }
-    }
+    stack: &'s SpecificContextStack<'s>,
 }
 
 struct InternalOptimisingLineFormatter<'this, 'token> {
@@ -343,6 +335,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             penalty: self.get_decision_penalty(PenaltyDecision {
                 raw_decision: new_line.to_raw(),
                 line_length: last_line_length,
+                stack: &formatting_contexts.get_specific_context_stack(0),
             }),
         };
         if let Some(base_context) = Rc::make_mut(&mut node.context_data).first_mut() {
@@ -597,6 +590,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         next_node.penalty += self.get_decision_penalty(PenaltyDecision {
             raw_decision,
             line_length: token_line_length,
+            stack: contexts,
         });
 
         let child_line_solutions = self.find_optimal_child_lines_solution(
@@ -950,11 +944,20 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         }
     }
 
-    fn get_decision_penalty(&self, decision: impl Into<PenaltyDecision>) -> u64 {
-        let decision = decision.into();
+    fn get_decision_penalty(&self, decision: PenaltyDecision) -> u64 {
         match decision.raw_decision {
-            RawDecision::Break => 3,
-            RawDecision::Continue if decision.line_length > self.settings.max_line_length => 999999,
+            RawDecision::Break => match decision
+                .stack
+                .ctx_iter_indices()
+                .next()
+                .map(|(_, ctx)| ctx.context_type())
+            {
+                Some(ContextType::Brackets(BracketKind::Angle, _)) => 2u64.pow(10),
+                _ => 3,
+            },
+            RawDecision::Continue if decision.line_length > self.settings.max_line_length => {
+                2u64.pow(20)
+            }
             _ => 0,
         }
     }

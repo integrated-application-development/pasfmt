@@ -144,7 +144,7 @@ impl FormattingContext {
     }
 
     /// Returns whether a context is to be affected by a decision
-    fn is_active_at_token(&self, line_index: u32) -> bool {
+    pub fn is_active_at_token(&self, line_index: u32) -> bool {
         self.starting_token != line_index
             && self.ending_token.is_none_or(|index| line_index <= index)
     }
@@ -671,6 +671,11 @@ impl<'a> SpecificContextStack<'a> {
                             data.one_element_per_line = Some(true);
                         }
                     }
+                    CT::MemberAccess => {
+                        if is_break {
+                            data.one_element_per_line = Some(true);
+                        }
+                    }
                     CT::CommaElem | CT::AssignRHS => {
                         if is_break {
                             data.break_anonymous_routine = Some(true);
@@ -1063,10 +1068,17 @@ impl<'a> LineFormattingContexts<'a> {
                 TT::Op(OK::Dot) => {
                     if CT::Precedence(0) == last_context_type {
                         contexts.retain_current();
-                        if let Some(TT::Op(
-                            OK::RParen | OK::RBrack | OK::GreaterThan(ChK::Generic),
-                        )) = prev_token_type
-                        {
+                        if matches!(prev_token_type, Some(TT::Op(OK::RParen | OK::RBrack))) {
+                            /*
+                                Fluency is considered after () and [] because
+                                they allow for arbitrary computation which will
+                                harm the readability of a chained expression on
+                                a single line.
+
+                                <> and just pure names are more likely to be
+                                simple. Generics are seen as an extension of the
+                                identifier.
+                            */
                             contexts.fluent(contexts.current_context.clone());
                         }
                     }

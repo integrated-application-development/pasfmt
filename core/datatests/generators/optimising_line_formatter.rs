@@ -2075,6 +2075,12 @@ mod routines {
                         BBB;
                         CC
                     >(CC: DD; EE: FF);
+                    procedure Apples<AAA; BB>(
+                        CC: DD;
+                        EE: FF;
+                        G: H;
+                        I: J
+                    );
                     procedure Apples<
                         AAA;
                         BBB;
@@ -3272,6 +3278,34 @@ mod statements {
                                 .durianssss
                                 .eggplantss(figs))
                         .grapes;
+                ",
+                member_access = "
+                    applesss[a].bananasssss(b, c);
+                    applessss[a]
+                        .bananasssss(b, c);
+                    applesss.bananas.carrotss[
+                        bbbbbbbb
+                    ];
+                    applessss[a]
+                        .bananasssssss(
+                            bbbb,
+                            cccc);
+                    applessss[a]
+                        .bananasssssssssss(
+                            bbbb,
+                            cccc);
+                    applesss<a>.bananasssss(b, c);
+                    applessss<a>
+                        .bananasssss(b, c);
+                    applessss<a>.bananasssssss(
+                        bbbb,
+                        cccc
+                    );
+                    applessss<a>
+                        .bananasssssssssss(
+                            bbbb,
+                            cccc
+                        );
                 ",
             );
         }
