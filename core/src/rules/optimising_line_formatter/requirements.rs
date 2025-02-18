@@ -249,6 +249,10 @@ impl InternalOptimisingLineFormatter<'_, '_> {
             ) => DR::MustNotBreak,
             (Some(TT::Keyword(KK::Property)), Some(TT::Identifier)) => DR::MustNotBreak,
             (
+                Some(TT::Keyword(KK::Class)),
+                Some(TT::Keyword(KK::Function | KK::Procedure | KK::Constructor | KK::Destructor)),
+            ) => DR::MustNotBreak,
+            (
                 Some(TT::Keyword(KK::Function | KK::Procedure | KK::Constructor | KK::Destructor)),
                 Some(TT::Identifier),
             ) => DR::MustNotBreak,

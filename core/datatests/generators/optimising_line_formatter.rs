@@ -1798,6 +1798,13 @@ mod routines {
         pub fn generate(root_dir: &Path) {
             generate_test_cases!(
                 root_dir,
+                class_routines = "
+                    interface
+                    class procedure Applesssssssss;
+                    class function Applessssssssss;
+                    class constructor Applesssssss;
+                    class destructor Applessssssss;
+                ",
                 no_params_procedure = "
                     interface
                     procedure Applessssssssssssss;
