@@ -14,6 +14,9 @@
         :root {
           color-scheme: dark;
         }
+        #github-logo img {
+          filter: invert(100%);
+        }
       }
       html,
       body {
@@ -36,7 +39,15 @@
         overflow: hidden;
       }
       #settings {
-        flex: 0 1 auto;
+        display: flex;
+      }
+      #github-logo {
+        margin-left: auto;
+        margin-right: 1em;
+      }
+      #github-logo img {
+        height: 1.5em;
+        vertical-align: middle;
       }
       #editpane {
         display: flex;
@@ -112,6 +123,9 @@
         <option value="/examples/simple.pas">simple</option>
       </select>
       <button id="share-example">Share Example</button>
+      <a id="github-logo" href="https://github.com/integrated-application-development/pasfmt/">
+        <img src="/img/github.svg" alt="github logo" />
+      </a>
     </div>
     <div class="editor-container" id="editorContainer">
       <div class="" id="editpane">
