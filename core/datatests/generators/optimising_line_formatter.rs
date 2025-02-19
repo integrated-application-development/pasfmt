@@ -322,6 +322,17 @@ mod comments {
                       begin
                       end;
                     end;
+                    type
+                      TFoo = record
+                      case AAAAA of
+                        BBBBB: //
+                        (BBBBBBB, CCCCCCC);
+                        BBBBB: //
+                        (
+                          BBBBBBBBBBBB,
+                          CCCCCCCCCCCC
+                        );
+                      end;
                 ",
                 after_lparen = "
                     type
@@ -418,6 +429,12 @@ mod anonymous {
                     AAAA(
                         function(A: B): C
                         begin
+                        end
+                    );
+                    AAAA(
+                        function(A: B): C
+                        begin
+                          A := C;
                         end
                     );
                     AAAA(

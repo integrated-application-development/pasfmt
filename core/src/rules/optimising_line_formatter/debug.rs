@@ -300,6 +300,7 @@ impl<'a, 'b, 'c> DebugFormattingSolution<'a, 'b, 'c> {
 impl Debug for DebugFormattingSolution<'_, '_, '_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Solution found:")?;
+        writeln!(f, "Penalty: {}", self.solution.penalty)?;
         writeln!(
             f,
             "{:?}",

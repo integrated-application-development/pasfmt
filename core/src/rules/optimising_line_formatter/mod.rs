@@ -364,9 +364,15 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             }
             if node.penalty > best_penalties[(node.next_line_index - 1) as usize] {
                 trace!(
-                    "Pruning due to better node penalty ({}) for the current node ({})",
+                    "Pruning due to better node penalty ({}) for the current node ({})\n{:?}",
                     best_penalties[(node.next_line_index - 1) as usize],
-                    node.penalty
+                    node.penalty,
+                    DebugFormattingNode::new(
+                        &node,
+                        line.1,
+                        &formatting_contexts.get_specific_context_stack(node.next_line_index),
+                        self
+                    )
                 );
                 continue;
             }
@@ -506,13 +512,24 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                             // deemed incompatible with this partial solution,
                             // no solution will be found.
 
-                            if node.penalty < best_penalties[node.next_line_index as usize] {
-                                best_penalties[node.next_line_index as usize] = node.penalty;
-                                node_successors.extend(get_solutions(NL::Break, node, &contexts));
-                                trace!("Updating best penalty for node, exiting indifference loop");
-                            } else {
-                                trace!("There is has been a better penalty explored for the current node");
+                            let line_index = node.next_line_index as usize;
+                            for node in get_solutions(NL::Break, node, &contexts) {
+                                if node.penalty < best_penalties[line_index] {
+                                    best_penalties[line_index] = node.penalty;
+
+                                    trace!(
+                                        "Updating best penalty for node\n{:?}",
+                                        DebugFormattingNode::new(&node, line.1, &contexts, self)
+                                    );
+                                    node_successors.push(node);
+                                } else {
+                                    trace!(
+                                        "There is has been a better penalty explored for the node\n{:?}",
+                                        DebugFormattingNode::new(&node, line.1, &contexts, self)
+                                    );
+                                }
                             }
+                            trace!("Exiting indifference loop");
                             break 'indiff;
                         }
                         DR::MustNotBreak => {
