@@ -18,6 +18,9 @@
 
 ## Getting Started
 
+Download the [latest release](https://github.com/integrated-application-development/pasfmt/releases/latest)
+or [build from source](#building-from-source).
+
 To format one `pas`, `dpr`, or `dpk` file (in-place), run
 
 ```sh
