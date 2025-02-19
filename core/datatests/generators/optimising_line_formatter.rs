@@ -326,12 +326,12 @@ mod comments {
                       TFoo = record
                       case AAAAA of
                         BBBBB: //
-                        (BBBBBBB, CCCCCCC);
+                            (BBBBBBB, CCCCCCC);
                         BBBBB: //
-                        (
-                          BBBBBBBBBBBB,
-                          CCCCCCCCCCCC
-                        );
+                            (
+                              BBBBBBBBBB,
+                              CCCCCCCCCC
+                            );
                       end;
                 ",
                 after_lparen = "

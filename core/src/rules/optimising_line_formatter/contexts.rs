@@ -492,7 +492,7 @@ impl<'a> SpecificContextStack<'a> {
                 // ```
                 self.update_last_matching_context(
                     node,
-                    context_matches!(CT::SemicolonElem),
+                    context_matches!(CT::SemicolonElem | CT::Base),
                     |_, data| {
                         data.is_broken |= is_break;
                     },
