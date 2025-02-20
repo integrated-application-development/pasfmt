@@ -44,6 +44,8 @@ pasfmt --help
 
 Some aspects of formatting style can be controlled from a configuration file.
 
+The full list of available options is [here](./docs/CONFIGURATION.md), and can also be printed from the command line by running `pasfmt -C help`.
+
 To customise the configuration, create a file called `pasfmt.toml` in the root directory of the project
 you are formatting. Make sure that `pasfmt` is being run from that directory, or a child directory.
 
@@ -64,13 +66,6 @@ Specific `pasfmt.toml` files can also be used from the command-line:
 ```sh
 pasfmt --config-file path/to/pasfmt.toml path/to/file.pas
 ```
-
-> [!TIP]
-> For a full list of available configuration options, run
->
-> ```sh
-> pasfmt -C help
-> ```
 
 Additionally, configuration options can be specified on the command-line, which will override values from the file:
 
