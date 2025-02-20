@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.4.0-rc1] - 2025-02-20
+
 ### Fixed
 
 - Fixed lexing of conditional directive expressions containing compiler directives, comments, or strings.

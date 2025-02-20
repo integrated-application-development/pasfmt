@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0-rc1] - 2025-02-20
+
 ### Fixed
 
 - `--config-file` no longer erroneously accepts a path to a directory and searches from it for a
