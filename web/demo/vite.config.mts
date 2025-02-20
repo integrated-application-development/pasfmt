@@ -19,4 +19,5 @@ export default defineConfig({
       allow: [".."],
     },
   },
+  base: "https://integrated-application-development.github.io/pasfmt/",
 });

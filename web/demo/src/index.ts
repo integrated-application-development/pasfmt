@@ -253,7 +253,7 @@ if (source !== null) {
   let decoded = atob(source);
   originalEditor.setValue(decoded);
 } else {
-  loadSampleFile("/examples/simple.pas");
+  loadSampleFile("/pasfmt/examples/simple.pas");
 }
 
 if (settings !== null) {
