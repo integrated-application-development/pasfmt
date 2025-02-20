@@ -7,10 +7,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Removed
+### Fixed
 
-- Ability to override configuration on the CLI with escaped values eg (`-Ckey="\uFF"`).
-- Support for inline assembly instruction formatting. Instructions lines are ignored.
+- Lexing of conditional directive expressions containing compiler directives, comments, or strings.
+- Lexing of compiler directives similar to conditional directives (e.g. `{$if_}`).
+- Lexing of unterminated asm text literals at EOF.
+- Lexing of sequential conditionally-compiled asm keywords.
+- `--config-file` no longer erroneously accepts a path to a directory and searches from it for a
+  `pasfmt.toml` file. It is now an error to provide a path to a directory.
+- Detection of decoding errors when reading from stdin.
+- Silent ignoral of non-existent paths (were being treated as globs matching no files).
+- Errors on writing non-ASCII data in an ANSI encoding to a Windows Console. Now written as Unicode.
 
 ### Changed
 
@@ -36,23 +43,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     provided cursors.
 - Debug logging for time taken to format each file.
 
-### Fixed
+### Removed
 
-- Lexing of conditional directive expressions containing compiler directives, comments, or strings.
-- Lexing of compiler directives similar to conditional directives (e.g. `{$if_}`).
-- Lexing of unterminated asm text literals at EOF.
-- Lexing of sequential conditionally-compiled asm keywords.
-- `--config-file` no longer erroneously accepts a path to a directory and searches from it for a
-  `pasfmt.toml` file. It is now an error to provide a path to a directory.
-- Detection of decoding errors when reading from stdin.
-- Silent ignoral of non-existent paths (were being treated as globs matching no files).
-- Errors on writing non-ASCII data in an ANSI encoding to a Windows Console. Now written as Unicode.
+- Ability to override configuration on the CLI with escaped values eg (`-Ckey="\uFF"`).
+- Support for inline assembly instruction formatting. Instructions lines are ignored.
 
 ## [0.3.0] - 2024-05-29
-
-### Changed
-
-- `--files-file` parameter to `--files-from`.
 
 ### Fixed
 
@@ -60,7 +56,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Erroneous transcoding of UTF-16 input to UTF-8.
 - Unwanted use of the replacement character when encoding. This now results in an error.
 
+### Changed
+
+- `--files-file` parameter to `--files-from`.
+
 ## [0.2.0] - 2024-05-07
+
+### Fixed
+
+- Incorrect parsing for generic type param lists containing semicolons.
+- Extra trailing newline when formatting stdin to stdout.
+- Lexical edge cases with unusual whitespace.
+- Incorrect encoding used for writing files with encodings inferred from a BOM.
+- Incorrect encoding used in stdin/stdout mode; UTF-8 was always used, but now the configured
+  encoding is respected.
+
+### Changed
+
+- Handling of unterminated comments and text literals.
+- The default encoding on Windows to be the system ANSI codepage.
+- The default encoding on non-Windows platforms to be UTF-8.
+- Handling of IO errors. Previously any IO error would immediately crash the program.
+  Now errors are logged when they occur and cause the program to exit non-zero after
+  all other files have been formatted successfully.
+- Default continuation to be the same as the configured indentation.
 
 ### Added
 
@@ -85,25 +104,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - short version of `--config-file` CLI option.
 - `--write`/`-w` CLI option (now accessible via `--mode=files`).
 - `--verify` CLI option (replaced by `--mode=check` with some differences).
-
-### Changed
-
-- Handling of unterminated comments and text literals.
-- The default encoding on Windows to be the system ANSI codepage.
-- The default encoding on non-Windows platforms to be UTF-8.
-- Handling of IO errors. Previously any IO error would immediately crash the program.
-  Now errors are logged when they occur and cause the program to exit non-zero after
-  all other files have been formatted successfully.
-- Default continuation to be the same as the configured indentation.
-
-### Fixed
-
-- Incorrect parsing for generic type param lists containing semicolons.
-- Extra trailing newline when formatting stdin to stdout.
-- Lexical edge cases with unusual whitespace.
-- Incorrect encoding used for writing files with encodings inferred from a BOM.
-- Incorrect encoding used in stdin/stdout mode; UTF-8 was always used, but now the configured
-  encoding is respected.
 
 ## [0.1.0] - 2023-08-28
 
