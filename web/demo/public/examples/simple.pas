@@ -50,3 +50,11 @@ Inc(I); end;
     begin if True then Inc(I); end);
   end;
 end;
+
+const S1 = '''
+multiline string
+''';
+
+const S2 = '''''
+'''
+''''';

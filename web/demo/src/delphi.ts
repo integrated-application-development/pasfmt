@@ -5,6 +5,7 @@ Extends the provided pascal language definition.
   * add support for underscores in hex integer literals
   * add support for binary integer literals
   * add support for hex and binary character literals
+  * add support for multiline strings
   * remove | and % from operators
   * remove treatment of < and > as matched brackets (it's not always generics)
 */
@@ -14,7 +15,11 @@ import * as pascal from "monaco-editor/esm/vs/basic-languages/pascal/pascal";
 
 monaco.languages.register({ id: "delphi" });
 
-const lang: monaco.languages.IMonarchLanguage = structuredClone(pascal.language);
+const lang: monaco.languages.IMonarchLanguage = structuredClone(
+  pascal.language
+);
+
+lang.includeLF = true;
 
 // alt comments
 lang.tokenizer.altcomment = [
@@ -34,6 +39,24 @@ lang.tokenizer.root.unshift([/\$[0-9a-fA-F_]*/, "number.hex"]);
 lang.tokenizer.root.unshift([/#\$[0-9a-fA-F_]*/, "string"]);
 // binary character literals
 lang.tokenizer.root.unshift([/#%[01_]*/, "string"]);
+
+// multiline strings
+lang.tokenizer.root.unshift([
+  /('(?:'')+)\r?\n/,
+  { token: "string", next: "@multilinestring.$1" },
+]);
+lang.tokenizer.multilinestring = [
+  [
+    /('(?:'')+)/,
+    {
+      cases: {
+        "$1==$S2": { token: "string", next: "@pop" },
+        "@default": "string",
+      },
+    },
+  ],
+  [/./, "string"],
+];
 
 // removed | %
 lang.symbols = /[=><:@^&+\-*\/]+/;
