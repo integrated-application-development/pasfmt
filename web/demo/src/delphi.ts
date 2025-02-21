@@ -27,7 +27,16 @@ lang.tokenizer.altcomment = [
   [/\*\)/, "comment", "@pop"],
   [/[)*]/, "comment"],
 ];
-lang.tokenizer.whitespace.push([/\(\*/, "comment", "@altcomment"]);
+
+lang.tokenizer.whitespace = [
+  [/[ \t\r\n]+/, "white"],
+  [/\{/, "comment", "@comment"],
+  // the trailing $ is incompatible with the includeLF=true setting
+  // [/\/\/.*$/, "comment"],
+  [/\/\/.*/, "comment"],
+  // add support for alt comments
+  [/\(\*/, "comment", "@altcomment"],
+];
 
 // all of these use unshift to have higher precedence that the existing rules
 
