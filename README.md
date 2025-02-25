@@ -90,6 +90,7 @@ const ValueMap: TArray<Integer> = [
 ## Integrations
 
 - [`pasfmt-rad`](https://github.com/integrated-application-development/pasfmt-rad): a Delphi IDE extension for `pasfmt`
+- [`pasfmt-action`](https://github.com/integrated-application-development/pasfmt-action): a GitHub Action for integrating `pasfmt` into GitHub CI workflows
 
 ## Building from Source
 
