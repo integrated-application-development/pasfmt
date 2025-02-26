@@ -10,16 +10,13 @@ runs:
       with:
         components: rustfmt, clippy
 
-    - name: Cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: rust-toolchain-${{ steps.toolchain.outputs.cachekey }}-cargo-${{ hashFiles('**/Cargo.lock') }}-job-${{ github.job }}
-        restore-keys: |
-          rust-toolchain-${{ steps.toolchain.outputs.cachekey }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          rust-toolchain-${{ steps.toolchain.outputs.cachekey }}
-          rust-
+    - name: Run sccache-cache only on non-release runs
+      if: github.event_name != 'release' && github.event_name != 'workflow_dispatch'
+      uses: mozilla-actions/sccache-action@v0.0.7
 
+    - name: Set Rust caching env vars only on non-release runs
+      if: github.event_name != 'release' && github.event_name != 'workflow_dispatch'
+      shell: bash
+      run: |
+        echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+        echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
