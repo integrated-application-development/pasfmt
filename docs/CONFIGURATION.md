@@ -5,6 +5,7 @@ Some aspects of formatting style are configurable.
 Configuration options can either be specified in a `pasfmt.toml` configuration file, or on the command line.
 
 ## Available Options
+
 <table>
   <thead>
     <tr>
@@ -41,10 +42,10 @@ Configuration options can either be specified in a `pasfmt.toml` configuration f
         <ul>
           <li>on Windows, the system ANSI codepage is used</li>
           <li>
-            otherwise, UTF-8 is used In all cases a detected BOM will override
-            the configured encoding.
+            otherwise, UTF-8 is used
           </li>
         </ul>
+        In all cases a detected BOM will override the configured encoding.
       </td>
     </tr>
     <tr>
