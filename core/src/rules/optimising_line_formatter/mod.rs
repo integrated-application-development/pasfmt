@@ -836,11 +836,12 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                         // Exception for empty body case, e.g., `A:;`
                         Potentials::One(ChildLineOption::ContinueAll)
                     }
+                    (_, 1) => Potentials::Two(
+                        // Allow inline case arm statements
+                        ChildLineOption::ContinueAll,
+                        ChildLineOption::BreakAll(parent_indented_ws),
+                    ),
                     _ => Potentials::One(ChildLineOption::BreakAll(parent_indented_ws)),
-                    /*
-                        TODO: Add setting and heuristic for unwrapping single child line
-                        e.g., `A: ...;`
-                    */
                 }
             }
             _ => {

@@ -3034,10 +3034,16 @@ mod control_flows {
                 ",
                 case_statement = "
                     case A of
+                      AAAAAAAAA: BBBBBB := CCCCCC;
+                      AAAAAAAAAA:
+                        BBBBBBBBBBB := CCCCCCCCCC;
+                      AAAAAAAAAA:
+                        BBBBBBBBBBB :=
+                            CCCCCCCCCCC;
                       AAAAAAAAAAAAAA: begin
                         Foo;
                       end;
-                      AAAAAAAAAAAAAA:
+                      AAAAAAA:
                         if AAAAA then
                           Foo;
                       AAAAAAAAAAAAAA:
