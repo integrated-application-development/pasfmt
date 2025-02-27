@@ -40,7 +40,19 @@ jobs:
       - name: Setup Rust
         uses: ./.github/workflows/setup/
 
-      - run: cargo test --all
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Run tests with coverage
+        run: cargo llvm-cov --all-features --workspace --codecov --output-path codecov.json
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          files: codecov.json
+          fail_ci_if_error: true
 
   format:
     name: Format
