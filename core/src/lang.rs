@@ -325,6 +325,18 @@ pub enum ConditionalDirectiveKind {
     Endif,
 }
 
+impl ConditionalDirectiveKind {
+    pub(crate) fn is_if(&self) -> bool {
+        matches!(self, Self::If | Self::Ifdef | Self::Ifndef | Self::Ifopt)
+    }
+    pub(crate) fn is_else(&self) -> bool {
+        matches!(self, Self::Else | Self::Elseif)
+    }
+    pub(crate) fn is_end(&self) -> bool {
+        matches!(self, Self::Endif | Self::Ifend)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum TextLiteralKind {
     SingleLine,
@@ -435,6 +447,9 @@ impl LogicalLine {
     }
     pub fn get_parent(&self) -> Option<LineParent> {
         self.parent
+    }
+    pub fn set_parent(&mut self, parent: Option<LineParent>) {
+        self.parent = parent;
     }
     pub fn get_level(&self) -> u16 {
         self.level

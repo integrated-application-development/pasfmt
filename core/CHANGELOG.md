@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Stopped deleting "voided" lines.
 
+### Added
+
+- Added `ConditionalDirectiveConsolidator` to combine _simple_ conditional statements into a single `LogicalLine`.
+
 ## [0.4.0-rc1] - 2025-02-20
 
 ### Fixed
