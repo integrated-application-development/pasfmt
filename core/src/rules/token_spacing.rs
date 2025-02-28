@@ -375,6 +375,10 @@ mod tests {
         two_generic_params_in_property_type_before_read = {"property Foo : TFoo < A ,  B > read FFoo", "property Foo: TFoo<A, B> read FFoo"},
         one_generic_param_in_property_type_before_write = {"property Foo : TFoo < A > write FFoo", "property Foo: TFoo<A> write FFoo"},
         two_generic_params_in_property_type_before_write = {"property Foo : TFoo < A ,  B > write FFoo", "property Foo: TFoo<A, B> write FFoo"},
+
+        array_of = {"A = B < array of C >", "A = B<array of C>"},
+        set_of = {"A = B < set of C >", "A = B<set of C>"},
+        array_of_set_of = {"A = B < array of set of C >", "A = B<array of set of C>"},
     );
 
     formatter_test_group!(

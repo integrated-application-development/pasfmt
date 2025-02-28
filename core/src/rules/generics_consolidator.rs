@@ -42,7 +42,10 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                             KeywordKind::Class
                             | KeywordKind::Record
                             | KeywordKind::Constructor
-                            | KeywordKind::String,
+                            | KeywordKind::String
+                            | KeywordKind::Array
+                            | KeywordKind::Set
+                            | KeywordKind::Of,
                         ),
                     ) => {}
                     Some(TokenType::Op(OperatorKind::GreaterThan(_))) => {
@@ -207,6 +210,23 @@ mod tests {
 
         // A<String>
         run_test(&[ID, LT, STRING, GT], &[ID, LG, STRING, RG])
+    }
+
+    #[test]
+    fn composite_types() {
+        const SET: TokenType = TokenType::Keyword(KeywordKind::Set);
+        const ARRAY: TokenType = TokenType::Keyword(KeywordKind::Array);
+        const OF: TokenType = TokenType::Keyword(KeywordKind::Of);
+
+        // A<set of B>
+        run_test(&[ID, LT, SET, OF, ID, GT], &[ID, LG, SET, OF, ID, RG]);
+        // A<array of B>
+        run_test(&[ID, LT, ARRAY, OF, ID, GT], &[ID, LG, ARRAY, OF, ID, RG]);
+        // A<array of set of B>
+        run_test(
+            &[ID, LT, ARRAY, OF, SET, OF, ID, GT],
+            &[ID, LG, ARRAY, OF, SET, OF, ID, RG],
+        );
     }
 
     #[test]
