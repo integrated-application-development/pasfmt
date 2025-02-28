@@ -24,6 +24,7 @@ mod directives {
 
     pub fn generate(root_dir: &Path) {
         conditional::generate(root_dir);
+        consolidated_conditional::generate(root_dir);
         compiler::generate(root_dir);
     }
 
@@ -72,6 +73,221 @@ mod directives {
                           ;
                     end;
                 ",
+            );
+        }
+    }
+
+    mod consolidated_conditional {
+        use super::*;
+
+        pub fn generate(root_dir: &Path) {
+            generate_test_cases!(
+                root_dir,
+                if_else_invocation = "
+                    // wrap_column=40                       |
+                    A({$if} B {$else} C {$endif});
+                    AAAAAAAAAAAA(
+                        {$if} B {$elseif} C {$endif}
+                    );
+                    AAAAAAAAAAAA(
+                        {$if} BB {$else} CC {$endif}
+                    );
+                    AAAAAAAAAAAA(
+                        {$if}
+                        BBBBBBB
+                        {$else}
+                        CCCCCC
+                        {$endif}
+                    );
+                    AAAAAAAAAAAA(
+                        {$if}
+                        BBB.BBB
+                        {$elseif}
+                        CCC.CCC
+                        {$endif}
+                    );
+                    AAAAAAAAAAAA(
+                        {$if} B {$else} C {$endif},
+                        A,
+                    );
+                    AAAAAAAAAAAA(
+                        {$if}
+                        BBBBBBB
+                        {$elseif}
+                        CCCCCC
+                        {$endif},
+                        A
+                    );
+                ",
+                if_invocation = "
+                    // wrap_column=40                       |
+                    AAAAAAAAAAAAAAA({$if} B {$endif}, C, D);
+                    AAAAAAAAAAAAAAAA(
+                        {$if} B {$endif},
+                        C,
+                        D
+                    );
+                    AAAAAAAAAAAAAAAA(
+                        {$if}
+                        BBBBBBBBBBBBBBBBBBBBB
+                        {$endif},
+                        C,
+                        D
+                    );
+                ",
+                if_else_const = "
+                    // wrap_column=40                       |
+                    const
+                      A = {$if} BBBBB {$else} CCCC {$endif};
+                      AA =
+                          {$if} BBBBB {$else} CCCC {$endif};
+                      AA =
+                          {$if}
+                          BBBBBB
+                          {$else}
+                          CCCCCC
+                          {$endif};
+                      A: T = (
+                          A: {$if} A {$else} B {$endif};
+                          B: {$if} A {$elseif} B {$endif}
+                      );
+                ",
+                if_const = "
+                    // wrap_column=40                       |
+                    const
+                      AAAAAAAAAAAAAA = {$if} BBBBB {$endif};
+                      AAAAAAAAAAAAAAA =
+                          {$if} BBBBB {$endif};
+                      AAAAAAAAAAAAAAA =
+                          {$if}
+                          BBBBBBBBBBBBBBBBBBB
+                          {$endif};
+                ",
+                if_else_assignment = "
+                    // wrap_column=40                       |
+                    A := {$if} BBBBB {$else} CCCCC {$endif};
+                    AAA :=
+                        {$if} BBBB {$elseif} CCCC {$endif};
+                    AA :=
+                        {$if}
+                        BBBBBB
+                        {$else}
+                        CCCCCC
+                        {$endif};
+                ",
+                if_assignment = "
+                    // wrap_column=40                       |
+                    AAAAAAAAAAAAA := {$if} BBBBBBB {$endif};
+                    AAAAAAAAAAAAAA :=
+                        {$if} BBBBBBB {$endif};
+                    AAAAAAAAAAAAAA :=
+                        {$if}
+                        BBBBBBBBBBBBBBBBBBBBB
+                        {$endif};
+                ",
+                if_else_types = "
+                    // wrap_column=40                       |
+                    type
+                      AA = class({$if} B {$else} C {$endif})
+                        AAA: {$if} B {$else} C {$endif};
+                        AAAAAAAA:
+                            {$if} B {$else} C {$endif};
+                        AAAAAAAA:
+                            {$if}
+                            BBBBB
+                            {$else}
+                            CCCCC
+                            {$endif};
+                        AAA: T<{$if} B {$else} C {$endif}>;
+                        AAAAAAAA:
+                            T<{$if} B {$elseif} C {$endif}>;
+                        AAAAAAAA:
+                            T<
+                                {$if}
+                                BBBBB
+                                {$else}
+                                CCCCC
+                                {$endif}
+                            >;
+                      end;
+                      AAA =
+                          class({$if} B {$else} C {$endif})
+                      end;
+                      AAA =
+                          class(
+                              {$if} BB {$elseif} CC {$endif}
+                          )
+                      end;
+                      AAA =
+                          class(
+                              {$if}
+                              BBBB
+                              {$else}
+                              CCCC
+                              {$endif}
+                          )
+                      end;
+                ",
+                if_types = "
+                    // wrap_column=40                       |
+                    type
+                      AA = class({$if} BBBBBBBBBBB {$endif})
+                        AAA: {$if} BBBBBBBBBBB {$endif};
+                        AAAAAAAA:
+                            {$if} BBBBBBBBBBB {$endif};
+                        AAAAAAAA:
+                            {$if}
+                            BBBBBBBBBBBBBBBBBBBBB
+                            {$endif};
+                        AAA: T<{$if} BBBBBBBBBBB {$endif}>;
+                        AAAAAAAA:
+                            T<{$if} BBBBBBBBBBB {$endif}>;
+                        AAAAAAAA:
+                            T<
+                                {$if}
+                                BBBBBBBBBBBBBBBBBBBBBBBBBB
+                                {$endif}
+                            >;
+                      end;
+                      AAA =
+                          class({$if} BBBBBBBBBBB {$endif})
+                      end;
+                      AAA =
+                          class(
+                              {$if} BBBBBBBBBBBBB {$endif}
+                          )
+                      end;
+                      AAA =
+                          class(
+                              {$if}
+                              BBBBBBBBBBBBBBBBBBBBBBB
+                              {$endif}
+                          )
+                      end;
+                ",
+                other = "
+                    // wrap_column=90                                                                         |
+                    A := [{$if} A {$else} B {$endif}];
+                    A := ({$if} A {$else} B {$endif});
+                    A := A({$if} A {$else} B {$endif}, {$if} A {$else} B {$endif});
+                    A :=
+                        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA(
+                            {$if} A {$else} B {$endif},
+                            {$if} A {$else} B {$endif}
+                        );
+                    A :=
+                        {$if} A {$else} B {$endif}
+                            + {$if} A {$else} B {$endif};
+                    A :=
+                        {$if} A.A {$else} B.B {$endif}
+                            + {$if} A.A {$else} B.B {$endif};
+                    A :=
+                        A. {$if} A {$else} B {$endif}
+                            (
+                                {$if} A.A {$else} B.B {$endif}
+                                    + {$if} A.A {$else} B.B {$endif};
+                            );
+                "
             );
         }
     }
@@ -355,11 +571,11 @@ mod comments {
                 root_dir,
                 after = "
                     Foo(
-                    {$ifdef A} //
+                        {$ifdef A} //
                         A
-                    {$else} //
+                        {$else} //
                         B
-                    {$endif} //
+                        {$endif} //
                     );
                 ",
             );
