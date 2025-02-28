@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
-- Fixed spacing around generics with composite type parameters (e.g. `array of`, `set of`).
+- Fixed spacing around generics with composite type parameters (e.g. `array of`, `set of`, `string[10]`).
 
 ### Changed
 

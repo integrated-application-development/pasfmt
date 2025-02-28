@@ -379,6 +379,24 @@ mod tests {
         array_of = {"A = B < array of C >", "A = B<array of C>"},
         set_of = {"A = B < set of C >", "A = B<set of C>"},
         array_of_set_of = {"A = B < array of set of C >", "A = B<array of set of C>"},
+
+        short_string = {"A = B < string[10] >", "A = B<string[10]>"},
+        short_string_comment_between = {"A = B < string{}[10] >", "A = B<string {} [10]>"},
+        short_string_expr = {
+            "A = B < string[10 + C * (1 shl 8 shr 2 and 1 or 2 xor 1 div 2 mod 2) + D<B> / 2] >",
+            "A = B<string[10 + C * (1 shl 8 shr 2 and 1 or 2 xor 1 div 2 mod 2) + D<B> / 2]>"
+        },
+        short_string_nested_expr = {
+            "A = B < string[10 + SizeOf(C<string[(10 + 1) * 2]>)] >",
+            "A = B<string[10 + SizeOf(C<string[(10 + 1) * 2]>)]>"
+        },
+        short_string_unmatched_parens = {"A = B < string[(] >", "A = B<string[(]>"},
+        // this case is more of a quirk of the implementation, rather than 'correct' behaviour.
+        short_string_unmatched_brack = {"A = B < string[ A<[> ] >", "A = B<string[A<[>]>"},
+        // only 'operator' keywords are allowed in the brackets
+        short_string_unexpected_keyword = {"A = B < string[begin] >", "A = B < string[begin] >"},
+        short_string_cmp_expr = {"A = B < string[ (C<D)<E ] >", "A = B<string[(C < D) < E]>"},
+        short_string_nested_bracks = {"A = B < string[ C[0] < 0 ] >", "A = B<string[C[0] < 0]>"},
     );
 
     formatter_test_group!(

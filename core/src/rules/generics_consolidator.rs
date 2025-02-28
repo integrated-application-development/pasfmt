@@ -3,11 +3,16 @@ use crate::{
     traits::TokenConsolidator,
 };
 
+struct TypeParamState {
+    open_idx: usize,
+    brack_count: u32,
+}
+
 pub struct DistinguishGenericTypeParamsConsolidator;
 impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
     fn consolidate(&self, tokens: &mut [Token]) {
         let mut token_idx = 0;
-        let mut opening_idxs = vec![];
+        let mut state: Vec<TypeParamState> = vec![];
         while token_idx < tokens.len() {
             if !matches!(
                 tokens.get(token_idx).map(TokenData::get_token_type),
@@ -19,12 +24,22 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
 
             let mut next_idx = token_idx + 1;
             let mut comma_found = false;
-            opening_idxs.clear();
-            opening_idxs.push(token_idx);
-            while !opening_idxs.is_empty() {
-                match tokens.get(next_idx).map(TokenData::get_token_type) {
+            let mut prev_was_string = false;
+            let mut brack_count = 0;
+
+            state.clear();
+            state.push(TypeParamState {
+                open_idx: token_idx,
+                brack_count: 0,
+            });
+            while !state.is_empty() {
+                let token_type = tokens.get(next_idx).map(TokenData::get_token_type);
+                match token_type {
                     Some(TokenType::Op(OperatorKind::LessThan(_))) => {
-                        opening_idxs.push(next_idx);
+                        state.push(TypeParamState {
+                            open_idx: next_idx,
+                            brack_count,
+                        });
                     }
                     Some(TokenType::Op(OperatorKind::Comma)) => {
                         comma_found = true;
@@ -73,16 +88,48 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                             }
                         }
 
-                        let old_idx = opening_idxs.pop().unwrap();
+                        let closed_state = state.pop().unwrap();
+                        brack_count = closed_state.brack_count;
+
                         use ChevronKind as CK;
-                        tokens[old_idx]
+                        tokens[closed_state.open_idx]
                             .set_token_type(TokenType::Op(OperatorKind::LessThan(CK::Generic)));
 
                         tokens[next_idx]
                             .set_token_type(TokenType::Op(OperatorKind::GreaterThan(CK::Generic)));
                     }
+
+                    // support for 'short string' types as generic args: `A<string[10]>`
+                    Some(TokenType::Op(OperatorKind::LBrack))
+                        if prev_was_string || brack_count > 0 =>
+                    {
+                        brack_count += 1;
+                    }
+                    Some(TokenType::Op(OperatorKind::RBrack)) if brack_count > 0 => {
+                        while let Some(prev) = state.pop() {
+                            if prev.brack_count < brack_count {
+                                brack_count -= 1;
+                                state.push(prev);
+                                break;
+                            }
+                        }
+                    }
+
+                    // support for expressions as the short string length: `A<string[1 shl 7]>`
+                    Some(
+                        TokenType::TextLiteral(_) | TokenType::NumberLiteral(_) | TokenType::Op(_),
+                    ) if brack_count > 0 => {}
+                    Some(TokenType::Keyword(kk)) if brack_count > 0 && kk.is_numeric_operator() => {
+                    }
+
                     _ => break,
                 }
+
+                if token_type.is_some_and(|t| !t.is_comment_or_directive()) {
+                    prev_was_string =
+                        matches!(token_type, Some(TokenType::Keyword(KeywordKind::String)));
+                }
+
                 next_idx += 1;
             }
             token_idx = next_idx;
@@ -119,6 +166,7 @@ mod tests {
     }
 
     const ID: TokenType = TokenType::Identifier;
+
     const LP: TokenType = TT::Op(OperatorKind::LParen);
     const RP: TokenType = TT::Op(OperatorKind::RParen);
     const LB: TokenType = TT::Op(OperatorKind::LBrack);
@@ -136,8 +184,19 @@ mod tests {
     const ADDR: TokenType = TT::Op(OperatorKind::AddressOf);
     const NOT: TokenType = TT::Keyword(KeywordKind::Not);
     const PLUS: TokenType = TT::Op(OperatorKind::Plus);
+    const SHL: TokenType = TT::Keyword(KeywordKind::Shl);
 
+    const STRING: TokenType = TokenType::Keyword(KeywordKind::String);
+    const SET: TokenType = TokenType::Keyword(KeywordKind::Set);
+    const ARRAY: TokenType = TokenType::Keyword(KeywordKind::Array);
+    const OF: TokenType = TokenType::Keyword(KeywordKind::Of);
     const CLASS: TokenType = TokenType::Keyword(KeywordKind::Class);
+    const REC: TokenType = TokenType::Keyword(KeywordKind::Record);
+    const CON: TokenType = TokenType::Keyword(KeywordKind::Constructor);
+
+    const NUM: TokenType = TokenType::NumberLiteral(NumberLiteralKind::Decimal);
+    const TEXT: TokenType = TokenType::TextLiteral(TextLiteralKind::SingleLine);
+    const MTEXT: TokenType = TokenType::TextLiteral(TextLiteralKind::MultiLine);
 
     #[test]
     fn non_generics_are_unchanged() {
@@ -191,9 +250,6 @@ mod tests {
 
     #[test]
     fn type_constraints() {
-        const REC: TokenType = TokenType::Keyword(KeywordKind::Record);
-        const CON: TokenType = TokenType::Keyword(KeywordKind::Constructor);
-
         // A<B: C>
         run_test(&[ID, LT, ID, COL, ID, GT], &[ID, LG, ID, COL, ID, RG]);
         // A<B: class>
@@ -206,18 +262,12 @@ mod tests {
 
     #[test]
     fn string_keyword() {
-        const STRING: TokenType = TokenType::Keyword(KeywordKind::String);
-
         // A<String>
         run_test(&[ID, LT, STRING, GT], &[ID, LG, STRING, RG])
     }
 
     #[test]
     fn composite_types() {
-        const SET: TokenType = TokenType::Keyword(KeywordKind::Set);
-        const ARRAY: TokenType = TokenType::Keyword(KeywordKind::Array);
-        const OF: TokenType = TokenType::Keyword(KeywordKind::Of);
-
         // A<set of B>
         run_test(&[ID, LT, SET, OF, ID, GT], &[ID, LG, SET, OF, ID, RG]);
         // A<array of B>
@@ -226,6 +276,25 @@ mod tests {
         run_test(
             &[ID, LT, ARRAY, OF, SET, OF, ID, GT],
             &[ID, LG, ARRAY, OF, SET, OF, ID, RG],
+        );
+        // A<string[10]>
+        run_test(
+            &[ID, LT, STRING, LB, NUM, RB, GT],
+            &[ID, LG, STRING, LB, NUM, RB, RG],
+        );
+        // A<string[10 + B<string[1 shl 2]>]>
+        run_test(
+            &[
+                ID, LT, STRING, LB, NUM, PLUS, ID, LT, STRING, LB, NUM, SHL, NUM, RB, GT, RB, GT,
+            ],
+            &[
+                ID, LG, STRING, LB, NUM, PLUS, ID, LG, STRING, LB, NUM, SHL, NUM, RB, RG, RB, RG,
+            ],
+        );
+        // A<string[SizeOf('a' + '''\n a \n''')]>
+        run_test(
+            &[ID, LT, STRING, LB, ID, LP, TEXT, PLUS, MTEXT, RP, RB, GT],
+            &[ID, LG, STRING, LB, ID, LP, TEXT, PLUS, MTEXT, RP, RB, RG],
         );
     }
 
