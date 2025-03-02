@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed generics consolidation when composite types are used as parameters.
+  - Fixes cases with `array of`, `set of`, and `string[10]` (short string).
+  - Does not fix cases with anonymous records.
+
+### Added
+
+- Added `KeywordKind::is_numeric_operator`.
+
 ## [0.4.0-rc1] - 2025-02-20
 
 ### Fixed

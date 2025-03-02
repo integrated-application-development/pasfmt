@@ -229,6 +229,19 @@ impl KeywordKind {
                 | KeywordKind::Stored
         )
     }
+
+    pub fn is_numeric_operator(&self) -> bool {
+        matches!(
+            self,
+            KeywordKind::And
+                | KeywordKind::Or
+                | KeywordKind::Xor
+                | KeywordKind::Shl
+                | KeywordKind::Shr
+                | KeywordKind::Div
+                | KeywordKind::Mod
+        )
+    }
 }
 
 /// Used to distinguish the semantic meanings of `=`
