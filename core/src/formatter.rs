@@ -117,7 +117,6 @@ impl Formatter {
             &mut lines,
             Some(cursors.as_mut()),
         );
-        delete_voided_logical_lines(&mut lines);
 
         let mut formatted_tokens = FormattedTokens::new_from_tokens(&tokens, &ignored_tokens);
         for formatter in self.logical_line_formatters.iter() {
@@ -128,10 +127,6 @@ impl Formatter {
 
         self.reconstructor.reconstruct(formatted_tokens, buf);
     }
-}
-
-fn delete_voided_logical_lines(lines: &mut Vec<LogicalLine>) {
-    lines.retain(|line| line.get_line_type() != LogicalLineType::Voided);
 }
 
 fn delete_marked_tokens(
@@ -472,7 +467,14 @@ mod tests {
             .collect_vec();
         let expected_lines = expected_lines
             .into_iter()
-            .map(|line_indices| LogicalLine::new(None, 0, line_indices, LogicalLineType::Unknown))
+            .map(|line_indices| {
+                let line_type = if line_indices.is_empty() {
+                    LogicalLineType::Voided
+                } else {
+                    LogicalLineType::Unknown
+                };
+                LogicalLine::new(None, 0, line_indices, line_type)
+            })
             .collect_vec();
 
         delete_marked_tokens(
@@ -481,7 +483,6 @@ mod tests {
             &mut lines,
             None,
         );
-        delete_voided_logical_lines(&mut lines);
         assert_that(&lines).equals_iterator(&expected_lines.iter());
     }
 
@@ -532,6 +533,7 @@ mod tests {
             vec![
                 vec![0, 1],
                 vec![0, 1],
+                vec![],
                 vec![0, 1],
                 vec![0, 1],
                 vec![1],

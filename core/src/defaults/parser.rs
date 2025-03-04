@@ -101,7 +101,7 @@ fn parse_file(tokens: &mut [RawToken]) -> Vec<LogicalLine> {
                 tokens: vec![token_index],
                 line_type: LLT::CompilerDirective,
             }),
-            TT::ConditionalDirective(CDK::If | CDK::Ifdef | CDK::Ifndef | CDK::Ifopt) => {
+            TT::ConditionalDirective(kind) if kind.is_if() => {
                 directive_lines.push(LocalLogicalLine {
                     parent: None,
                     level: directive_level,
@@ -110,7 +110,7 @@ fn parse_file(tokens: &mut [RawToken]) -> Vec<LogicalLine> {
                 });
                 directive_level += 1;
             }
-            TT::ConditionalDirective(CDK::Endif | CDK::Ifend) => {
+            TT::ConditionalDirective(kind) if kind.is_end() => {
                 directive_level = directive_level.saturating_sub(1);
                 directive_lines.push(LocalLogicalLine {
                     parent: None,
@@ -119,7 +119,7 @@ fn parse_file(tokens: &mut [RawToken]) -> Vec<LogicalLine> {
                     line_type: LLT::ConditionalDirective,
                 });
             }
-            TT::ConditionalDirective(CDK::Else | CDK::Elseif) => {
+            TT::ConditionalDirective(kind) if kind.is_else() => {
                 directive_lines.push(LocalLogicalLine {
                     parent: None,
                     level: directive_level.saturating_sub(1),

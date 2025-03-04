@@ -303,6 +303,7 @@ pub fn make_formatter(config: &FormattingConfig) -> Formatter {
         .lexer(DelphiLexer {})
         .parser(DelphiLogicalLineParser {})
         .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
+        .lines_consolidator(ConditionalDirectiveConsolidator {})
         .token_ignorer(FormattingToggler {})
         .token_ignorer(IgnoreNonUnitImportClauses {})
         .token_ignorer(IgnoreAsmIstructions {})

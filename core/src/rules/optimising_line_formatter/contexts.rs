@@ -5,6 +5,7 @@ use std::rc::Rc;
 use parent_pointer_tree::NodeRef;
 use types::FormattingNode;
 
+use super::types::FormattingSolution;
 use super::*;
 use crate::prelude::KeywordKind as KK;
 use crate::prelude::LogicalLineType as LLT;
@@ -99,6 +100,7 @@ pub(super) enum ContextType {
     AssignLHS,
     AssignRHS,
     ControlFlowBegin,
+    ConditionalDirective,
     // `MemberAccess` allows non-fluent calls to be on the same line
     MemberAccess,
     Subject,
@@ -380,10 +382,17 @@ impl<'a> SpecificContextStack<'a> {
         }
     }
     fn update_operator_precedences(&self, node: &mut FormattingNode, is_break: bool) {
-        self.update_last_matching_context(node, context_matches!(CT::Precedence(_)), |_, data| {
-            data.one_element_per_line.get_or_insert(is_break);
-            data.can_break &= is_break;
-        });
+        self.update_last_matching_context(
+            node,
+            context_matches!(CT::Precedence(_) | CT::ConditionalDirective),
+            |ctx, data| {
+                // Using `ConditionalDirective` as a stop-gap
+                if matches!(ctx.context_type, CT::Precedence(_)) {
+                    data.one_element_per_line.get_or_insert(is_break);
+                    data.can_break &= is_break;
+                }
+            },
+        );
 
         if is_break {
             self.ctx_iter_indices()
@@ -417,7 +426,7 @@ impl<'a> SpecificContextStack<'a> {
         let last_real_token_type = (0..line_index)
             .rev()
             .filter_map(|index| self.get_token_type_from_line_index(index))
-            .find(|token_type| !token_type.is_comment_or_directive());
+            .find(|token_type| !token_type.is_comment_or_compiler_directive());
 
         self.ctx_iter_indices()
             .skip(1)
@@ -650,6 +659,19 @@ impl<'a> SpecificContextStack<'a> {
             }
         }
 
+        if let Some(TT::ConditionalDirective(_)) = curr_token_type {
+            // This is removing the is_active_at_token filter to ensure if
+            // {$if...} is not broken before, the whole conditional code
+            // is not broken.
+            if let Some(data) = self
+                .ctx_iter_indices()
+                .find(|(_, context)| matches!(context.context_type, CT::ConditionalDirective))
+                .and_then(|(index, _)| Rc::make_mut(&mut node.context_data).get_mut(index))
+            {
+                data.can_break &= is_break;
+            }
+        }
+
         // Some contexts need updating if their children get updated
         for (ctx_index, ctx) in self
             .ctx_iter_indices()
@@ -657,6 +679,13 @@ impl<'a> SpecificContextStack<'a> {
         {
             if let Some(data) = Rc::make_mut(&mut node.context_data).get_mut(ctx_index) {
                 match ctx.context_type {
+                    CT::ConditionalDirective => {
+                        if curr_token_type.is_some_and(|t| !t.is_comment_or_compiler_directive()) {
+                            data.can_break &= data.is_child_broken | is_break;
+                            data.one_element_per_line
+                                .get_or_insert(data.is_child_broken | is_break);
+                        }
+                    }
                     CT::TypedAssignment | CT::ForLoop | CT::RaiseAt => {
                         data.is_broken |= data.is_child_broken
                     }
@@ -690,7 +719,7 @@ impl<'a> SpecificContextStack<'a> {
     pub(super) fn update_contexts_from_child_solutions(
         &self,
         node: &mut FormattingNode,
-        child_solutions: &[(usize, types::FormattingSolution)],
+        child_solutions: &[(usize, FormattingSolution)],
     ) {
         if child_solutions
             .iter()
@@ -798,14 +827,17 @@ impl<'a> LineFormattingContexts<'a> {
 
         let mut prev_prev_token_type = None;
         let mut prev_token_type = None;
+        let mut prev_directive_token_type = None;
         let mut current = get_token_type_from_line_index(0);
         let mut next_token_type = get_token_type_from_line_index(1);
         while let Some(current_token_type) = current {
-            if !current_token_type.is_comment_or_directive() {
+            if !current_token_type.is_comment_or_compiler_directive() {
                 let last_context_type = contexts.current_context.get().context_type;
                 // New contexts relating to the previous token are pushed here
                 // to avoid including any leading comments
-                if let Some(prev_token_type) = prev_token_type {
+                if let (Some(prev_token_type), Some(prev_directive_token_type)) =
+                    (prev_token_type, prev_directive_token_type)
+                {
                     match (prev_token_type, last_context_type) {
                         (TT::Op(OK::LParen | OK::LBrack | OK::LessThan(ChK::Generic)), _)
                         | (TT::Op(OK::Semicolon), CT::SemicolonList) => {
@@ -829,7 +861,7 @@ impl<'a> LineFormattingContexts<'a> {
                         }
                         _ => {}
                     }
-                    match prev_token_type {
+                    match prev_directive_token_type {
                         TT::Keyword(KK::Of) => {
                             contexts.push(CT::Subject);
                             contexts.push_expression();
@@ -905,6 +937,12 @@ impl<'a> LineFormattingContexts<'a> {
                                 contexts.push(CT::Type);
                             }
                             contexts.push_expression();
+                        }
+                        TT::ConditionalDirective(kind) if kind.is_if() => {
+                            contexts.push_operators();
+                        }
+                        TT::ConditionalDirective(kind) if kind.is_else() => {
+                            contexts.push_operators();
                         }
                         op if super::get_operator_precedence(op).is_some()
                             && is_binary(op, prev_prev_token_type) =>
@@ -1128,6 +1166,15 @@ impl<'a> LineFormattingContexts<'a> {
                     }
                     contexts.push(CT::Directive);
                 }
+                TT::ConditionalDirective(kind) if kind.is_if() => {
+                    contexts.push((CT::ConditionalDirective, 0));
+                }
+                TT::ConditionalDirective(kind) if kind.is_else() => {
+                    contexts.pop_until(CT::ConditionalDirective);
+                }
+                TT::ConditionalDirective(kind) if kind.is_end() => {
+                    contexts.pop_until(CT::ConditionalDirective);
+                }
                 _ => {}
             }
 
@@ -1146,12 +1193,18 @@ impl<'a> LineFormattingContexts<'a> {
                     contexts
                         .pop_until_after(context_matches!(CT::Brackets(BracketKind::Square, _)));
                 }
+                TT::ConditionalDirective(kind) if kind.is_end() => {
+                    contexts.pop_until_after(CT::ConditionalDirective);
+                }
                 _ => {}
             }
 
             if !current_token_type.is_comment_or_directive() {
                 prev_prev_token_type = prev_token_type;
                 prev_token_type = current;
+            }
+            if !current_token_type.is_comment_or_compiler_directive() {
+                prev_directive_token_type = current;
             }
             current = next_token_type;
             next_token_type = get_token_type_from_line_index(contexts.line_index + 1);
@@ -1511,6 +1564,11 @@ impl KeywordKind {
         self.is_method_directive()
             || self.is_property_directive()
             || matches!(self, KK::Index | KK::Name)
+    }
+}
+impl TokenType {
+    pub(super) fn is_comment_or_compiler_directive(self) -> bool {
+        matches!(self, TT::Comment(_) | TT::CompilerDirective)
     }
 }
 

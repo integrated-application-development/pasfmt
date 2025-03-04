@@ -8,18 +8,32 @@ use crate::suites::get_input_output;
 use super::ErrorString;
 use pasfmt_core::prelude::*;
 
+fn get_specified_line_length(input: &str) -> Option<u32> {
+    const WRAP_COLUMN_PAT: &str = "// wrap_column=";
+    let index = WRAP_COLUMN_PAT.len() + input.find(WRAP_COLUMN_PAT)?;
+    let ending_index = index
+        + input[index..]
+            .find(|c: char| c.is_ascii_whitespace())
+            .unwrap_or(input.len());
+    input[index..ending_index].parse().ok()
+}
+
 fn run_test(input: &str) -> datatest_stable::Result<()> {
+    // The default max_line_length is small in tests to make writing tests
+    // more simple and more concise.
+    const DEFAULT_MAX_LINE_LENGTH: u32 = 30;
+    let max_line_length = get_specified_line_length(input).unwrap_or(DEFAULT_MAX_LINE_LENGTH);
+
     let reconstruction_settings = ReconstructionSettings::new(LineEnding::Lf, TabKind::Soft, 2, 4);
     let formatter = Formatter::builder()
         .lexer(DelphiLexer {})
         .parser(DelphiLogicalLineParser {})
         .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
+        .lines_consolidator(ConditionalDirectiveConsolidator {})
         .file_formatter(TokenSpacing {})
         .file_formatter(OptimisingLineFormatter::new(
             OptimisingLineFormatterSettings {
-                // The max_line_length is small in tests to make writing tests
-                // more simple and more concise.
-                max_line_length: 30,
+                max_line_length,
                 iteration_max: 20_000,
                 break_before_begin: false,
             },

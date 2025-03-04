@@ -1,3 +1,4 @@
+pub mod conditional_directive_consolidator;
 pub mod eof_newline;
 pub mod formatting_toggle;
 pub mod generics_consolidator;
@@ -6,6 +7,7 @@ pub mod ignore_non_unit_import_clauses;
 pub mod optimising_line_formatter;
 pub mod token_spacing;
 
+pub use conditional_directive_consolidator::*;
 pub use eof_newline::*;
 pub use formatting_toggle::*;
 pub use generics_consolidator::*;

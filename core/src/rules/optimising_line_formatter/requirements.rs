@@ -31,7 +31,8 @@ impl InternalOptimisingLineFormatter<'_, '_> {
             return value.map_can_break(parents_support_break);
         }
 
-        let requirement = match self.get_token_type_window(line_index, line) {
+        let token_type_window = self.get_token_type_window(line_index, line);
+        let requirement = match token_type_window {
             (Some(TT::Op(OK::LParen)), Some(TT::Op(OK::RParen))) => contexts_data
                 .get_last_context(context_matches!(CT::Brackets(BracketKind::Round, _)))
                 .map(|(_, data)| data.is_child_broken | data.is_broken)
@@ -97,6 +98,38 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                     .or(parens_requirement)
                     .unwrap_or_default()
             }
+            (Some(TT::ConditionalDirective(kind)), _)
+            | (_, Some(TT::ConditionalDirective(kind)))
+                if kind.is_if() =>
+            {
+                /*
+                    The `if` type conditional directives effectively have no
+                    bearing on the formatting.
+                    This is to support these styles:
+                    ```delphi
+                    A({$if} A {$else} B {$endif});
+                    A(
+                        {$if} A {$else} B {$endif}
+                    );
+                    A(
+                        {$if}
+                        A
+                        {$else}
+                        B
+                        {$endif}
+                    );
+                    ```
+                */
+                DR::Indifferent
+            }
+            (Some(TT::ConditionalDirective(kind)), _) if kind.is_else() => contexts_data
+                .get_last_context(context_matches!(CT::ConditionalDirective))
+                .and_then(|(_, data)| data.one_element_per_line)
+                .if_else_or_default(DR::MustBreak, DR::MustNotBreak),
+            (_, Some(TT::ConditionalDirective(_))) => contexts_data
+                .get_last_context(context_matches!(CT::ConditionalDirective))
+                .and_then(|(_, data)| data.one_element_per_line)
+                .if_else_or_default(DR::MustBreak, DR::MustNotBreak),
             (
                 Some(
                     TT::Identifier
@@ -262,6 +295,17 @@ impl InternalOptimisingLineFormatter<'_, '_> {
             _ => DR::Indifferent,
         };
 
+        let requirement = match (token_type_window, requirement) {
+            ((Some(TT::ConditionalDirective(kind)), Some(TT::Identifier)), DR::Indifferent)
+                if kind.is_end() =>
+            {
+                requirement
+            }
+            ((Some(TT::ConditionalDirective(kind)), Some(_)), DR::Indifferent) if kind.is_end() => {
+                DR::MustBreak
+            }
+            _ => requirement,
+        };
         requirement.map_can_break(parents_support_break)
     }
 
@@ -286,16 +330,26 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 )),
             ) => Some(DR::MustBreak),
             (
-                Some(
-                    TT::ConditionalDirective(_)
-                    | TT::Comment(
-                        CommentKind::IndividualLine
-                        | CommentKind::InlineLine
-                        | CommentKind::MultilineBlock,
-                    ),
-                ),
+                Some(TT::Comment(
+                    CommentKind::IndividualLine
+                    | CommentKind::InlineLine
+                    | CommentKind::MultilineBlock,
+                )),
                 _,
             ) => Some(DR::MustBreak),
+            (Some(TT::ConditionalDirective(_)), _)
+                if line
+                    .get_tokens()
+                    .get(line_index.wrapping_sub(1) as usize)
+                    .copied()
+                    != line
+                        .get_tokens()
+                        .get(line_index as usize)
+                        .map(|&idx| idx.wrapping_sub(1)) =>
+            {
+                // If the conditional directive is not in the current line
+                Some(DR::MustBreak)
+            }
             _ => None,
         }
     }
@@ -309,7 +363,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
             (0..line_index)
                 .rev()
                 .flat_map(|index| self.get_token_type_for_line_index(line, index))
-                .find(|token_type| !token_type.is_comment_or_directive()),
+                .find(|token_type| !token_type.is_comment_or_compiler_directive()),
             self.get_token_type_for_line_index(line, line_index),
         )
     }
