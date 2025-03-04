@@ -827,6 +827,7 @@ impl<'a> LineFormattingContexts<'a> {
 
         let mut prev_prev_token_type = None;
         let mut prev_token_type = None;
+        let mut prev_directive_token_type = None;
         let mut current = get_token_type_from_line_index(0);
         let mut next_token_type = get_token_type_from_line_index(1);
         while let Some(current_token_type) = current {
@@ -834,7 +835,9 @@ impl<'a> LineFormattingContexts<'a> {
                 let last_context_type = contexts.current_context.get().context_type;
                 // New contexts relating to the previous token are pushed here
                 // to avoid including any leading comments
-                if let Some(prev_token_type) = prev_token_type {
+                if let (Some(prev_token_type), Some(prev_directive_token_type)) =
+                    (prev_token_type, prev_directive_token_type)
+                {
                     match (prev_token_type, last_context_type) {
                         (TT::Op(OK::LParen | OK::LBrack | OK::LessThan(ChK::Generic)), _)
                         | (TT::Op(OK::Semicolon), CT::SemicolonList) => {
@@ -858,7 +861,7 @@ impl<'a> LineFormattingContexts<'a> {
                         }
                         _ => {}
                     }
-                    match prev_token_type {
+                    match prev_directive_token_type {
                         TT::Keyword(KK::Of) => {
                             contexts.push(CT::Subject);
                             contexts.push_expression();
@@ -1199,6 +1202,9 @@ impl<'a> LineFormattingContexts<'a> {
             if !current_token_type.is_comment_or_directive() {
                 prev_prev_token_type = prev_token_type;
                 prev_token_type = current;
+            }
+            if !current_token_type.is_comment_or_compiler_directive() {
+                prev_directive_token_type = current;
             }
             current = next_token_type;
             next_token_type = get_token_type_from_line_index(contexts.line_index + 1);

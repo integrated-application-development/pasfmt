@@ -448,9 +448,6 @@ impl LogicalLine {
     pub fn get_parent(&self) -> Option<LineParent> {
         self.parent
     }
-    pub fn set_parent(&mut self, parent: Option<LineParent>) {
-        self.parent = parent;
-    }
     pub fn get_level(&self) -> u16 {
         self.level
     }

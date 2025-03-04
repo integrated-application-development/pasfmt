@@ -287,6 +287,28 @@ mod directives {
                                 {$if} A.A {$else} B.B {$endif}
                                     + {$if} A.A {$else} B.B {$endif};
                             );
+                ",
+                dot_wrapping = "
+                    A :=
+                        {$if}
+                        AAAA.
+                        {$else}
+                        AAAA.
+                        {$endif} BBBB;
+                    A :=
+                        {$if}
+                        AAAA.BBBB
+                        {$else}
+                        AAAA.BBBB
+                        {$endif};
+                    A :=
+                        {$if}
+                        AAAAAAAAAAAAA
+                            .BBBBBBBBBBBBB
+                        {$else}
+                        AAAAAAAAAAAAA
+                            .BBBBBBBBBBBBB
+                        {$endif};
                 "
             );
         }
