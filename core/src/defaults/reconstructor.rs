@@ -45,14 +45,30 @@ enum TokPos {
 
 impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
     fn reconstruct(&self, formatted_tokens: FormattedTokens, buf: &mut String) {
+        const MISSING_LINE_BREAK_WARN: &str = "Fixed missing line break after single-line comment";
+
+        let mut must_break = false;
+
         formatted_tokens
             .get_tokens()
             .iter()
             .for_each(|(token, formatting_data)| {
+                let is_eof = matches!(token.get_token_type(), TokenType::Eof);
+
                 if formatting_data.is_ignored() {
+                    if must_break && !token.get_leading_whitespace().contains('\n') && !is_eof {
+                        log::warn!("{}", MISSING_LINE_BREAK_WARN);
+                        buf.push_str(self.reconstruction_settings.get_newline_str());
+                    };
                     buf.push_str(token.get_leading_whitespace());
                 } else {
-                    (0..formatting_data.newlines_before)
+                    let nls = if must_break && formatting_data.newlines_before == 0 && !is_eof {
+                        log::warn!("{}", MISSING_LINE_BREAK_WARN);
+                        1
+                    } else {
+                        formatting_data.newlines_before
+                    };
+                    (0..nls)
                         .for_each(|_| buf.push_str(self.reconstruction_settings.get_newline_str()));
                     (0..formatting_data.indentations_before).for_each(|_| {
                         buf.push_str(self.reconstruction_settings.get_indentation_str())
@@ -64,6 +80,9 @@ impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
                 };
 
                 buf.push_str(token.get_content());
+
+                must_break =
+                    matches!(token.get_token_type(), TokenType::Comment(ck) if ck.is_singleline());
             });
     }
 
@@ -468,6 +487,44 @@ mod tests {
                 ignored_formatting_data(),
             )]),
             "\n \n\ttoken1",
+        );
+    }
+
+    #[test]
+    fn singleline_comment_safety() {
+        run_test(
+            FormattedTokens::new(vec![
+                (
+                    &new_token("//", TokenType::Comment(CommentKind::IndividualLine)),
+                    FormattingData::from(""),
+                ),
+                (
+                    &new_token("A", TokenType::Identifier),
+                    FormattingData::from(" "),
+                ),
+                (
+                    &new_token("//", TokenType::Comment(CommentKind::InlineLine)),
+                    FormattingData::from(""),
+                ),
+                (
+                    &new_token("A", TokenType::Identifier),
+                    ignored_formatting_data(),
+                ),
+                (
+                    &new_token("{}", TokenType::Comment(CommentKind::InlineBlock)),
+                    FormattingData::from(""),
+                ),
+                (
+                    &new_token("A", TokenType::Identifier),
+                    FormattingData::from(""),
+                ),
+                (
+                    &new_token("//", TokenType::Comment(CommentKind::InlineBlock)),
+                    FormattingData::from(""),
+                ),
+                (&new_token("", TokenType::Eof), FormattingData::from("")),
+            ]),
+            "//\n A//\nA{}A//",
         );
     }
 
