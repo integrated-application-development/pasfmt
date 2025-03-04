@@ -594,7 +594,11 @@ mod comments {
                       case AAA of
                         BBB: ( //
                           F: FFF;
-                        )
+                        );
+                        BBB: (
+                          //
+                          F: FFF;
+                        );
                       end;
                 ",
             );
@@ -615,6 +619,10 @@ mod comments {
                         B
                         {$endif} //
                     );
+                    {$if}
+                      {$define A} //
+                      {$define A} {} {}
+                    {$endif}
                 ",
             );
         }

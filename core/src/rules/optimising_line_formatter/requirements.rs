@@ -27,7 +27,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
 
         let parents_support_break = contexts_data.parents_support_break();
 
-        if let Some(value) = self.require_formatting_invariants(line_index, line) {
+        if let Some(value) = self.get_formatting_invariant(line_index, line) {
             return value.map_can_break(parents_support_break);
         }
 
@@ -312,7 +312,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
         requirement.map_can_break(parents_support_break)
     }
 
-    fn require_formatting_invariants(
+    pub(super) fn get_formatting_invariant(
         &self,
         line_index: u32,
         line: &LogicalLine,
@@ -321,6 +321,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
             self.get_prev_token_type_for_line_index(line, line_index),
             self.get_token_type_for_line_index(line, line_index),
         ) {
+            (None, _) => Some(DR::MustNotBreak),
             (_, Some(TT::Comment(CommentKind::InlineLine | CommentKind::InlineBlock))) => {
                 Some(DR::MustNotBreak)
             }

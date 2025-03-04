@@ -135,7 +135,7 @@ struct LineChildren {
     descendant_count: u32,
 }
 
-#[derive(Hash, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
 enum ChildLineOption {
     ContinueAll,
     BreakAll(LineWhitespace),
@@ -304,23 +304,43 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             content: content_len,
         } = self.token_lengths[first_token_index];
 
-        let (new_line, requirement, last_line_length, base_can_break) = match first_token_decision {
-            FirstDecision::Break => (
+        let (new_line, requirement, last_line_length, base_can_break) = match (
+            self.get_formatting_invariant(0, line.1),
+            first_token_decision,
+        ) {
+            (Some(DR::MustNotBreak), FirstDecision::Break) => (
+                Decision::Continue,
+                DR::MustNotBreak,
+                spaces_before + content_len,
+                true,
+            ),
+            (_, FirstDecision::Break) => (
                 Decision::Break { continuations: 0 },
                 DR::MustBreak,
                 starting_ws.len(self.recon_settings) + content_len,
                 true,
             ),
-            FirstDecision::Continue {
-                line_length,
-                can_break,
-            } => (
+            (
+                _,
+                FirstDecision::Continue {
+                    line_length,
+                    can_break,
+                },
+            ) => (
                 Decision::Continue,
                 DR::MustNotBreak,
                 line_length + spaces_before + content_len,
                 can_break,
             ),
         };
+
+        let invariants = self.get_formatting_invariant(0, line.1);
+        if let (Some(DR::MustNotBreak), NL::Break) | (Some(DR::MustBreak), NL::Continue) =
+            (invariants, new_line.to_raw())
+        {
+            // this line breaks a formatting invariant
+            return Err(FormattingSolutionError::NoSolutionFound);
+        }
 
         let decision_tree = ParentPointerTree::new(TokenDecision {
             decision: new_line,
@@ -694,20 +714,18 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 continuations: 0,
             };
 
-        let must_break = matches!(
-            line_children
-                .line_indices
-                .first()
-                .and_then(|&child_line| self.lines.get(child_line))
-                .and_then(|child_line| self.get_prev_token_type_for_line_index(child_line, 0)),
-            Some(
-                TT::ConditionalDirective(_)
-                    | TT::Comment(
-                        CommentKind::IndividualLine
-                            | CommentKind::InlineLine
-                            | CommentKind::MultilineBlock,
-                    ),
-            )
+        let Some(first_child) = line_children
+            .line_indices
+            .first()
+            .and_then(|&idx| self.lines.get(idx))
+        else {
+            // There are no child solutions with no child lines
+            return PotentialSolutions::One(vec![]);
+        };
+
+        let must_break_first_child = matches!(
+            self.get_formatting_invariant(0, first_child),
+            Some(DR::MustBreak)
         );
 
         let starting_options = match self.get_token_type(global_token_index) {
@@ -761,7 +779,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                           ...
                     */
                     (_, Some(TT::Keyword(KK::If))) => {
-                        if must_break {
+                        if must_break_first_child {
                             Potentials::One(ChildLineOption::BreakAll(parent_indented_ws))
                         } else {
                             Potentials::One(ChildLineOption::ContinueThenBreak(parent_base_ws))
@@ -775,7 +793,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                         end
                     */
                     (_, Some(TT::Keyword(KK::Begin))) => {
-                        if self.settings.break_before_begin || must_break {
+                        if self.settings.break_before_begin || must_break_first_child {
                             Potentials::One(ChildLineOption::BreakAll(parent_base_ws))
                         } else {
                             Potentials::One(ChildLineOption::ContinueThenBreak(parent_base_ws))
@@ -801,7 +819,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                     line_children.descendant_count,
                 ) {
                     (Some(false), Some(TT::Keyword(KK::Begin)), _) => {
-                        if self.settings.break_before_begin || must_break {
+                        if self.settings.break_before_begin || must_break_first_child {
                             Potentials::One(ChildLineOption::BreakAll(parent_base_ws))
                         } else {
                             Potentials::Two(
@@ -823,7 +841,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             Some(TT::Op(OK::Colon)) => {
                 match (get_first_child_token(), line_children.descendant_count) {
                     (Some(TT::Keyword(KK::Begin)), _) => {
-                        if self.settings.break_before_begin || must_break {
+                        if self.settings.break_before_begin || must_break_first_child {
                             Potentials::One(ChildLineOption::BreakAll(parent_base_ws))
                         } else {
                             Potentials::Two(
@@ -832,7 +850,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                             )
                         }
                     }
-                    (Some(TT::Op(OK::Semicolon)), 1) if !must_break => {
+                    (Some(TT::Op(OK::Semicolon)), 1) if !must_break_first_child => {
                         // Exception for empty body case, e.g., `A:;`
                         Potentials::One(ChildLineOption::ContinueAll)
                     }
@@ -858,13 +876,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         };
 
         starting_options.and_then(|option| {
-            if matches!(
-                option,
-                ChildLineOption::ContinueAll | ChildLineOption::ContinueThenBreak(_)
-            ) && must_break
-            {
-                return None;
-            }
+            trace!("Exploring child lines option {option:?}");
             let child_starting_ws = match option {
                 ChildLineOption::ContinueAll => LineWhitespace::zero(),
                 ChildLineOption::BreakAll(starting_ws)
