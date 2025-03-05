@@ -1,4 +1,4 @@
-use std::{error::Error, fs::read_to_string, path::Path};
+use std::{error::Error, fs::read_to_string, path::Path, sync::LazyLock};
 
 use itertools::Itertools;
 use pretty_assertions::assert_str_eq;
@@ -7,6 +7,26 @@ use crate::suites::get_input_output;
 
 use super::ErrorString;
 use pasfmt_core::prelude::*;
+
+struct ErrorLogger;
+impl log::Log for ErrorLogger {
+    fn enabled(&self, _metadata: &log::Metadata) -> bool {
+        true
+    }
+
+    fn log(&self, record: &log::Record) {
+        if matches!(record.level(), log::Level::Error) {
+            panic!("{:?} logged an error:\n{}", record.file(), record.args());
+        }
+    }
+
+    fn flush(&self) {}
+}
+static LOGGER: ErrorLogger = ErrorLogger {};
+static SET_LOGGER: LazyLock<()> = LazyLock::new(|| {
+    log::set_logger(&LOGGER).expect("logger should not already be configured");
+    log::set_max_level(log::LevelFilter::Trace);
+});
 
 fn get_specified_line_length(input: &str) -> Option<u32> {
     const WRAP_COLUMN_PAT: &str = "// wrap_column=";
@@ -23,6 +43,8 @@ fn get_specified_line_length(input: &str) -> Option<u32> {
 }
 
 fn run_test(input: &str) -> datatest_stable::Result<()> {
+    *SET_LOGGER;
+
     // The default max_line_length is small in tests to make writing tests
     // more simple and more concise.
     const DEFAULT_MAX_LINE_LENGTH: u32 = 30;

@@ -5,6 +5,7 @@ edition = "2021"
 
 [dev-dependencies]
 datatest-stable = { workspace = true }
+log = { workspace = true }
 pasfmt-core = { path = "..", features = [ "_lang_types_from_str" ] }
 spectral = { workspace = true }
 indoc = { workspace = true }

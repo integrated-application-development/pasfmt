@@ -393,6 +393,7 @@ dependencies = [
  "fxhash",
  "indoc",
  "itertools 0.12.1",
+ "log",
  "pasfmt-core",
  "pretty_assertions",
  "spectral",
