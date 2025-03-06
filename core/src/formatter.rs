@@ -105,10 +105,18 @@ impl Formatter {
         for token_remover in self.token_removers.iter() {
             token_remover.remove_tokens((&tokens, &lines), &mut tokens_marked_for_deletion);
         }
+
         if ignored_tokens.any_marked() {
             tokens_marked_for_deletion
                 .set
                 .retain(|idx| !ignored_tokens.is_marked(idx));
+
+            for line in &mut lines {
+                let mut line_tokens = line.get_tokens().iter();
+                if line_tokens.all(|t| ignored_tokens.is_marked(t)) {
+                    line.void_and_drain();
+                }
+            }
         }
 
         delete_marked_tokens(
@@ -680,6 +688,96 @@ mod tests {
             .reconstructor(default_test_reconstructor())
             .build();
         run_test(formatter, "()()", "( )( ) ");
+    }
+
+    mod ignored_lines {
+        use super::*;
+
+        struct AssertNLinesVoided(usize);
+        impl LogicalLineFileFormatter for AssertNLinesVoided {
+            fn format(&self, _: &mut FormattedTokens<'_>, lines: &[LogicalLine]) {
+                assert_eq!(
+                    self.0,
+                    lines
+                        .iter()
+                        .filter(|line| line.get_line_type() == LogicalLineType::Voided)
+                        .count(),
+                    "expected voided line count doesn't match actual count"
+                );
+            }
+        }
+
+        fn assert_voided_line_count(expected_count: usize, input: &str) {
+            let formatter = Formatter::builder()
+                .lexer(DelphiLexer {})
+                .parser(DelphiLogicalLineParser {})
+                .token_ignorer(FormattingToggler {})
+                .file_formatter(AssertNLinesVoided(expected_count))
+                .reconstructor(default_test_reconstructor())
+                .build();
+            run_test(formatter, input, input)
+        }
+
+        #[test]
+        fn no_children() {
+            assert_voided_line_count(
+                3,
+                "\
+A := B;
+      // pasfmt off - voided line #1
+Foo ; // voided line #2
+Bar ; // voided line #3
+Baz (
+    '',
+    0
+// pasfmt on
+);
+Bar;
+",
+            );
+        }
+
+        #[test]
+        fn around_child_line() {
+            assert_voided_line_count(
+                3,
+                "\
+A := procedure begin
+      // pasfmt off - voided line #1
+  A ; // voided line #2
+      // pasfmt on - voided line #3
+end;
+",
+            );
+        }
+        #[test]
+        fn around_parent_line() {
+            assert_voided_line_count(
+                4,
+                "\
+// pasfmt off - voided line #1
+A:=procedure begin // voided line #2
+  A ; // voided line #3
+end;
+ // pasfmt on - voided line #4
+",
+            );
+        }
+
+        #[test]
+        fn around_multiple_child_branches() {
+            assert_voided_line_count(
+                3,
+                "\
+if True then
+  {pasfmt off} // voided line #1
+ A             // voided line #2
+else
+ B             // voided line #3
+; {pasfmt on}
+",
+            );
+        }
     }
 
     struct MakeMultiplySignIdentifier;

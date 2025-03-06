@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Stopped deleting "voided" lines.
+- Void lines which consist of only ignored tokens.
+  This is closer to what a user would expect from the action of 'disabling' formatting; they may
+  be using the `{pasfmt off}` comment to get around some performance issue, or some error.
 
 ### Added
 
