@@ -105,10 +105,18 @@ impl Formatter {
         for token_remover in self.token_removers.iter() {
             token_remover.remove_tokens((&tokens, &lines), &mut tokens_marked_for_deletion);
         }
+
         if ignored_tokens.any_marked() {
             tokens_marked_for_deletion
                 .set
                 .retain(|idx| !ignored_tokens.is_marked(idx));
+
+            for line in &mut lines {
+                let mut line_tokens = line.get_tokens().iter();
+                if line_tokens.all(|t| ignored_tokens.is_marked(t)) {
+                    line.void_and_drain();
+                }
+            }
         }
 
         delete_marked_tokens(
@@ -680,6 +688,44 @@ mod tests {
             .reconstructor(default_test_reconstructor())
             .build();
         run_test(formatter, "()()", "( )( ) ");
+    }
+
+    struct AssertNLinesVoided<const N: usize>;
+    impl<const N: usize> LogicalLineFileFormatter for AssertNLinesVoided<N> {
+        fn format(&self, _: &mut FormattedTokens<'_>, lines: &[LogicalLine]) {
+            assert_eq!(
+                N,
+                lines
+                    .iter()
+                    .filter(|line| line.get_line_type() == LogicalLineType::Voided)
+                    .count(),
+                "expected voided line count doesn't match actual count"
+            );
+        }
+    }
+
+    #[test]
+    fn ignored_lines() {
+        let formatter = Formatter::builder()
+            .lexer(DelphiLexer {})
+            .parser(DelphiLogicalLineParser {})
+            .token_ignorer(FormattingToggler {})
+            .file_formatter(AssertNLinesVoided::<3>)
+            .reconstructor(default_test_reconstructor())
+            .build();
+        let input = "\
+A := B;
+  // pasfmt off
+Foo ;
+Bar ;
+Baz (
+    '',
+    0
+// pasfmt on
+);
+Bar;
+";
+        run_test(formatter, input, input);
     }
 
     struct MakeMultiplySignIdentifier;
