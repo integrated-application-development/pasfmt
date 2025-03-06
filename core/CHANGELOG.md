@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `ConditionalDirectiveConsolidator` to combine _simple_ conditional statements into a single `LogicalLine`.
 - Added `KeywordKind::is_numeric_operator`.
+- Added `CommentKind::is_singleline`.
 
 ## [0.4.0-rc1] - 2025-02-20
 

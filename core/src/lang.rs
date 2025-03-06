@@ -326,6 +326,12 @@ pub enum CommentKind {
     IndividualLine,
 }
 
+impl CommentKind {
+    pub fn is_singleline(&self) -> bool {
+        matches!(self, CommentKind::InlineLine | CommentKind::IndividualLine)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum ConditionalDirectiveKind {
     If,
