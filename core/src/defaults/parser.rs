@@ -1442,12 +1442,12 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         while !(matches!(self.get_token_type::<-1>(), Some(TT::Op(OK::RParen)))
             && paren_level >= self.paren_level)
         {
-            if matches!(
-                self.get_current_token_type(),
-                Some(TT::Op(OK::Semicolon | OK::LParen))
-            ) {
-                fix_next_eq(self);
+            match self.get_current_token_type() {
+                Some(TT::Op(OK::Semicolon | OK::LParen)) => fix_next_eq(self),
+                None => break,
+                _ => {}
             }
+
             match self.get_current_token_type_window() {
                 (Some(TT::Op(OK::Colon | OK::Dot)), Some(TT::IdentifierOrKeyword(_)), _) => {
                     self.consolidate_current_ident()

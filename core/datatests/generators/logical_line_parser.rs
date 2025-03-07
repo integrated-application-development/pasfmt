@@ -33,6 +33,7 @@ pub fn generate_test_files(root_dir: &Path) {
     statements::generate(root_dir);
     attributes::generate(root_dir);
     semicolons::generate(root_dir);
+    regression::generate(root_dir);
 }
 
 mod directives {
@@ -3118,6 +3119,19 @@ mod semicolons {
                 1  |begin{{1}}
                 _^1|  Foo{}
                 1  |end;
+            ",
+        );
+    }
+}
+
+mod regression {
+    use super::*;
+
+    pub fn generate(root_dir: &Path) {
+        generate_test_cases!(
+            root_dir,
+            unterminated_param_list = "
+                _|procedure F(
             ",
         );
     }
