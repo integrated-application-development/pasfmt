@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed spacing around generics with composite type parameters (e.g. `array of`, `set of`, `string[10]`).
 - Fixed fields being merged with comments in variant records.
 - Fixed end of line comment placement after compiler directives.
+- Fixed infinite loop on unterminated parameter list.
 
 ### Changed
 
