@@ -749,7 +749,7 @@ checksum = "0ab1bc2a289d34bd04a330323ac98a1b4bc82c9d9fcb1e66b63caa84da26b575"
 
 [[package]]
 name = "pasfmt"
-version = "0.4.0-rc1+dev"
+version = "0.4.0-rc2"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -771,7 +771,7 @@ dependencies = [
 
 [[package]]
 name = "pasfmt-core"
-version = "0.4.0-rc1+dev"
+version = "0.4.0-rc2"
 dependencies = [
  "criterion",
  "fxhash",
@@ -791,7 +791,7 @@ dependencies = [
 
 [[package]]
 name = "pasfmt-orchestrator"
-version = "0.4.0-rc1+dev"
+version = "0.4.0-rc2"
 dependencies = [
  "anstyle",
  "anyhow",

@@ -1,6 +1,6 @@
 [package]
 name = "pasfmt"
-version = "0.4.0-rc1+dev"
+version = "0.4.0-rc2"
 edition = "2021"
 
 # To allow splitting integration tests into separate files without creating multiple test binaries
