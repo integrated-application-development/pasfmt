@@ -11,7 +11,7 @@ impl TokenIgnorer for IgnoreNonUnitImportClauses {
         (tokens, lines): (&[Token], &[LogicalLine]),
         token_marker: &mut TokenMarker,
     ) {
-        if let Some(TokenType::Keyword(Program | Library | Package)) = tokens
+        if let Some(TokenType::Keyword(Unit)) = tokens
             .iter()
             .find(|token| {
                 !matches!(
@@ -23,21 +23,32 @@ impl TokenIgnorer for IgnoreNonUnitImportClauses {
             })
             .map(Token::get_token_type)
         {
-            lines
-                .iter()
-                .filter(|line| line.get_line_type() == LogicalLineType::ImportClause)
-                .for_each(|line| self.ignore_clause_line(line, token_marker));
-        };
+            return;
+        }
+
+        let mut lines_iter = lines.iter();
+        while let Some((&start, &end)) = Self::get_next_clause_range(&mut lines_iter, tokens) {
+            for token in start..=end {
+                token_marker.mark(token);
+            }
+        }
     }
 }
 impl IgnoreNonUnitImportClauses {
-    fn ignore_clause_line(&self, line: &LogicalLine, token_marker: &mut TokenMarker) {
-        let Some((&start, &end)) = line.get_tokens().iter().minmax().into_option() else {
-            return;
-        };
-        for token in start..=end {
-            token_marker.mark(token);
-        }
+    fn get_next_clause_range<'a>(
+        lines: &mut impl Iterator<Item = &'a LogicalLine>,
+        tokens: &[Token],
+    ) -> Option<(&'a usize, &'a usize)> {
+        lines
+            .skip_while(|line| {
+                line.get_tokens().first().is_some_and(|&i| {
+                    !matches!(tokens[i].get_token_type(), TokenType::Keyword(Uses))
+                })
+            })
+            .take_while_inclusive(|line| line.get_line_type() != LogicalLineType::ImportClause)
+            .flat_map(|line| line.get_tokens())
+            .minmax()
+            .into_option()
     }
 }
 
@@ -63,6 +74,20 @@ mod tests {
             }
         }
     }
+    struct BreakBeforeAllLines {}
+    impl LogicalLineFileFormatter for BreakBeforeAllLines {
+        fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, lines: &[LogicalLine]) {
+            for line in lines.iter().skip(1) {
+                if let Some(&first) = line.get_tokens().first() {
+                    let formatting_data = formatted_tokens
+                        .get_formatting_data_mut(first)
+                        .expect("formatting data should exist");
+                    formatting_data.newlines_before = 1;
+                    formatting_data.spaces_before = 0;
+                }
+            }
+        }
+    }
 
     fn formatter() -> Formatter {
         Formatter::builder()
@@ -70,6 +95,7 @@ mod tests {
             .parser(DelphiLogicalLineParser {})
             .token_ignorer(IgnoreNonUnitImportClauses {})
             .file_formatter(AddSpaceAfterComma {})
+            .file_formatter(BreakBeforeAllLines {})
             .reconstructor(default_test_reconstructor())
             .build()
     }
@@ -152,16 +178,22 @@ mod tests {
                             stringify!($typ),
                             "
                              foo;
-                            uses a, {$ifdef A},  b  {$endif};
+                            uses a {$ifdef A},  b  {$endif};
                             (a,b,c);
+                            uses a {$ifdef A},  b  {$endif} ,  c;
+                            (a,b,c);
+                            uses {$ifdef A}  a  {$endif} ,  b;
                             "
                         ),
                         indoc::concatdoc!(
                             stringify!($typ),
                             "
                              foo;
-                            uses a, {$ifdef A},  b  {$endif};
+                            uses a {$ifdef A},  b  {$endif};
                             (a, b, c);
+                            uses a {$ifdef A},  b  {$endif} ,  c;
+                            (a, b, c);
+                            uses {$ifdef A}  a  {$endif} ,  b;
                             "
                         )
                     },
@@ -190,7 +222,8 @@ mod tests {
             "},
             indoc::indoc! {"
                 unit foo;
-                uses a, b, c;
+                uses
+                a, b, c;
                 (a, b, c);
             "}
         },
@@ -208,7 +241,8 @@ mod tests {
                 {$R}
                 {$ifdef X}
                 unit foo;
-                uses a, b, c;
+                uses
+                a, b, c;
                 (a, b, c);
             "}
         },
@@ -221,9 +255,11 @@ mod tests {
             "},
             indoc::indoc! {"
                 unit foo;
-                uses a, b, c;
+                uses
+                a, b, c;
                 (a, b, c);
-                uses a, b, c;
+                uses
+                a, b, c;
             "}
         }
     );
