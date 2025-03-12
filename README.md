@@ -22,13 +22,13 @@ Try the [web demo](https://integrated-application-development.github.io/pasfmt/)
 [latest release](https://github.com/integrated-application-development/pasfmt/releases/latest),
 or [build from source](#building-from-source).
 
-To format one `pas`, `dpr`, or `dpk` file (in-place), run
+To format one file (in-place), run
 
 ```sh
 pasfmt path/to/file.pas
 ```
 
-To recursively format all supported files in a directory (in-place), run
+To recursively format all `pas` and `dpr` files in a directory (in-place), run
 
 ```sh
 pasfmt path/to/directory/

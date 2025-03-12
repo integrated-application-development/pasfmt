@@ -58,12 +58,12 @@ fn recursive_directory_search() -> TestResult {
 
     assert_eq!(
         included_files_contents.len(),
-        6,
+        4,
         "Unexpected number of files copied from tests/data/ext/included"
     );
     assert_eq!(
         excluded_files_contents.len(),
-        6,
+        7,
         "Unexpected number of files copied from tests/data/ext/excluded"
     );
 
@@ -140,11 +140,11 @@ fn glob_can_include_any_ext() -> TestResult {
 
     let excluded_glob = tmp.to_string_lossy() + "/data/ext/excluded/*";
     let excluded_files_contents = file_contents(&excluded_glob)?;
-    assert_eq!(excluded_files_contents.len(), 6);
+    assert_eq!(excluded_files_contents.len(), 7);
 
     pasfmt()?
         .current_dir(&tmp)
-        .args(["**/*.*pas*", "**/*.*dpr*", "**/*.*dpk*"])
+        .args(["**/*.*pas*", "**/*.*dpr*", "**/*.*dpk*", "**/*.dpk"])
         .assert()
         .success();
     assert_all_contents_changed(&excluded_glob, &excluded_files_contents)?;

@@ -394,11 +394,7 @@ impl FileFormatter {
 
 fn formattable_file_path(path: &Path) -> bool {
     match path.extension() {
-        Some(ext) => {
-            ext.eq_ignore_ascii_case("pas")
-                || ext.eq_ignore_ascii_case("dpr")
-                || ext.eq_ignore_ascii_case("dpk")
-        }
+        Some(ext) => ext.eq_ignore_ascii_case("pas") || ext.eq_ignore_ascii_case("dpr"),
         None => false,
     }
 }
@@ -417,9 +413,6 @@ mod tests {
         dpr_lower = {"b.dpr"},
         dpr_upper = {"b.DPR"},
         dpr_mixed = {"b.Dpr"},
-        dpk_lower = {"c.dpk"},
-        dpk_upper = {"c.DPK"},
-        dpk_mixed = {"c.Dpk"},
     )]
     fn formattable_file_paths(path: &str) {
         assert!(formattable_file_path(&PathBuf::from(path)));
@@ -441,6 +434,9 @@ mod tests {
         only_dot_pas = {".pas"},
         only_dot_dpr = {".dpr"},
         only_dot_dpk = {".dpk"},
+        dpk_lower = {"c.dpk"},
+        dpk_upper = {"c.DPK"},
+        dpk_mixed = {"c.Dpk"},
     )]
     fn non_formattable_file_paths(path: &str) {
         assert!(!formattable_file_path(&PathBuf::from(path)));
