@@ -55,7 +55,6 @@ impl IgnoreNonUnitImportClauses {
 #[cfg(test)]
 mod tests {
     use paste::paste;
-    use spectral::prelude::*;
 
     use crate::prelude::*;
     use crate::test_utils::formatter_test_group;

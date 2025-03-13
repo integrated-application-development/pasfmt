@@ -212,7 +212,6 @@ fn space_operator(
 #[cfg(test)]
 mod tests {
     use crate::{prelude::*, test_utils::formatter_test_group};
-    use spectral::prelude::*;
 
     fn formatter() -> Formatter {
         Formatter::builder()

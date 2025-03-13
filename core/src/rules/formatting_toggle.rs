@@ -88,7 +88,6 @@ impl TokenIgnorer for FormattingToggler {
 #[cfg(test)]
 mod tests {
     use indoc::indoc;
-    use spectral::prelude::*;
 
     use crate::prelude::*;
     use crate::test_utils::formatter_test_group;

@@ -20,8 +20,6 @@ impl TokenIgnorer for IgnoreAsmIstructions {
 
 #[cfg(test)]
 mod tests {
-    use spectral::prelude::*;
-
     use crate::prelude::*;
     use crate::test_utils::formatter_test_group;
 
