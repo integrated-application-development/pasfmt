@@ -305,7 +305,6 @@ pub fn make_formatter(config: &FormattingConfig) -> Formatter {
         .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
         .lines_consolidator(ConditionalDirectiveConsolidator {})
         .token_ignorer(FormattingToggler {})
-        .token_ignorer(IgnoreNonUnitImportClauses {})
         .token_ignorer(IgnoreAsmIstructions {})
         .file_formatter(TokenSpacing {})
         .line_formatter(FormatterSelector::new(
