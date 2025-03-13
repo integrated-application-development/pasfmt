@@ -7,9 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Fixed
+### Changed
 
-- Fixed conditional directives not being ignored between `uses` and import list in non-units.
+- Uses, contains, and requires clauses in `program`, `package`, and `library` files are no longer ignored.
+  Previously there were concerns over breaking IDE features by formatting these sections, but after some
+  testing and reconsideration we have decided that this is a non-issue and it's better to consistently
+  format all import clauses.
 
 ## [0.4.0-rc2] - 2025-03-12
 
