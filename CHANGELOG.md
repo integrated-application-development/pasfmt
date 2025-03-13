@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Fixed conditional directives not being ignored between `uses` and import list in non-units.
 
+### Changed
+
+- Stopped formatting `.dpk` files in glob/directory file search.
+
 ## [0.4.0-rc2] - 2025-03-12
 
 ### Fixed
