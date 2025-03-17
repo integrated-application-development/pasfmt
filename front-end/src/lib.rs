@@ -304,6 +304,7 @@ pub fn make_formatter(config: &FormattingConfig) -> Formatter {
         .parser(DelphiLogicalLineParser {})
         .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
         .lines_consolidator(ConditionalDirectiveConsolidator {})
+        .lines_consolidator(DeindentPackageDirectives {})
         .token_ignorer(FormattingToggler {})
         .token_ignorer(IgnoreAsmIstructions {})
         .file_formatter(TokenSpacing {})
