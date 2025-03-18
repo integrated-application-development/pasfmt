@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-03-18
+
 ### Changed
 
 - Uses, contains, and requires clauses in `program`, `package`, and `library` files are no longer ignored.
