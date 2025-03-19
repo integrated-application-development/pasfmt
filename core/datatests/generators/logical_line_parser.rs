@@ -2847,6 +2847,13 @@ mod statements {
                     _|  Bar();
                     _|end
                 ",
+                label_if_statement = "
+                    _  |begin
+                    _  |  %111:
+                    _1 |  if A then{1}
+                    _^1|    B;
+                    _  |end
+                ",
                 other_contexts = "
                     _|begin
                     _|  repeat

@@ -1161,6 +1161,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.next_token(); // Label specifier
                     self.next_token(); // Colon
                     self.finish_logical_line();
+                    return;
                 }
                 _ => self.next_token(),
             }
