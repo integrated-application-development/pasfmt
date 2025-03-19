@@ -8,10 +8,12 @@ Extends the provided pascal language definition.
   * add support for multiline strings
   * remove | and % from operators
   * remove treatment of < and > as matched brackets (it's not always generics)
+  * update list of keywords: remove intrinsics and non-Delphi keywords; add missing Delphi keywords.
 */
 
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import * as pascal from "monaco-editor/esm/vs/basic-languages/pascal/pascal";
+import { keywords } from "./generated/keywords";
 
 monaco.languages.register({ id: "delphi" });
 
@@ -89,6 +91,8 @@ let toRemove = lang.tokenizer.root.findIndex(
     Array.isArray(elm) && elm[0].toString() == /[<>](?!@symbols)/.toString()
 );
 lang.tokenizer.root.splice(toRemove, 1);
+
+lang.keywords = keywords;
 
 const conf = structuredClone(pascal.conf);
 
