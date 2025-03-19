@@ -99,7 +99,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                     .unwrap_or_default()
             }
             (
-                Some(TT::Keyword(KK::Class)),
+                Some(TT::Keyword(KK::Class | KK::To)),
                 Some(TT::Keyword(KK::Function | KK::Procedure | KK::Constructor | KK::Destructor)),
             ) => DR::MustNotBreak,
             (

@@ -552,9 +552,6 @@ impl<'a> SpecificContextStack<'a> {
             {
                 self.update_last_matching_context(node, CT::Subject, apply_pivotal_break);
             }
-            (Some(TT::Keyword(KK::To)), Some(TT::Keyword(KK::Procedure | KK::Function))) => {
-                self.update_last_matching_context(node, CT::Subject, apply_pivotal_break);
-            }
             (Some(TT::Op(OK::Assign | OK::Equal(EqKind::Decl))), _) => {
                 let is_type_parens = self
                     .ctx_data_iter(node)

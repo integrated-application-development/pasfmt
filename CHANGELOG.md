@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Never break in the middle of `reference to function` and `reference to procedure`.
+
 ### Fixed
 
 - Fixed formatting of structures after a label.
