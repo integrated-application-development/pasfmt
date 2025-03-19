@@ -1,11 +1,32 @@
-import { defineConfig, PluginOption } from "vite";
-import path from "path";
+import { defineConfig } from "vite";
+import path, { dirname, resolve } from "path";
+import { mkdirSync, readFileSync, writeFileSync } from "fs";
 
 // There's some issue with ES modules and this dependency.
 // Without this hack, there is an error 'monacoEditorPlugin is not a function'.
 import _monacoEditorPlugin from "vite-plugin-monaco-editor";
 const monacoEditorPlugin =
   (_monacoEditorPlugin as any).default || _monacoEditorPlugin;
+
+let keywordGenPlugin = {
+  name: "generate-keywords-module",
+  buildStart() {
+    const keywords = readFileSync("../../misc/keywords.txt")
+      .toString()
+      .split("\n")
+      .map((s) => s.trim());
+
+    const content =
+      "export const keywords = [\n" +
+      keywords.map((kw) => `  "${kw}",\n`).join("") +
+      "];";
+
+    const filePath = resolve(__dirname, "src/generated/keywords.js");
+    mkdirSync(dirname(filePath));
+    writeFileSync(filePath, content);
+    console.log("generated:", filePath);
+  },
+};
 
 export default defineConfig({
   plugins: [
@@ -16,6 +37,7 @@ export default defineConfig({
         return path.join(root, buildOutDir, "monacoeditorwork");
       },
     }),
+    keywordGenPlugin,
   ],
   build: {
     // for top-level await
