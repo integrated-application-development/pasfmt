@@ -1682,24 +1682,24 @@ mod type_decls {
                           ) of object;
                 ",
                 procedure_reference = "
+                    // wrap_column=40                       |
                     type
                       AA = reference to procedure;
-                      AAA =
+                      AAAAAAAAAAAAA =
                           reference to procedure;
-                      AAA =
-                          reference to
-                              procedure(AAA: BBB);
-                      AAA =
-                          reference to
-                              procedure(
-                                  AAAA: BBB
-                              );
-                      AAA =
-                          reference to
-                              procedure(
-                                  AA: B;
-                                  CC: D
-                              );
+                      AAA = reference to procedure(AA: BB);
+                      AAAAA =
+                          reference to procedure(AAA: BBB);
+                      AAAAA =
+                          reference to procedure(
+                              AAAA: BBBB
+                          );
+                ",
+                procedure_reference_no_wrap = "
+                    // wrap_column=28           |
+                    type
+                      AA =
+                          reference to procedure;
                 ",
                 simple_procedure = "
                     type
@@ -1731,17 +1731,29 @@ mod type_decls {
                           ): AAAAAA of object;
                 ",
                 function_reference = "
+                    // wrap_column=40                       |
                     type
-                      AAA = reference to function;
+                      AAA = reference to function: BBBBBBBB;
                       AAA =
-                          reference to
-                              function: BBBBBBBBB;
+                          reference to function: BBBBBBBBB;
+                      AAA = reference to function();
+                      AAA = reference to function(A: B): CC;
+                      AAAA =
+                          reference to function(A: B): CCCC;
+                      AAAA =
+                          reference to function(A: B):
+                              CCCCC;
                       AAA =
-                          reference to
-                              function(
-                                  AA: B;
-                                  CC: D
-                              ): BBBBBBB;
+                          reference to function(
+                              AA: B;
+                              CC: D
+                          ): BBBBBBB;
+                ",
+                function_reference_no_wrap = "
+                    // wrap_column=27          |
+                    type
+                      AA =
+                          reference to function;
                 ",
                 simple_function = "
                     type
