@@ -244,9 +244,13 @@ casing_token_consolidation_test!(
             type
               tfoo = class
               protected
+                const
+                  &PROTECTED = False;
+                var
+                  &PRIVATE: integer;
                 property PUBLIC: integer read PRIVATE stored PROTECTED;
               automated
-              end"
+              end;"
         },
     },
 );
