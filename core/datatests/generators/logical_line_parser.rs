@@ -629,6 +629,23 @@ mod import_clauses {
                     ",
                     $keyword
                 ),
+                comment_between_import_and_item = format!(
+                    "
+                        _|package Foo;
+                        _|{0}
+                        _|  {{}}
+                        _|  A;
+                        _|{0}
+                        _|  //
+                        _|  A;
+                        _|{0}
+                        _|  {{}}
+                        _|  //
+                        _|  {{}}
+                        _|  A;
+                    ",
+                    $keyword
+                ),
             );
         };
     }
@@ -686,6 +703,11 @@ mod exports {
                  |  Bar index 2 name Bar;
                 ---
                 1:ExportClause
+            ",
+            comment_between_export_and_item = "
+                _|exports
+                _|  {}
+                _|  A;
             ",
         );
     }

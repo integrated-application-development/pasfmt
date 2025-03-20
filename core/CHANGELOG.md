@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed parsing of structures after labels.
 - Parsing of visibility specifiers used as identifers outside type declarations.
 
+### Changed
+
+- Comments between `uses`/`contains`/`requires`/`exports` and the first list item are now parsed to
+  their own lines.
+
 ## [0.4.0] - 2025-03-18
 
 ### Added

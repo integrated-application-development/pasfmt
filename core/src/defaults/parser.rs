@@ -478,6 +478,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         context_ending_predicate: CEP::Opaque(never_ending),
                         level: ParserContextLevel::Level(1),
                     });
+                    self.parse_comment_lines();
                     self.parse_expression(); // Identifier
                     self.simple_op_until(after_semicolon(), parse_exports);
                     self.set_logical_line_type(LLT::ExportClause);
@@ -828,6 +829,14 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         self.current_line.pop();
     }
 
+    fn parse_comment_lines(&mut self) {
+        self.parse_block(ParserContext {
+            context_type: ContextType::Utility,
+            context_ending_predicate: CEP::Opaque(not_comment_or_directive),
+            level: ParserContextLevel::Level(0),
+        });
+    }
+
     fn parse_import_clause(&mut self) {
         self.finish_logical_line();
         self.consolidate_current_keyword();
@@ -838,6 +847,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             context_ending_predicate: CEP::Opaque(never_ending),
             level: ParserContextLevel::Level(1),
         });
+        self.parse_comment_lines();
         self.simple_op_until(after_semicolon(), |parser| {
             if let Some(TT::Keyword(KK::In(_))) = parser.get_current_token_type() {
                 parser.set_current_token_type(TT::Keyword(KK::In(InKind::Import)));
@@ -2170,6 +2180,12 @@ fn except_finally(parser: &LLP) -> bool {
         parser.get_current_token_type(),
         Some(TT::Keyword(KK::Except | KK::Finally))
     )
+}
+
+fn not_comment_or_directive(parser: &LLP) -> bool {
+    parser
+        .get_current_token_type()
+        .is_none_or(|t| !t.is_comment_or_directive())
 }
 
 fn declaration_section(parser: &LLP) -> bool {
