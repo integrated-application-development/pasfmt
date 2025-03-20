@@ -359,6 +359,7 @@ mod comments {
         midline_block::generate(root_dir);
         child_lines::generate(root_dir);
         conditional_directives::generate(root_dir);
+        individual_block::generate(root_dir);
     }
 
     mod midline_line {
@@ -497,6 +498,15 @@ mod comments {
                             and FFFFFFFFFFFF then
                       ;
                 ",
+                between_import_and_item = {
+                    "
+                    uses {} A;
+                    ",
+                    "
+                    uses {}
+                      A;
+                    "
+                }
             );
         }
     }
@@ -624,6 +634,48 @@ mod comments {
                       {$define A} {} {}
                     {$endif}
                 ",
+            );
+        }
+    }
+
+    mod individual_block {
+        use super::*;
+
+        pub fn generate(root_dir: &Path) {
+            generate_test_cases!(
+                root_dir,
+                between_import_and_item = "
+                    package;
+                    uses
+                      {}
+                      A;
+
+                    uses
+                      {}
+                      {}
+                      A;
+
+                    exports
+                      {}
+                      A;
+                    requires
+                      {}
+                      A;
+                    contains
+                      {}
+                      A;
+                ",
+                between_import_and_item_add_break_after = {
+                    "
+                    uses
+                      {} A;
+                    ",
+                    "
+                    uses
+                      {}
+                      A;
+                    "
+                }
             );
         }
     }
