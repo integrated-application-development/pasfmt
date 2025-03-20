@@ -1,0 +1,36 @@
+name: Build Web Demo
+description: Build the web demo
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - uses: jetli/wasm-pack-action@v0.4.0
+      with:
+        version: 'latest'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Install dependencies
+      shell: sh
+      run: |
+        cd web/demo
+        npm install
+
+    - name: Build with wasm-pack
+      shell: sh
+      run: |
+        cd web
+        wasm-pack build --target web
+
+    - name: Build with vite
+      shell: sh
+      run: |
+        cd web/demo
+        npx vite build

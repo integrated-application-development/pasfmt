@@ -1,0 +1,17 @@
+name: Build Web Demo
+
+on:
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build Web Demo
+        uses: ./.github/workflows/build-web-demo/
