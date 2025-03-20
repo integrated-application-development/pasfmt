@@ -3140,6 +3140,15 @@ mod regression {
             unterminated_param_list = "
                 _|procedure F(
             ",
+            visibility_keywords_outside_type_decl = "
+                _|const
+                _|  Strict = 0;
+                _|  Automated = 0;
+                _|  Private = 0;
+                _|  Protected = 0;
+                _|  Public = 0;
+                _|  Published = 0;
+            "
         );
     }
 }
