@@ -27,32 +27,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - uses: jetli/wasm-pack-action@v0.4.0
-        with:
-          version: 'latest'
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: |
-          cd web/demo
-          npm install
-
-      - name: Build with wasm-pack
-        run: |
-          cd web
-          wasm-pack build --target web
-
-      - name: Build with vite
-        run: |
-          cd web/demo
-          npx vite build
+      - name: Build Web Demo
+        uses: ./.github/workflows/build-web-demo/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
