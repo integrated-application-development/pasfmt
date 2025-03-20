@@ -73,7 +73,7 @@ fn bench_lex_submodules(submodules: &[(&str, &PathBuf)], c: &mut Criterion) {
     group.finish();
 }
 
-fn execute_command(mut command: Command) {
+fn execute_command(command: &mut Command) {
     let output = command
         .output()
         .unwrap_or_else(|e| panic!("failed to launch subprocess: {command:?}. {e}"));
@@ -89,42 +89,73 @@ fn execute_command(mut command: Command) {
     }
 }
 
-fn init_submodules() {
-    let mut command = Command::new("git");
-    command
-        .arg("submodule")
-        .arg("update")
-        .arg("--init")
-        .arg("--checkout")
-        .arg("--force");
-    execute_command(command);
+fn clone_repo(url: &str, sha: &str) {
+    eprintln!("Cloning {url} ({sha})");
+    let clone_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("benches/clones")
+        .join(url.split('/').last().expect("URL should contain '/'"));
+    execute_command(Command::new("git").arg("init").arg(&clone_dir));
+
+    if Command::new("git")
+        .current_dir(&clone_dir)
+        .args(["remote", "set-url", "origin", url])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .is_none()
+    {
+        execute_command(
+            Command::new("git")
+                .current_dir(&clone_dir)
+                .args(["remote", "add", "origin", url]),
+        );
+    }
+    execute_command(Command::new("git").current_dir(&clone_dir).args([
+        "fetch",
+        "--depth=1",
+        "origin",
+        sha,
+    ]));
+    execute_command(
+        Command::new("git")
+            .current_dir(&clone_dir)
+            .args(["reset", "--hard", sha]),
+    );
+}
+
+fn init_clones() {
+    clone_repo(
+        "https://github.com/IndySockets/Indy",
+        "0d6819aa8eaf6afcae9112ea6b8ca8dfa2d7be05",
+    );
+    clone_repo(
+        "https://github.com/MHumm/DelphiEncryptionCompendium",
+        "91d6e66bdb900c23f7e852401c579cc4a7f6a0db",
+    );
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let submodule_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("benches/modules");
-    set_current_dir(&submodule_dir).unwrap_or_else(|_| {
-        panic!("failed to change into the source directory: {submodule_dir:?}")
-    });
+    let clones_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("benches/clones");
+    set_current_dir(&clones_dir)
+        .unwrap_or_else(|_| panic!("failed to change into the source directory: {clones_dir:?}"));
 
-    init_submodules();
+    init_clones();
 
     bench_format_submodules(
         &[
-            ("Indy", &submodule_dir.join("Indy")),
-            ("DEC", &submodule_dir.join("DelphiEncryptionCompendium")),
+            ("Indy", &clones_dir.join("Indy")),
+            ("DEC", &clones_dir.join("DelphiEncryptionCompendium")),
         ],
         c,
     );
 
     bench_lex_submodules(
         &[
-            ("Indy", &submodule_dir.join("Indy")),
-            ("DEC", &submodule_dir.join("DelphiEncryptionCompendium")),
+            ("Indy", &clones_dir.join("Indy")),
+            ("DEC", &clones_dir.join("DelphiEncryptionCompendium")),
         ],
         c,
     );
-
-    init_submodules();
 }
 
 criterion_group!(benches, criterion_benchmark);
