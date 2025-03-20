@@ -501,7 +501,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 )
                 | TT::IdentifierOrKeyword(
                     KK::Private | KK::Protected | KK::Public | KK::Published | KK::Automated,
-                ) => {
+                ) if self.is_in_type_decl() => {
                     if let Some(TT::IdentifierOrKeyword(KK::Strict)) = self.get_token_type::<-1>() {
                         self.consolidate_prev_keyword();
                     }
@@ -2052,6 +2052,13 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             global_token_index: self.get_current_token_index().unwrap(),
         }
     }
+
+    fn is_in_type_decl(&self) -> bool {
+        self.context
+            .contexts
+            .iter()
+            .any(|c| matches!(c.context_type, ContextType::TypeDeclaration))
+    }
 }
 enum OpResult {
     Break,
@@ -2178,45 +2185,34 @@ fn declaration_section(parser: &LLP) -> bool {
         (Some(TT::Op(OK::Equal(_)) | TT::Keyword(KK::Packed)), Some(TT::Keyword(KK::Class))) => {
             false
         }
-        (
-            _,
-            Some(
-                TT::Keyword(
-                    KK::Label
-                    | KK::Const(_)
-                    | KK::Type
-                    | KK::Var(_)
-                    | KK::Exports
-                    | KK::ThreadVar
-                    | KK::Begin
-                    | KK::Asm
-                    | KK::Strict
-                    | KK::Private
-                    | KK::Protected
-                    | KK::Public
-                    | KK::Published
-                    | KK::Automated
-                    | KK::Class
-                    | KK::Property
-                    | KK::Function
-                    | KK::Procedure
-                    | KK::Constructor
-                    | KK::Destructor
-                    | KK::End
-                    | KK::Implementation
-                    | KK::Initialization
-                    | KK::Finalization,
-                )
-                | TT::IdentifierOrKeyword(
-                    KK::Strict
-                    | KK::Private
-                    | KK::Protected
-                    | KK::Public
-                    | KK::Published
-                    | KK::Automated,
-                ),
-            ),
-        ) => true,
+        (_, Some(TT::Keyword(kk) | TT::IdentifierOrKeyword(kk))) => match kk {
+            KK::Label
+            | KK::Const(_)
+            | KK::Type
+            | KK::Var(_)
+            | KK::Exports
+            | KK::ThreadVar
+            | KK::Begin
+            | KK::Asm
+            | KK::Class
+            | KK::Property
+            | KK::Function
+            | KK::Procedure
+            | KK::Constructor
+            | KK::Destructor
+            | KK::End
+            | KK::Implementation
+            | KK::Initialization
+            | KK::Finalization => true,
+
+            KK::Strict
+            | KK::Private
+            | KK::Protected
+            | KK::Public
+            | KK::Published
+            | KK::Automated => parser.is_in_type_decl(),
+            _ => false,
+        },
         _ => false,
     }
 }

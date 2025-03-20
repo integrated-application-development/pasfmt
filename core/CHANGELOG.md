@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed parsing of structures after labels.
+- Parsing of visibility specifiers used as identifers outside type declarations.
 
 ## [0.4.0] - 2025-03-18
 
