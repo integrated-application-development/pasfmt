@@ -869,14 +869,6 @@ impl<'a> LineFormattingContexts<'a> {
                             contexts.push(CT::Subject);
                             contexts.push_expression();
                         }
-                        TT::Keyword(KK::To)
-                            if matches!(
-                                next_token_type,
-                                Some(TT::Keyword(KK::Function | KK::Procedure))
-                            ) =>
-                        {
-                            contexts.push(CT::Subject);
-                        }
                         TT::Keyword(
                             KK::Function | KK::Procedure | KK::Destructor | KK::Constructor,
                         ) => {
@@ -1123,6 +1115,9 @@ impl<'a> LineFormattingContexts<'a> {
                 {
                     let op_prec = super::get_operator_precedence(op).unwrap();
                     contexts.pop_until_and_retain(CT::Precedence(op_prec));
+                }
+                TT::Keyword(KK::Of) if matches!(next_token_type, Some(TT::Keyword(KK::Object))) => {
+                    contexts.pop_until_after(CT::AnonHeader);
                 }
                 TT::Keyword(KK::Then | KK::Do | KK::Of) => {
                     contexts.pop_until(context_matches!(CT::ControlFlow | CT::ForLoop));
