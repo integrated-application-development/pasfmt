@@ -752,8 +752,9 @@ mod anonymous {
                         end
                     );
                     AAAA(
-                        function(AAAA: BBBBB):
-                            CCCC
+                        function(
+                            AAAA: BBBBB
+                        ): CCCC
                         begin
                         end
                     );
@@ -1673,8 +1674,9 @@ mod type_decls {
                       AAAAAA =
                           procedure of object;
                       AAAAAA =
-                          procedure(AA: B) of
-                              object;
+                          procedure(
+                              AA: B
+                          ) of object;
                       AAAAAA =
                           procedure(
                               AA: BB;
@@ -1722,13 +1724,20 @@ mod type_decls {
                       AAAAAA =
                           function: AAA of object;
                       AAAAAA =
-                          function(AA: B):
-                              AAAA of object;
+                          function(
+                              AA: B
+                          ): AAAA of object;
                       AAAAAA =
                           function(
                               AA: BB;
                               CC: DD
                           ): AAAAAA of object;
+                      AAAAAA =
+                          function(
+                              AA: BB;
+                              CC: DD
+                          ): AAAAAAAAAAA of
+                              object;
                 ",
                 function_reference = "
                     // wrap_column=40                       |
@@ -1741,8 +1750,9 @@ mod type_decls {
                       AAAA =
                           reference to function(A: B): CCCC;
                       AAAA =
-                          reference to function(A: B):
-                              CCCCC;
+                          reference to function(
+                              A: B
+                          ): CCCCC;
                       AAA =
                           reference to function(
                               AA: B;

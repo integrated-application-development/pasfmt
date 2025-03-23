@@ -261,6 +261,11 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 .map(|(ctx, _)| ctx.context_type() == CT::CommaList)
                 .if_else_or_default(DR::Indifferent, DR::MustNotBreak),
             (Some(TT::Keyword(KK::Raise | KK::At)), _) => DR::MustNotBreak,
+            (Some(TT::Keyword(KK::Of)), Some(TT::Keyword(KK::Object))) => contexts_data
+                .iter()
+                .find(|(ctx, _)| matches!(ctx.context_type(), CT::AssignRHS))
+                .map(|(_, data)| data.is_child_broken)
+                .if_else_or_default(DR::Indifferent, DR::MustNotBreak),
             (_, Some(TT::Keyword(KK::Then | KK::Do | KK::Of))) => DR::MustNotBreak,
             (Some(TT::Keyword(KK::Then | KK::Do)), Some(TT::Keyword(KK::Begin))) => contexts_data
                 .get_last_context(CT::ControlFlowBegin)

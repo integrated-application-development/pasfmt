@@ -981,6 +981,27 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
     }
 
     fn get_decision_penalty(&self, decision: PenaltyDecision) -> u64 {
+        let is_breaking_routine_header_type = || {
+            use ContextType as CT;
+            let Some(TT::Op(OK::Colon)) =
+                self.get_prev_token_type_for_line_index(decision.line, decision.line_index)
+            else {
+                // if previous token isn't colon, we aren't breaking a type
+                return false;
+            };
+
+            match (decision.stack.ctx_iter_indices())
+                .map(|(_, ctx)| ctx.context_type())
+                .find(|typ| matches!(typ, CT::AnonHeader | CT::Brackets(_, _)))
+            {
+                // inside brackets can't be function header's type
+                Some(CT::Brackets(_, _)) => false,
+                Some(_) => true,
+                // no relevant contexts, check for routine header line
+                None => decision.line.get_line_type() == LLT::RoutineHeader,
+            }
+        };
+
         match decision.raw_decision {
             RawDecision::Break => match decision
                 .stack
@@ -994,16 +1015,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 {
                     2u64.pow(9)
                 }
-                _ if decision.line.get_line_type() == LLT::RoutineHeader
-                    && self
-                        .get_prev_token_type_for_line_index(decision.line, decision.line_index)
-                        == Some(TT::Op(OK::Colon))
-                    && !decision.stack.ctx_iter_indices().any(|(_, ctx)| {
-                        matches!(ctx.context_type(), ContextType::Brackets(_, _))
-                    }) =>
-                {
-                    2u64.pow(8)
-                }
+                _ if is_breaking_routine_header_type() => 2u64.pow(8),
                 _ => 3,
             },
             RawDecision::Continue if decision.line_length > self.settings.max_line_length => {
