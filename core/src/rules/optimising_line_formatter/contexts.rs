@@ -552,6 +552,13 @@ impl<'a> SpecificContextStack<'a> {
             {
                 self.update_last_matching_context(node, CT::Subject, apply_pivotal_break);
             }
+            (Some(TT::Op(OK::Assign | OK::Equal(EqKind::Decl))), Some(TT::Keyword(KK::Set))) => {
+                // This is to allow `= set of (...` to break the elements of the
+                // list and not before `set`
+                self.update_last_matching_context(node, context_matches!(CT::Base), |_, data| {
+                    data.is_broken |= is_break;
+                });
+            }
             (Some(TT::Op(OK::Assign | OK::Equal(EqKind::Decl))), _) => {
                 let is_type_parens = self
                     .ctx_data_iter(node)
@@ -603,6 +610,9 @@ impl<'a> SpecificContextStack<'a> {
             (Some(TT::Keyword(KK::At)), _) => {}
             (Some(TT::Keyword(KK::Type)), Some(tt)) if tt != TT::Keyword(KK::Of) => {
                 self.update_last_matching_context(node, context_matches!(_), apply_pivotal_break);
+            }
+            (Some(TT::Keyword(KK::Of)), Some(TT::Op(OK::LParen))) => {
+                // To exclude `set of` anonymous enum, e.g.,
             }
             (Some(TT::Keyword(KK::Of)), _) => {
                 self.update_last_matching_context(node, context_matches!(_), apply_pivotal_break);
