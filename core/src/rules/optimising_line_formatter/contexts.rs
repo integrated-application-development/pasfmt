@@ -867,7 +867,7 @@ impl<'a> LineFormattingContexts<'a> {
                             contexts.push_expression();
                         }
                         TT::Keyword(KK::Type)
-                            if !matches!(next_token_type, Some(TT::Keyword(KK::Of))) =>
+                            if !matches!(current_token_type, TT::Keyword(KK::Of)) =>
                         {
                             contexts.push(CT::Subject);
                             contexts.push_expression();
