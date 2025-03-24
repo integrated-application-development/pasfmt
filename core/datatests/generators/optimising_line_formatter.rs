@@ -1584,16 +1584,17 @@ mod type_decls {
                           set of (AAA);
                       AAAAAAAAAAAAA =
                           set of (AAAA, BBB, CCC);
-                      AAAAAAAAAAAAA =
-                          set of
-                              (AAAA, BBBB, CCC);
-                      AAAAAAAAAAAAA =
-                          set of
-                              (
-                                  AAAAA,
-                                  BBBBB,
-                                  CCCC
-                              );
+                      AAAAAAAAAAAAA = set of (
+                          AAAA,
+                          BBBB,
+                          CCC
+                      );
+                      AAAAAAAAAAAAAAAAAA =
+                          set of (
+                              AAAAA,
+                              BBBBB,
+                              CCCC
+                          );
                 ",
                 file = "
                     type
