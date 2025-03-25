@@ -981,6 +981,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
     }
 
     fn get_decision_penalty(&self, decision: PenaltyDecision) -> u64 {
+        const DEFAULT_BREAK_PENALTY: u64 = 3;
         let is_breaking_routine_header_type = || {
             use ContextType as CT;
             let Some(TT::Op(OK::Colon)) =
@@ -1016,10 +1017,18 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                     2u64.pow(9)
                 }
                 _ if is_breaking_routine_header_type() => 2u64.pow(8),
-                _ => 3,
+                _ => DEFAULT_BREAK_PENALTY,
             },
             RawDecision::Continue if decision.line_length > self.settings.max_line_length => {
+                // Penalise the token proportionally to the amount it goes over
+                // the max_line_length. Solutions with less tokens over the
+                // limit will be preferred, followed by those that exceed the
+                // limit the least.
+                // Using the `DEFAULT_BREAK_PENALTY` here means, each character
+                // over the limit is equivalent to that of a default break.
                 2u64.pow(20)
+                    + (decision.line_length - self.settings.max_line_length) as u64
+                        * DEFAULT_BREAK_PENALTY
             }
             _ => 0,
         }
