@@ -4563,14 +4563,16 @@ mod line_length_violations {
                             + EEEEEEEEEEEEEEEE :=
                         E;
 
-                    EEEEEEEEE + EEEEEEEEEEEEEEEEEE :=
+                    EEEEEEEEE
+                            + EEEEEEEEEEEEEEEEEE :=
                         E;
 
                     EEEEEEEEE
                             + EEEEEEEEEEEEEEEEEEE :=
                         E;
 
-                    EEEEEEEEE + EEEEEEEEEEEEEEEEEEEEE :=
+                    EEEEEEEEE
+                            + EEEEEEEEEEEEEEEEEEEEE :=
                         E;
             ",
             trailing_comments = "
