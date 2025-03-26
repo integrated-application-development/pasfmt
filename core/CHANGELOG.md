@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - clause of `do`/`then`/`else` structures (without `begin`-`end`)
   - after compound statement, but before the semicolon
 
+### Changed
+
+- Conditional directive parsing now uses a greedy algorithm that avoids the exponential
+  performance issues with the old algorithm.
+
 ## 0.5.1 - 2025-06-02
 
 ### Fixed

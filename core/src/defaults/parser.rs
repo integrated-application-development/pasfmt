@@ -24,8 +24,6 @@ use fxhash::FxHashSet;
 use itertools::Itertools;
 use log::trace;
 
-use crate::lang::ConditionalDirectiveKind as CDK;
-
 use crate::lang::CommentKind as CK;
 use crate::lang::DeclKind as DK;
 use crate::lang::KeywordKind as KK;
@@ -33,6 +31,8 @@ use crate::lang::OperatorKind as OK;
 use crate::lang::RawTokenType as TT;
 use crate::lang::*;
 use crate::traits::LogicalLineParser;
+
+use directive_tree::DirectiveTree;
 
 type LogicalLineRef = usize;
 
@@ -65,13 +65,11 @@ impl LogicalLineParser for DelphiLogicalLineParser {
     * Creating the lines of the individual conditional directive tokens
 */
 fn parse_file(tokens: &mut [RawToken]) -> Vec<LogicalLine> {
-    let conditional_branches = get_conditional_branches_per_directive(tokens);
-    let passes = get_all_conditional_branch_paths(&conditional_branches);
+    let tree = DirectiveTree::parse(tokens);
+
     let mut lines = FxHashMap::default();
     let mut attributed_directives = FxHashSet::default();
-    let mut pass_tokens = Vec::new();
-    for pass in passes {
-        get_pass_tokens(tokens, &pass, &conditional_branches, &mut pass_tokens);
+    for pass_tokens in tree.passes() {
         let pass_lines =
             InternalDelphiLogicalLineParser::new(tokens, &pass_tokens, &mut attributed_directives)
                 .parse();
@@ -2433,135 +2431,6 @@ fn is_operator(token_type: RawTokenType) -> bool {
     )
 }
 
-// Pass construction
-
-#[derive(Debug, Clone)]
-struct ConditionalBranchLevel {
-    branch: usize,
-    last: bool,
-}
-#[derive(Debug, Clone, Default)]
-struct ConditionalBranch {
-    levels: Vec<ConditionalBranchLevel>,
-}
-impl ConditionalBranch {
-    pub fn includes(&self, branch: &ConditionalBranch) -> bool {
-        self.levels
-            .iter()
-            .zip(&branch.levels)
-            .all(|(a, b)| a.branch == b.branch || a.branch > b.branch && b.last)
-    }
-}
-
-/*
-    This function takes a collection of `ConditionalBranch` and returns a Vec of
-    the index of the last branch at each level of conditional directive nesting.
-*/
-fn get_directive_level_last_indices(conditional_branches: &[ConditionalBranch]) -> Vec<usize> {
-    conditional_branches
-        .iter()
-        .fold(vec![0], |mut result, branch| {
-            for (index, &ConditionalBranchLevel { branch, .. }) in branch.levels.iter().enumerate()
-            {
-                if let Some(branch_count) = result.get_mut(index) {
-                    *branch_count = (*branch_count).max(branch);
-                } else {
-                    result.push(branch);
-                }
-            }
-            result
-        })
-}
-
-fn get_all_conditional_branch_paths(
-    branches: &[ConditionalBranch],
-) -> impl IntoIterator<Item = ConditionalBranch> {
-    get_pass_directive_indices(&get_directive_level_last_indices(branches))
-        .into_iter()
-        .map(|ids| ConditionalBranch {
-            levels: ids
-                .into_iter()
-                .map(|id| ConditionalBranchLevel {
-                    branch: id,
-                    last: false,
-                })
-                .collect_vec(),
-        })
-}
-
-fn get_conditional_branches_per_directive(tokens: &[RawToken]) -> Vec<ConditionalBranch> {
-    let mut counters = ConditionalBranch { levels: vec![] };
-    let mut levels: Vec<ConditionalBranch> = vec![];
-
-    for cdk in tokens.iter().map(RawToken::get_token_type).filter_map(|t| {
-        if let TT::ConditionalDirective(cdk) = t {
-            Some(cdk)
-        } else {
-            None
-        }
-    }) {
-        match cdk {
-            CDK::If | CDK::Ifdef | CDK::Ifndef | CDK::Ifopt => {
-                counters.levels.push(ConditionalBranchLevel {
-                    branch: 0,
-                    last: false,
-                });
-            }
-            CDK::Else | CDK::Elseif => {
-                if let Some(c) = counters.levels.last_mut() {
-                    c.branch += 1
-                };
-            }
-            CDK::Endif | CDK::Ifend => {
-                if let Some(c) = counters.levels.last() {
-                    for dir in levels.iter_mut().rev() {
-                        if let Some(c2) = dir.levels.get_mut(counters.levels.len() - 1) {
-                            if c2.branch == c.branch {
-                                c2.last = true;
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-                }
-                counters.levels.pop();
-            }
-        }
-        levels.push(counters.clone());
-    }
-
-    levels
-}
-
-fn get_pass_tokens(
-    tokens: &[RawToken],
-    conditional_branch: &ConditionalBranch,
-    conditional_branches: &[ConditionalBranch],
-    pass_tokens: &mut Vec<usize>,
-) {
-    pass_tokens.clear();
-    let mut current_branch;
-    let mut branch_included = true;
-    let mut conditional_index = 0;
-    for (index, token_type) in tokens.iter().map(RawToken::get_token_type).enumerate() {
-        match token_type {
-            TT::ConditionalDirective(_) => {
-                current_branch = &conditional_branches[conditional_index];
-                branch_included = conditional_branch.includes(current_branch);
-                conditional_index += 1;
-            }
-            _ if branch_included => pass_tokens.push(index),
-            _ => {}
-        }
-    }
-}
-
-fn get_pass_directive_indices(last_branches: &[usize]) -> impl IntoIterator<Item = Vec<usize>> {
-    last_branches
-        .iter()
-        .map(|&index| 0..=index)
-        .multi_cartesian_product()
-}
 // Utility types
 
 struct NonEmptyVec<T> {
@@ -2613,6 +2482,8 @@ impl<T> From<NonEmptyVec<T>> for Vec<T> {
         result
     }
 }
+
+mod directive_tree;
 
 // Tests
 
