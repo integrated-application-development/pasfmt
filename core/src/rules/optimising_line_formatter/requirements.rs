@@ -261,11 +261,18 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 .map(|(ctx, _)| ctx.context_type() == CT::CommaList)
                 .if_else_or_default(DR::Indifferent, DR::MustNotBreak),
             (Some(TT::Keyword(KK::Raise | KK::At)), _) => DR::MustNotBreak,
+            // For `set of` anonymous enums
+            (Some(TT::Keyword(KK::Of)), Some(TT::Op(OK::LParen))) => DR::MustNotBreak,
+            // For `procedure of object` to allow wrapping `object`
             (Some(TT::Keyword(KK::Of)), Some(TT::Keyword(KK::Object))) => contexts_data
                 .iter()
                 .find(|(ctx, _)| matches!(ctx.context_type(), CT::AssignRHS))
                 .map(|(_, data)| data.is_child_broken)
                 .if_else_or_default(DR::Indifferent, DR::MustNotBreak),
+            (Some(TT::Keyword(KK::Of)), _) => contexts_data
+                .get_last_context(context_matches!(ContextType::Base))
+                .map(|(_, data)| data.is_child_broken)
+                .if_else_or(DR::Indifferent, DR::MustNotBreak, DR::Indifferent),
             (_, Some(TT::Keyword(KK::Then | KK::Do | KK::Of))) => DR::MustNotBreak,
             (Some(TT::Keyword(KK::Then | KK::Do)), Some(TT::Keyword(KK::Begin))) => contexts_data
                 .get_last_context(CT::ControlFlowBegin)
