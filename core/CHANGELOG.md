@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added setting to enable internal formatting of multiline strings: `OptimisingLineFormatterSettings.format_multiline_strings`.
+- Added `LowercaseKeywords` to convert instances of keywords to lowercase.
 
 ### Changed
 
