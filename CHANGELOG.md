@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
     middle are adjusted to retain their original significant leading whitespace.
   2. Internal line endings are normalised to match the configured line ending.
   3. Invalid multiline strings are left untouched.
+- All keywords are now set to lowercase. This includes reserved words (like `begin` and `const`) but also includes
+  non-reserved words (like `absolute` and `override`) when used in the context that makes them special.
 
 ## [0.6.0] - 2025-08-25
 
