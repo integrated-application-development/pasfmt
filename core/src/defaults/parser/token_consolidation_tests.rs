@@ -206,6 +206,8 @@ casing_token_consolidation_test!(
     // https://docwiki.embarcadero.com/RADStudio/en/Implementing_Interfaces#Method_Resolution_Clause
     function_resolution = { "type foo = class function READ.WRITE = OPERATOR; end;" },
     procedure_resolution = { "type foo = class procedure READ.WRITE = OPERATOR; end;" },
+    flag_directive_method_resolution = { "type foo = class procedure NEAR.NEAR = NEAR; end;" },
+    valued_directive_method_resolution = { "type foo = class procedure NAME.NAME = NAME; end;" },
 );
 
 casing_token_consolidation_test!(

@@ -1390,6 +1390,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     // For `procedure Interface.Method = Method`
                     parser.set_current_token_type(TT::Op(OK::Equal(EqKind::Decl)));
                     parser.next_token();
+                    parser.consolidate_current_ident();
                 }
                 Some(TT::Op(OK::LParen)) => parser.parse_parameter_list(),
                 Some(TT::Keyword(keyword_kind) | TT::IdentifierOrKeyword(keyword_kind))
