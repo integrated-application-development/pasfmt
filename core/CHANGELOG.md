@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed parsing of structures after labels.
 - Parsing of visibility specifiers used as identifers outside type declarations.
+- Fixed consolidation of method resolution clause values.
 
 ### Changed
 
