@@ -5,9 +5,9 @@ This file documents notable changes to the `pasfmt-core` crate.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Unreleased
 
-## [0.5.0] - 2025-03-31
+## 0.5.0 - 2025-03-31
 
 ### Fixed
 
@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comments between `uses`/`contains`/`requires`/`exports` and the first list item are now parsed to
   their own lines.
 
-## [0.4.0] - 2025-03-18
+## 0.4.0 - 2025-03-18
 
 ### Added
 
@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed `IgnoreNonUnitImportClauses`; all import clauses are now formatted.
 
-## [0.4.0-rc2] - 2025-03-12
+## 0.4.0-rc2 - 2025-03-12
 
 ### Changed
 
@@ -46,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `KeywordKind::is_numeric_operator`.
 - Added `CommentKind::is_singleline`.
 
-## [0.4.0-rc1] - 2025-02-20
+## 0.4.0-rc1 - 2025-02-20
 
 ### Fixed
 
@@ -106,7 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed `Formatter::format_into_buf` function.
 - Removed `Reconstructor::reconstruct_into_buf` trait method (renamed).
 
-## [0.3.0] - 2024-05-29
+## 0.3.0 - 2024-05-29
 
 ### Fixed
 
@@ -122,7 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed `RefToken` and `OwningToken` types.
 
-## [0.2.0] - 2024-05-07
+## 0.2.0 - 2024-05-07
 
 ### Fixed
 
@@ -182,7 +182,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed `add`, `remove`, and `variant` as keywords.
 - Removed `IdentifierOrKeyword` variant of `TokenType` enum.
 
-## [0.1.0] - 2023-08-28
+## 0.1.0 - 2023-08-28
 
 ### Added
 
