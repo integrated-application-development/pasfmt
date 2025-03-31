@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Never break in the middle of `reference to function` and `reference to procedure`.
-- Improve consistency across procedural types and anonymous routine headers.
+- Improved consistency across procedural types and anonymous routine headers.
 - Improved line wrapping layout heuristics for lines that exceed the `wrap_column`.
 - Allow `set of` anonymous enum to be on same line as `=`.
 
