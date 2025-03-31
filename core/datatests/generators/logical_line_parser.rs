@@ -860,6 +860,32 @@ mod decl_sections {
                         3:Declaration
                     "
                 ),
+                proc_of_object_var_with_false_directives = (
+                    "
+                        1|var
+                        2|  A: procedure of object; near;
+                        _|  Index: AA;
+                        3|  A: function: AA of object; far;
+                        _|  Name, Virtual: AA;
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
+                ),
+                ref_to_proc_var_with_false_directives = (
+                    "
+                        1|var
+                        2|  A: reference to procedure; stdcall;
+                        _|  Index: AA;
+                        3|  A: reference to function: AA; safecall;
+                        _|  Name, Virtual: AA;
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
+                ),
                 type_class = (
                     "
                         1|type

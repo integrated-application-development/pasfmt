@@ -1395,6 +1395,14 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 Some(TT::Keyword(keyword_kind) | TT::IdentifierOrKeyword(keyword_kind))
                     if is_directive(&keyword_kind) && parser.paren_level == 0 =>
                 {
+                    if matches!(
+                        parser.get_token_type::<1>(),
+                        Some(TT::Op(OK::Comma | OK::Colon))
+                    ) {
+                        // The next thing is not a directive, but a declaration
+                        return OpResult::Break;
+                    }
+
                     parser.consolidate_current_keyword();
                     parser.next_token();
                     if let (KK::External, Some(KK::Name)) =
