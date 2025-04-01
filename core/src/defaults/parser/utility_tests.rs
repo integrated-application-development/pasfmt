@@ -1,105 +1,6 @@
-use spectral::prelude::*;
-
 use super::*;
 use crate::prelude::*;
-
-#[yare::parameterized(
-    valid = {
-        indoc::indoc! {"
-            function Bar(
-            {$ifdef A}
-              {$ifdef A}
-              A
-              {$elseif}
-                {$ifdef A}
-              B
-                {$elseif}
-              C
-                {$elseif}
-              D
-                {$endif}
-              {$endif}
-            {$endif}
-            );"
-        },
-        &[0, 1, 2],
-    },
-    no_end = {
-        indoc::indoc! {"
-            function Bar(
-            {$ifdef A}
-              {$ifdef A}
-              A
-              {$elseif}
-                {$ifdef A}
-              B
-                {$elseif}
-              C
-                {$elseif}
-              D
-            );"
-        },
-        &[0, 1, 2],
-    },
-    adjacent_bigger_first = {
-        indoc::indoc! {"
-            function Bar(
-            {$ifdef A}
-              {$ifdef A}
-              A
-              {$else}
-              B
-              {$endif}
-              {$ifdef A}
-              C
-              {$endif}
-            {$endif}
-            );"
-        },
-        &[0, 1],
-    },
-    adjacent_bigger_second = {
-        indoc::indoc! {"
-            function Bar(
-            {$ifdef A}
-              {$ifdef A}
-              A
-              {$endif}
-              {$ifdef A}
-              B
-              {$else}
-              C
-              {$endif}
-            {$endif}
-            );"
-        },
-        &[0, 1],
-    },
-    no_branches = {
-        indoc::indoc! {"
-            function Bar(
-            {$ifdef A}
-              {$ifdef A}
-              A
-                {$ifdef A}
-              B
-                {$endif}
-              {$endif}
-            {$endif}
-            );"
-        },
-        &[0, 0, 0],
-    },
-    naked_else = { "function Bar({$elseif});", &[0] },
-    no_directives = { "function Bar();", &[0] },
-    no_else = { "{$ifdef}function Bar();{$endif}", &[0] },
-)]
-fn directive_level_counts(input: &str, expected_levels: &[usize]) {
-    let raw_tokens = DelphiLexer {}.lex(input);
-    let conditional_branches = get_conditional_branches_per_directive(&raw_tokens);
-    assert_that(&get_directive_level_last_indices(&conditional_branches).as_slice())
-        .is_equal_to(expected_levels);
-}
+use pretty_assertions::assert_eq;
 
 mod passes {
     use super::*;
@@ -117,6 +18,7 @@ mod passes {
 
     const IF: &str = "{$ifdef}";
     const ELSEIF: &str = "{$elseif}";
+    const ELSE: &str = "{$else}";
     const END: &str = "{$endif}";
 
     #[yare::parameterized(
@@ -186,31 +88,91 @@ mod passes {
                 "foo(a,d,g,i);",
                 "foo(b,e,h,j);",
                 "foo(b,f,h,k);",
-                "foo(a,d,l,n);",
-                "foo(b,e,m,o);",
+                "foo(b,f,l,n);",
+                "foo(b,f,m,o);",
                 "foo(b,f,m,p);",
             ],
+        },
+        manual_elseif = {
+            indoc::formatdoc!("
+                {IF}a
+                {ELSE}{IF}b
+                {ELSE}{IF}c
+                {ELSE}{IF}d
+                {ELSE}{IF}e
+                {ELSE}{IF}f
+                {ELSE}{IF}g
+                {ELSE}{IF}h
+                {ELSE}{IF}i
+                {ELSE}{IF}j
+                {ELSE}{IF}k
+                {ELSE}{IF}l
+                {ELSE}{IF}m
+                {ELSE}{IF}n
+                {ELSE}{IF}o
+                {ELSE}{IF}p
+                {ELSE}{IF}q
+                {ELSE}{IF}r
+                {ELSE}{IF}s
+                {ELSE}{IF}t
+                {ELSE}{IF}u
+                {ELSE}{IF}v
+                {ELSE}{IF}w
+                {ELSE}{IF}x
+                {ELSE}{IF}y
+                {ELSE}z
+                {END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}{END}"
+            ),
+            &[
+                "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q",
+                "r", "s", "t", "u", "v", "w", "x", "y", "z",
+            ],
+        },
+        first_branch_explored_only_once = {
+            indoc::formatdoc!("
+                {IF}
+                  {IF}
+                  {ELSE}a
+                  {END}
+                {END}
+
+                {IF}b
+                {ELSE}c
+                {END}"
+            ),
+            // Note that there is no "AB" parse; each 'flat' section is only walked once when it's not the last branch.
+            &["b", "ac"],
+        },
+        unmatched_end = {
+            indoc::formatdoc!("
+                {END}
+                {ELSE}
+
+                {IF}a
+                {ELSE}b
+                {END}
+
+                {END}
+                {ELSE}
+                {END}
+
+                {IF}c
+                {ELSE}d
+                {END}
+
+                {END}"
+            ),
+            &["ac", "bd"],
         },
     )]
     fn token_views(input: String, expected_pass_strings: &[&str]) {
         let raw_tokens = DelphiLexer {}.lex(&input);
-        let conditional_branches = get_conditional_branches_per_directive(&raw_tokens);
-        let mut pass_tokens = Vec::new();
-        let pass_strings = get_all_conditional_branch_paths(&conditional_branches)
-            .into_iter()
-            .map(|branch| {
-                get_pass_tokens(
-                    &raw_tokens,
-                    &branch,
-                    &conditional_branches,
-                    &mut pass_tokens,
-                );
-                token_indices_to_string(&raw_tokens, &pass_tokens)
-            })
+        let pass_strings = DirectiveTree::parse(&raw_tokens)
+            .passes()
+            .map(|pass| token_indices_to_string(&raw_tokens, &pass))
             .collect_vec();
         let pass_strings = pass_strings.iter().map(String::as_str).collect_vec();
-        let expected_pass_strings = expected_pass_strings.iter().collect_vec();
-        assert_that(&pass_strings).contains_all_of(&expected_pass_strings);
+        pretty_assertions::assert_eq!(&expected_pass_strings, &pass_strings);
     }
 }
 
@@ -269,10 +231,10 @@ fn test_expression_parsing(input: &str, token_count: Option<usize>) {
     );
     let original_line_count = parser.current_line.len();
     parser.parse_expression();
-    assert_that(&parser.pass_index).is_equal_to(token_count);
-    assert_that(&parser.brack_level).is_equal_to(0);
-    assert_that(&parser.paren_level).is_equal_to(0);
-    assert_that(&parser.current_line.len()).is_equal_to(original_line_count);
+    assert_eq!(parser.pass_index, token_count);
+    assert_eq!(parser.brack_level, 0);
+    assert_eq!(parser.paren_level, 0);
+    assert_eq!(parser.current_line.len(), original_line_count);
 }
 
 #[test]
@@ -286,9 +248,9 @@ fn no_eof() {
     let tokens_len = tokens.len();
 
     let (lines, consolidated_tokens) = DelphiLogicalLineParser {}.parse(tokens);
-    assert_that(&lines).has_length(1);
-    assert_that(lines[0].get_tokens()).has_length(tokens_len);
-    assert_that(&tokens_len).is_equal_to(consolidated_tokens.len());
+    assert_eq!(lines.len(), 1);
+    assert_eq!(lines[0].get_tokens().len(), tokens_len);
+    assert_eq!(tokens_len, consolidated_tokens.len());
 }
 
 #[yare::parameterized(
@@ -336,5 +298,5 @@ fn run_get_token_test(pass_index: usize, offset: isize, expected_token_index: Op
         2 => parser.get_token_index::<2>(),
         _ => panic!("offset {offset} not mapped"),
     };
-    assert_that(&offset_index).is_equal_to(expected_token_index);
+    pretty_assertions::assert_eq!(offset_index, expected_token_index);
 }
