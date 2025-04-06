@@ -93,7 +93,7 @@ fn clone_repo(url: &str, sha: &str) {
     eprintln!("Cloning {url} ({sha})");
     let clone_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("benches/clones")
-        .join(url.split('/').last().expect("URL should contain '/'"));
+        .join(url.split('/').next_back().expect("URL should contain '/'"));
     execute_command(Command::new("git").arg("init").arg(&clone_dir));
 
     if Command::new("git")
