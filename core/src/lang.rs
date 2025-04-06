@@ -513,7 +513,7 @@ impl From<(&str, bool)> for FormattingData {
         // another line.
         let last_line = leading_whitespace
             .split('\n')
-            .last()
+            .next_back()
             .map(|line| line.trim_end_matches('\r'))
             .unwrap_or_default();
 
