@@ -315,7 +315,7 @@ mod tests {
     );
 
     macro_rules! binary_op_cases {
-        ($(($name: ident, $symbol: expr_2021)),* $(,)?)=> {
+        ($(($name: ident, $symbol: expr)),* $(,)?)=> {
             formatter_test_group!(
                 binary_operators,
                 $($name = {concat!("A  ", $symbol, "  B"), concat!("A ", $symbol, " B")}),*

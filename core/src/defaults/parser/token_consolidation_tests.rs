@@ -67,7 +67,7 @@ fn run_casing_token_consolidation_test(input: &str) {
 }
 
 macro_rules! casing_token_consolidation_test {
-    ($suite_name:ident, $($case_name: ident = { $input: expr_2021 $(,)? }),* $(,)?) => {
+    ($suite_name:ident, $($case_name: ident = { $input: expr $(,)? }),* $(,)?) => {
         #[yare::parameterized(
             $($case_name = { $input }),*
         )]
@@ -258,7 +258,7 @@ casing_token_consolidation_test!(
 );
 
 macro_rules! casing_property_declaration_consolidation_test(
-    ($($case_name: ident = { $input: expr_2021 $(,)? }),* $(,)?) => {
+    ($($case_name: ident = { $input: expr $(,)? }),* $(,)?) => {
         #[yare::parameterized(
             $($case_name = { &format!("type foo = class {} end", $input) }),*
         )]
@@ -312,12 +312,12 @@ casing_property_declaration_consolidation_test!(
 macro_rules! portability_directive_consolidation_test_end_semicolon {
     (
         $suite_name: ident,
-        $directive: expr_2021,
+        $directive: expr,
         :end_semicolon:
-            $($case_name: ident = { $input: expr_2021 $(,)? }),*
+            $($case_name: ident = { $input: expr $(,)? }),*
         $(,)?
         :manual_semicolon:
-            $($no_sc_case_name: ident = { $no_sc_input: expr_2021 $(,)? }),*
+            $($no_sc_case_name: ident = { $no_sc_input: expr $(,)? }),*
         $(,)?
     ) => {
         paste::paste! {
@@ -432,7 +432,7 @@ casing_token_consolidation_test!(
 );
 
 macro_rules! property_expression_parsing_consolidation_test(
-    ($($case_name: ident = { $input: expr_2021 $(,)? }),* $(,)?) => {
+    ($($case_name: ident = { $input: expr $(,)? }),* $(,)?) => {
         #[yare::parameterized(
             $($case_name = { &format!("type TFoo = class property foo: foo index {} nodefault end", $input) }),*
         )]
