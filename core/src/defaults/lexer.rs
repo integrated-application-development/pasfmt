@@ -2673,7 +2673,7 @@ mod tests {
                 ("THIN_SPACE\u{2009}", TT::Identifier),
                 ("ZERO_WIDTH_NBSP\u{FEFF}", TT::Identifier),
                 // note, does not contain the U+3000 character
-                ( "IDEOGRAPHIC_SPACE", TT::Identifier),
+                ("IDEOGRAPHIC_SPACE", TT::Identifier),
             ],
         )
     }

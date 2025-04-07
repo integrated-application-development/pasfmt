@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
 use log::error;
-use pasfmt::{format, FormattingConfig};
+use pasfmt::{FormattingConfig, format};
 use pasfmt_orchestrator::predule::*;
 
 pasfmt_config!(

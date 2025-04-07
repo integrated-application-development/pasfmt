@@ -1,4 +1,4 @@
-use pasfmt::{make_formatter, FormattingConfig};
+use pasfmt::{FormattingConfig, make_formatter};
 use pasfmt_core::prelude::FileOptions;
 use wasm_bindgen::prelude::*;
 

@@ -374,12 +374,13 @@ impl<'a> SpecificContextStack<'a> {
         filter: impl ContextFilter,
         operation: impl Fn(Ref<'_, FormattingContext>, &mut FormattingContextState),
     ) -> bool {
-        match self.get_last_matching_context_mut(node, filter) { Some((context, data)) => {
-            operation(context, data);
-            true
-        } _ => {
-            false
-        }}
+        match self.get_last_matching_context_mut(node, filter) {
+            Some((context, data)) => {
+                operation(context, data);
+                true
+            }
+            _ => false,
+        }
     }
     fn update_operator_precedences(&self, node: &mut FormattingNode, is_break: bool) {
         self.update_last_matching_context(

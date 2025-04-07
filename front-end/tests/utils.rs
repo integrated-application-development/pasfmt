@@ -23,7 +23,7 @@ pub mod windows {
     use std::os::windows::io::AsRawHandle;
     use std::path::Path;
     use windows_sys::Win32::{
-        Storage::FileSystem::{LockFileEx, LOCK_FILE_FLAGS},
+        Storage::FileSystem::{LOCK_FILE_FLAGS, LockFileEx},
         System::IO::OVERLAPPED,
     };
 

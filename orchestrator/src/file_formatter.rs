@@ -1,4 +1,4 @@
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use encoding_rs::Encoding;
 use log::*;
 use std::{

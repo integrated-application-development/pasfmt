@@ -613,7 +613,7 @@ impl<'a> FormattedTokens<'a> {
     pub fn tokens_mut(
         &mut self,
     ) -> impl DoubleEndedIterator<Item = (Result<&mut Token<'a>, MutTokenErr>, &mut FormattingData)>
-           + ExactSizeIterator {
+    + ExactSizeIterator {
         self.tokens
             .iter_mut()
             .zip(&mut self.fmt)

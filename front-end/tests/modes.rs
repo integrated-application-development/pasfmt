@@ -1,4 +1,4 @@
-use assert_fs::{prelude::*, TempDir};
+use assert_fs::{TempDir, prelude::*};
 use predicates::prelude::*;
 use std::fs::read_to_string;
 use std::path::Path;
