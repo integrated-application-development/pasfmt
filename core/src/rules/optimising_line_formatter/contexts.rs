@@ -1283,7 +1283,7 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
             member_access_contexts: NodeRefSet::new(),
         }
     }
-    fn type_stack(&self) -> impl Iterator<Item = ContextType> + 'builder + use<'builder> {
+    fn type_stack(&self) -> impl Iterator<Item = ContextType> + use<'builder> {
         self.current_context
             .walk_parents_data()
             .map(|index| index.context_type)

@@ -1847,7 +1847,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     }
     fn get_current_logical_line_token_types(
         &self,
-    ) -> impl DoubleEndedIterator<Item = RawTokenType> + '_ + use<'_> {
+    ) -> impl DoubleEndedIterator<Item = RawTokenType> + use<'_> {
         self.get_current_logical_line()
             .tokens
             .iter()
