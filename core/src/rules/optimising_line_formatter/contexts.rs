@@ -337,7 +337,7 @@ impl<'a> SpecificContextStack<'a> {
     /// indices. Typically for modification.
     pub(super) fn ctx_iter_indices(
         &self,
-    ) -> impl Iterator<Item = (usize, Ref<'a, FormattingContext>)> {
+    ) -> impl Iterator<Item = (usize, Ref<'a, FormattingContext>)> + use<'a> {
         self.stack
             .into_iter()
             .flat_map(|stack| stack.walk_parents())
@@ -374,12 +374,12 @@ impl<'a> SpecificContextStack<'a> {
         filter: impl ContextFilter,
         operation: impl Fn(Ref<'_, FormattingContext>, &mut FormattingContextState),
     ) -> bool {
-        if let Some((context, data)) = self.get_last_matching_context_mut(node, filter) {
+        match self.get_last_matching_context_mut(node, filter) { Some((context, data)) => {
             operation(context, data);
             true
-        } else {
+        } _ => {
             false
-        }
+        }}
     }
     fn update_operator_precedences(&self, node: &mut FormattingNode, is_break: bool) {
         self.update_last_matching_context(
@@ -1282,7 +1282,7 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
             member_access_contexts: NodeRefSet::new(),
         }
     }
-    fn type_stack(&self) -> impl Iterator<Item = ContextType> + 'builder {
+    fn type_stack(&self) -> impl Iterator<Item = ContextType> + 'builder + use<'builder> {
         self.current_context
             .walk_parents_data()
             .map(|index| index.context_type)

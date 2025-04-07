@@ -1263,7 +1263,7 @@ fn ampersand(mut args: LexArgs) -> OffsetAndTokenType {
 // region: operators
 
 macro_rules! basic_op {
-    ($name: ident, $typ: expr) => {
+    ($name: ident, $typ: expr_2021) => {
         fn $name(args: LexArgs) -> OffsetAndTokenType {
             (args.offset, RawTokenType::Op($typ))
         }

@@ -3,7 +3,7 @@
 use crate::prelude::*;
 
 macro_rules! formatter_test_group {
-    ($i:ident, $($case_name: ident = {$($e: expr),* $(,)?}),* $(,)?) => {
+    ($i:ident, $($case_name: ident = {$($e: expr_2021),* $(,)?}),* $(,)?) => {
         #[yare::parameterized(
           $($case_name = { $($e),* }),*
         )]

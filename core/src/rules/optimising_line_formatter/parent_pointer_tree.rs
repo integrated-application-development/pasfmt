@@ -178,12 +178,12 @@ impl<'list, T> NodeRef<'list, T> {
 
     /// Iterates from a node through its parents while providing direct access
     /// to their data
-    pub fn walk_parents_data(&self) -> impl Iterator<Item = Ref<'list, T>> {
+    pub fn walk_parents_data(&self) -> impl Iterator<Item = Ref<'list, T>> + use<'list, T> {
         self.walk_parents().map(|node| node.get())
     }
 
     /// Iterate from a node through its parent nodes
-    pub fn walk_parents(&self) -> impl Iterator<Item = NodeRef<'list, T>> {
+    pub fn walk_parents(&self) -> impl Iterator<Item = NodeRef<'list, T>> + use<'list, T> {
         NodeRefIter {
             next_node: Some(self.index),
             tree: self.list,
