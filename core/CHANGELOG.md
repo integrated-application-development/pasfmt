@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Conditional directive parsing now uses a greedy algorithm that avoids the exponential
+  performance issues with the old algorithm.
+
 ## 0.5.0 - 2025-03-31
 
 ### Fixed
