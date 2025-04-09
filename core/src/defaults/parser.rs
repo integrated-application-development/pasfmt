@@ -516,14 +516,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         level: ParserContextLevel::Level(1),
                     });
                 }
-                TT::Keyword(
-                    keyword_kind @ (KK::Var(_)
-                    | KK::ThreadVar
-                    | KK::ResourceString
-                    | KK::Const(_)
-                    | KK::Label
-                    | KK::Type),
-                ) => {
+                TT::Keyword(keyword_kind) if keyword_kind.is_decl_section() => {
                     if let Some(ContextType::Statement(_) | ContextType::StatementBlock(_)) =
                         self.get_last_context_type()
                     {
@@ -1326,13 +1319,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             };
             match token_type {
                 TT::Op(OK::LParen) => self.parse_parameter_list(),
-                TT::Keyword(
-                    keyword_kind @ (KK::Label
-                    | KK::Const(_)
-                    | KK::Type
-                    | KK::Var(_)
-                    | KK::ResourceString),
-                ) => {
+                TT::Keyword(keyword_kind) if keyword_kind.is_decl_section() => {
                     let context_type = match keyword_kind {
                         KK::Type => ContextType::TypeBlock,
                         KK::Label => ContextType::LabelBlock,
@@ -2218,13 +2205,7 @@ fn declaration_section(parser: &LLP) -> bool {
             false
         }
         (_, Some(TT::Keyword(kk) | TT::IdentifierOrKeyword(kk))) => match kk {
-            KK::Label
-            | KK::Const(_)
-            | KK::ResourceString
-            | KK::Type
-            | KK::Var(_)
-            | KK::ThreadVar
-            | KK::Exports
+            KK::Exports
             | KK::Begin
             | KK::Asm
             | KK::Class
@@ -2244,7 +2225,8 @@ fn declaration_section(parser: &LLP) -> bool {
             | KK::Public
             | KK::Published
             | KK::Automated => parser.is_in_type_decl(),
-            _ => false,
+
+            _ => kk.is_decl_section(),
         },
         _ => false,
     }
@@ -2271,22 +2253,13 @@ fn parse_exports(parser: &mut LLP) {
 }
 
 fn local_declaration_section(parser: &LLP) -> bool {
-    matches!(
-        parser.get_current_token_type(),
+    match parser.get_current_token_type() {
         Some(TT::Keyword(
-            KK::Label
-                | KK::Const(_)
-                | KK::ResourceString
-                | KK::Type
-                | KK::Var(_)
-                | KK::Exports
-                | KK::Begin
-                | KK::Asm
-                | KK::End
-                | KK::Function
-                | KK::Procedure
-        ))
-    )
+            KK::Exports | KK::Begin | KK::Asm | KK::End | KK::Function | KK::Procedure,
+        )) => true,
+        Some(TT::Keyword(kk)) => kk.is_decl_section(),
+        _ => false,
+    }
 }
 
 // Parser consolidators

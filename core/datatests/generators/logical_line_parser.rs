@@ -860,6 +860,26 @@ mod decl_sections {
                         3:Declaration
                     "
                 ),
+                one_threadvar = (
+                    "
+                        1|threadvar
+                        2|  A: TFoo;
+                    ",
+                    "
+                        2:Declaration
+                    "
+                ),
+                many_threadvars = (
+                    "
+                        1|threadvar
+                        2|  A: TFoo;
+                        3|  B: TFoo;
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
+                ),
                 one_resourcestring = (
                     "
                         1|resourcestring
@@ -943,16 +963,18 @@ mod decl_sections {
                 ),
                 stacked = (
                     "
-                        1|label
-                        2|  A;
-                        3|const
-                        4|  A = '';
-                        5|resourcestring
-                        6|  A = '';
-                        7|type
-                        8|  A = B;
-                        9|var
-                       10|  A: B;
+                        1 |label
+                        2 |  A;
+                        3 |const
+                        4 |  A = '';
+                        5 |resourcestring
+                        6 |  A = '';
+                        7 |type
+                        8 |  A = B;
+                        9 |var
+                        10|  A: B;
+                        11|threadvar
+                        12|  A: B;
                     ",
                     "
                         2:Declaration
@@ -960,6 +982,7 @@ mod decl_sections {
                         6:Declaration
                         8:Declaration
                         10:Declaration
+                        12:Declaration
                     "
                 ),
             );
@@ -1023,6 +1046,26 @@ mod decl_sections {
                         3:Declaration
                     "
                 ),
+                one_resourcestring = test_case(
+                    "
+                        1  |resourcestring{1}
+                        2^1|  CFoo = 1;
+                    ",
+                    "
+                        2:Declaration
+                    "
+                ),
+                many_resourcestrings = test_case(
+                    "
+                        1  |resourcestring{1}
+                        2^1|  CFoo = 1;
+                        3^1|  CBar = '1234';
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
+                ),
                 one_var = test_case(
                     "
                         1  |var{1}
@@ -1063,8 +1106,28 @@ mod decl_sections {
                         3:Declaration
                     "
                 ),
+                one_threadvar = test_case(
+                    "
+                        1  |threadvar{1}
+                        2^1|  A: TFoo;
+                    ",
+                    "
+                        2:Declaration
+                    "
+                ),
+                many_threadvars = test_case(
+                    "
+                        1  |threadvar{1}
+                        2^1|  A: TFoo;
+                        3^1|  B: TFoo;
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                    "
+                ),
                 anonymous_argument = "
-                    _1 |Bar(procedure Foo
+                    _1 |Bar(procedure
                     1  |label{1}
                     2^1|  1,ident;
                     1  |const{2}
@@ -1080,7 +1143,31 @@ mod decl_sections {
                     4:Declaration
                     5:Declaration
                     6:Declaration
-                "
+                ",
+                stacked = test_case(
+                    "
+                        1  |label{1}
+                        2^1|  A;
+                        1  |const{2}
+                        3^2|  A = '';
+                        1  |resourcestring{3}
+                        4^3|  A = '';
+                        1  |type{4}
+                        5^4|  A = B;
+                        1  |var{5}
+                        6^5|  A: B;
+                        1  |threadvar{6}
+                        7^6|  A: B;
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                        4:Declaration
+                        5:Declaration
+                        6:Declaration
+                        7:Declaration
+                    "
+                ),
             );
         }
     }

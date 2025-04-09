@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed parsing of `resourcestring` sections.
+- Fixed parsing of `threadvar` sections in anonymous procedures.
+  This technically isn't valid code, but we allow the `threadvar` section in a regular routine, so
+  we should also allow it in an anonymous routine, for consistency.
+
+### Added
+
+- Added `KeywordKind::is_decl_section`.
 
 ## 0.5.0 - 2025-03-31
 
