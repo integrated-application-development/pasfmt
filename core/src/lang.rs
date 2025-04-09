@@ -242,6 +242,18 @@ impl KeywordKind {
                 | KeywordKind::Mod
         )
     }
+
+    pub fn is_decl_section(&self) -> bool {
+        matches!(
+            self,
+            KeywordKind::Const(_)
+                | KeywordKind::ResourceString
+                | KeywordKind::Var(_)
+                | KeywordKind::ThreadVar
+                | KeywordKind::Label
+                | KeywordKind::Type
+        )
+    }
 }
 
 /// Used to distinguish the semantic meanings of `=`
