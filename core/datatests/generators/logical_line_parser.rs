@@ -860,6 +860,30 @@ mod decl_sections {
                         3:Declaration
                     "
                 ),
+                one_resourcestring = (
+                    "
+                        1|resourcestring
+                        2|  A = '';
+                    ",
+                    "
+                        2:Declaration
+                    "
+                ),
+                many_resourcestrings = (
+                    "
+                        1|resourcestring
+                        2|  A = '';
+                        3|  B = '' + '';
+                        4|  C = '''
+                         |    asdf
+                         |    ''';
+                    ",
+                    "
+                        2:Declaration
+                        3:Declaration
+                        4:Declaration
+                    "
+                ),
                 proc_of_object_var_with_false_directives = (
                     "
                         1|var
@@ -915,6 +939,27 @@ mod decl_sections {
                     "
                         2:Declaration
                         3:Declaration
+                    "
+                ),
+                stacked = (
+                    "
+                        1|label
+                        2|  A;
+                        3|const
+                        4|  A = '';
+                        5|resourcestring
+                        6|  A = '';
+                        7|type
+                        8|  A = B;
+                        9|var
+                       10|  A: B;
+                    ",
+                    "
+                        2:Declaration
+                        4:Declaration
+                        6:Declaration
+                        8:Declaration
+                        10:Declaration
                     "
                 ),
             );
