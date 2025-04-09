@@ -519,6 +519,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 TT::Keyword(
                     keyword_kind @ (KK::Var(_)
                     | KK::ThreadVar
+                    | KK::ResourceString
                     | KK::Const(_)
                     | KK::Label
                     | KK::Type),
@@ -1325,7 +1326,13 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             };
             match token_type {
                 TT::Op(OK::LParen) => self.parse_parameter_list(),
-                TT::Keyword(keyword_kind @ (KK::Label | KK::Const(_) | KK::Type | KK::Var(_))) => {
+                TT::Keyword(
+                    keyword_kind @ (KK::Label
+                    | KK::Const(_)
+                    | KK::Type
+                    | KK::Var(_)
+                    | KK::ResourceString),
+                ) => {
                     let context_type = match keyword_kind {
                         KK::Type => ContextType::TypeBlock,
                         KK::Label => ContextType::LabelBlock,
@@ -2213,10 +2220,11 @@ fn declaration_section(parser: &LLP) -> bool {
         (_, Some(TT::Keyword(kk) | TT::IdentifierOrKeyword(kk))) => match kk {
             KK::Label
             | KK::Const(_)
+            | KK::ResourceString
             | KK::Type
             | KK::Var(_)
-            | KK::Exports
             | KK::ThreadVar
+            | KK::Exports
             | KK::Begin
             | KK::Asm
             | KK::Class
@@ -2268,6 +2276,7 @@ fn local_declaration_section(parser: &LLP) -> bool {
         Some(TT::Keyword(
             KK::Label
                 | KK::Const(_)
+                | KK::ResourceString
                 | KK::Type
                 | KK::Var(_)
                 | KK::Exports
