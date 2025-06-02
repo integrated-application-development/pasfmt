@@ -330,23 +330,32 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.finish_logical_line();
                     self.next_token();
                     self.finish_logical_line();
-                    let mut push_section_context = |context_type, level_delta| {
-                        self.parse_block(ParserContext {
+                    let mut push_section_context = |context_type, level_delta, stmt_kind| {
+                        let ctx = ParserContext {
                             context_type,
                             context_ending_predicate: CEP::Opaque(section_headings),
                             level: ParserContextLevel::Level(level_delta),
-                        });
+                        };
+                        if let Some(stmt_kind) = stmt_kind {
+                            self.parse_statement_block_with_kind(ctx, stmt_kind);
+                        } else {
+                            self.parse_block(ctx);
+                        }
                     };
                     match keyword_kind {
-                        KK::Interface => push_section_context(ContextType::Interface, 0),
-                        KK::Implementation => push_section_context(ContextType::Implementation, 0),
+                        KK::Interface => push_section_context(ContextType::Interface, 0, None),
+                        KK::Implementation => {
+                            push_section_context(ContextType::Implementation, 0, None)
+                        }
                         KK::Initialization => push_section_context(
                             ContextType::StatementBlock(BlockKind::Initialization),
                             1,
+                            Some(StatementKind::Normal),
                         ),
                         KK::Finalization => push_section_context(
                             ContextType::StatementBlock(BlockKind::Finalization),
                             1,
+                            Some(StatementKind::Normal),
                         ),
                         _ => {}
                     };
