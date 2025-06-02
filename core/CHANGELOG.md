@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed parsing of `threadvar` sections in anonymous procedures.
   This technically isn't valid code, but we allow the `threadvar` section in a regular routine, so
   we should also allow it in an anonymous routine, for consistency.
+- Fixed indentation inside `initialization`/`finalization` sections. Cases include:
+  - Comments preceding the `finalization` keyword or the final `end`.
+  - Comments preceding a structured statement.
+  - Statements following a structured statement without a begin-end block.
 
 ### Added
 

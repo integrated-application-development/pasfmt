@@ -401,6 +401,28 @@ mod comments {
                         ",
                         $comment
                     ),
+                    after_initialization_finalization = format!(
+                        "
+                            _|initialization
+                            _|  {0}
+                            _|finalization
+                            _|  {0}
+                        ",
+                        $comment
+                    ),
+                    after_initialization_finalization_before_child_line = format!(
+                        "
+                            _  |initialization
+                            _  |  {0}
+                            _1 |  if Foo then{{1}}
+                            _^1|    Bar;
+                            _  |finalization
+                            _  |  {0}
+                            _2 |  if Foo then{{2}}
+                            _^2|    Bar;
+                        ",
+                        $comment
+                    ),
                 );
             };
         }
@@ -506,6 +528,13 @@ mod child_lines {
                 _^3|    BBB;
                 3  |  end);
                 1  |end);
+            ",
+            inside_initialization = "
+                _  |initialization
+                _1 |  for var I := 0 to 10 do{1}
+                _^1|    Foo;
+                _2 |  for var I := 0 to 10 do{2}
+                _^2|    Bar;
             ",
         );
     }
