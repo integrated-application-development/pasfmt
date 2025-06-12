@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix indentation for anonymous routine sections following a `type` section.
+
 ### Changed
 
 - Anonymous routines are now wrapped onto multiple lines whenever they contain sections

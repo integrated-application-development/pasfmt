@@ -892,12 +892,12 @@ mod anonymous {
                           C = '';
                         type
                           D = E;
-                            var
-                              F: G;
-                            threadvar
-                              H: I;
-                            begin
-                            end;
+                        var
+                          F: G;
+                        threadvar
+                          H: I;
+                        begin
+                        end;
 
 
             "
