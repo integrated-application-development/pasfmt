@@ -423,6 +423,55 @@ mod comments {
                         ",
                         $comment
                     ),
+                    variant_record_before_child_line = format!(
+                        "
+                            _  |A = record
+                            _  |case B of
+                            _  |{}
+                            _1 |  C: ({{1}}
+                            _^1|    D
+                            _1 |  );
+                            _  |end;
+                        ",
+                        $comment
+                    ),
+                    in_empty_compound_statement = format!(
+                        "
+                            _  |begin
+
+                            1  |  while True do{{1}}
+                            _^1|      {0}\n;
+
+                            2  |  if True then{{2}}
+                            _^2|    F
+                            2  |  else{{3}}
+                            _^3|      {0}
+                            _^3|      {0}
+                            _^3|      {0}\n;
+
+                            3  |  if True then{{3}}
+                            _^3|      {0}\n;
+
+                            _  |  case A of
+                            _4 |    B:{{4}}
+                            _^4|        {0}\n;
+                            _  |  end;
+
+                            _  |end;
+                        ",
+                        $comment
+                    ),
+                    between_compound_statement_and_semicolon = format!(
+                        "
+                            _  |begin
+                            _1 |  if True then{{1}}
+                            _^1|    begin
+                            _^1|    end
+                            _^1|      {0}\n;
+                            _  |end;
+                        ",
+                        $comment
+                    ),
                 );
             };
         }
