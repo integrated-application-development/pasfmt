@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed indentation of comments around statements outside of statement lists.
+
 ## [0.5.1] - 2025-06-02
 
 ### Fixed

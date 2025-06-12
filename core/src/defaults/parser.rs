@@ -280,7 +280,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         end;
                         ```
                     */
-                    if self.is_in_statement_list() {
+                    if self.is_in_statement() {
                         self.finish_logical_line();
                     } else {
                         self.make_unfinished_line();
@@ -1186,11 +1186,9 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         self.parse_statement();
         self.context.pop();
     }
-    fn is_in_statement_list(&self) -> bool {
+    fn is_in_statement(&self) -> bool {
         let mut contexts = self.context.contexts.iter().rev().map(|c| c.context_type);
-
         matches!(contexts.next(), Some(ContextType::Statement(_)))
-            && matches!(contexts.next(), Some(ContextType::StatementBlock(_)))
     }
     fn parse_statement_list_block(&mut self, context: ParserContext) {
         self.parse_statement_block_with_kind(context, StatementKind::Normal);
