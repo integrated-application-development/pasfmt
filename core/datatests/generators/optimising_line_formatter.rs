@@ -853,14 +853,53 @@ mod anonymous {
             ",
             with_sections = "
                     // wrap_column=100
+                    A :=
+                        function
+                        label
+                          B;
+                        begin
+                        end;
+                    A :=
+                        function
+                        const
+                          B = '';
+                        begin
+                        end;
+                    A :=
+                        function
+                        type
+                          C = D;
+                        begin
+                        end;
+                    A :=
+                        function
+                        var
+                          B: C;
+                        begin
+                        end;
+                    A :=
+                        function
+                        threadvar
+                          B: C;
+                        begin
+                        end;
 
-                    A := function label B; begin end;
-                    A := function const B = ''; begin end;
-                    A := function type C = D; begin end;
-                    A := function var B: C; begin end;
-                    A := function threadvar B: C; begin end;
+                    A :=
+                        function
+                        label
+                          B;
+                        const
+                          C = '';
+                        type
+                          D = E;
+                            var
+                              F: G;
+                            threadvar
+                              H: I;
+                            begin
+                            end;
 
-                    A := function label B; const C = ''; type D = E; var F: G; threadvar H: I; begin end;
+
             "
         );
     }

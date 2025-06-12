@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Anonymous routines are now wrapped onto multiple lines whenever they contain sections
+  (e.g. `var`, `const`, `type`).
+
 ## 0.5.1 - 2025-06-02
 
 ### Fixed

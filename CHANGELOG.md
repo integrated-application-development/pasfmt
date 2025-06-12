@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Anonymous routines are now wrapped onto multiple lines whenever they contain sections
+  (e.g. `var`, `const`, `type`).
+
 ## [0.5.1] - 2025-06-02
 
 ### Fixed

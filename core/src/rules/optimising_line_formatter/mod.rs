@@ -730,7 +730,12 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
 
         let starting_options = match self.get_token_type(global_token_index) {
             Some(TT::Keyword(
-                KK::Label | KK::Const(_) | KK::Type | KK::Var(_) | KK::ThreadVar | KK::Begin,
+                keyword @ (KK::Label
+                | KK::Const(_)
+                | KK::Type
+                | KK::Var(_)
+                | KK::ThreadVar
+                | KK::Begin),
             )) => {
                 // Anonymous procedure sections
                 match (
@@ -740,9 +745,10 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                         ))
                         .and_then(|(_, data)| data.break_anonymous_routine),
                     line_children.descendant_count,
+                    keyword,
                 ) {
-                    (Some(false), ..=1) => Potentials::One(ChildLineOption::ContinueAll),
-                    (Some(false), _) => Potentials::None,
+                    (Some(false), ..=1, KK::Begin) => Potentials::One(ChildLineOption::ContinueAll),
+                    (Some(false), ..) => Potentials::None,
                     _ => Potentials::One(ChildLineOption::BreakAll(child_starting_ws)),
                 }
             }
