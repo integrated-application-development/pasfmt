@@ -423,10 +423,12 @@ impl<'a> SpecificContextStack<'a> {
         let line_index = node.next_line_index;
 
         let is_break = decision == NL::Break;
-        let last_real_token_type = (0..line_index)
+        let mut prev_token_iter = (0..line_index)
             .rev()
             .filter_map(|index| self.get_token_type_from_line_index(index))
-            .find(|token_type| !token_type.is_comment_or_compiler_directive());
+            .filter(|token_type| !token_type.is_comment_or_compiler_directive());
+        let prev_real_token_type = prev_token_iter.next();
+        let prev_prev_real_token_type = prev_token_iter.next();
 
         self.ctx_iter_indices()
             .skip(1)
@@ -444,7 +446,7 @@ impl<'a> SpecificContextStack<'a> {
             };
 
         let curr_token_type = self.get_token_type_from_line_index(line_index);
-        match (last_real_token_type, curr_token_type) {
+        match (prev_real_token_type, curr_token_type) {
             (_, Some(TT::Comment(CommentKind::InlineBlock | CommentKind::InlineLine))) => {
                 /*
                     When formatting comments, there are some considerations to be made:
@@ -608,7 +610,10 @@ impl<'a> SpecificContextStack<'a> {
                 self.update_last_matching_context(node, CT::RaiseAt, apply_pivotal_break);
             }
             (Some(TT::Keyword(KK::At)), _) => {}
-            (Some(TT::Keyword(KK::Type)), Some(tt)) if tt != TT::Keyword(KK::Of) => {
+            (Some(TT::Keyword(KK::Type)), Some(tt))
+                if tt != TT::Keyword(KK::Of)
+                    && prev_prev_real_token_type == Some(TT::Op(OK::Equal(EqKind::Decl))) =>
+            {
                 self.update_last_matching_context(node, context_matches!(_), apply_pivotal_break);
             }
             (Some(TT::Keyword(KK::Of)), Some(TT::Op(OK::LParen))) => {
