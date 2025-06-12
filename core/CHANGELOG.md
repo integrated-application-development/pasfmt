@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Fixed indentation of comments around statements outside of statement lists. Cases include:
+  - before case arm
+  - after case arm (without `begin`-`end`)
+  - clause of `do`/`then`/`else` structures (without `begin`-`end`)
+  - after compound statement, but before the semicolon
+
 ## 0.5.1 - 2025-06-02
 
 ### Fixed
