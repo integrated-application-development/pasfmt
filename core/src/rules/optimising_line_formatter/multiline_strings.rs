@@ -51,11 +51,10 @@ impl StringFormatter<'_> {
 
             if let Some(new_string_contents) =
                 self.try_rewrite_string(tok.get_content(), fmt, base_indentation)
+                && new_string_contents != tok.get_content()
             {
-                if new_string_contents != tok.get_content() {
-                    tok.set_content(new_string_contents);
-                    changed = true
-                }
+                tok.set_content(new_string_contents);
+                changed = true
             }
         }
         changed

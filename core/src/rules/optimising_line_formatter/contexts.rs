@@ -733,12 +733,11 @@ impl<'a> SpecificContextStack<'a> {
                 data.is_child_broken = true;
                 data.break_anonymous_routine = Some(true);
             });
-        } else if !child_solutions.is_empty() {
-            if let Some((_, context)) =
+        } else if !child_solutions.is_empty()
+            && let Some((_, context)) =
                 self.get_last_matching_context_mut(node, CT::ControlFlowBegin)
-            {
-                context.can_break = false;
-            }
+        {
+            context.can_break = false;
         }
     }
 }

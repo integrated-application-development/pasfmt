@@ -28,10 +28,9 @@ mod tests {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, _input: &[LogicalLine]) {
             for token_index in 1..formatted_tokens.len() {
                 if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token_index)
+                    && formatting_data.newlines_before == 0
                 {
-                    if formatting_data.newlines_before == 0 {
-                        formatting_data.spaces_before = 1;
-                    }
+                    formatting_data.spaces_before = 1;
                 }
             }
         }

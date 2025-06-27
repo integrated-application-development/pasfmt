@@ -610,19 +610,19 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             level,
         });
 
-        if self.context.is_ended.last() == Some(&false) {
-            if let Some(KK::Else) = self.get_current_keyword_kind() {
-                let parent = self.get_line_parent_of_current_token();
-                self.next_token(); // else
+        if self.context.is_ended.last() == Some(&false)
+            && let Some(KK::Else) = self.get_current_keyword_kind()
+        {
+            let parent = self.get_line_parent_of_current_token();
+            self.next_token(); // else
 
-                trace!("Parse `else` statement");
-                level = ParserContextLevel::Parent(parent, 1);
-                self.parse_block(ParserContext {
-                    context_type: ContextType::Statement(StatementKind::Normal),
-                    context_ending_predicate: CEP::Transparent(never_ending),
-                    level,
-                });
-            }
+            trace!("Parse `else` statement");
+            level = ParserContextLevel::Parent(parent, 1);
+            self.parse_block(ParserContext {
+                context_type: ContextType::Statement(StatementKind::Normal),
+                context_ending_predicate: CEP::Transparent(never_ending),
+                level,
+            });
         }
 
         trace!("Finished parsing `if` statement");
@@ -861,8 +861,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.context.update_statuses(ending_context);
                     return;
                 }
-                if self.is_at_start_of_line() {
-                    if let Some(line_type) = match context.context_type {
+                if self.is_at_start_of_line()
+                    && let Some(line_type) = match context.context_type {
                         ContextType::Statement(StatementKind::Case) => Some(LLT::CaseArm),
                         ContextType::LabelBlock
                         | ContextType::TypeBlock
@@ -872,9 +872,9 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                             Some(LLT::VariantRecordCaseArm)
                         }
                         _ => None,
-                    } {
-                        self.set_logical_line_type(line_type);
                     }
+                {
+                    self.set_logical_line_type(line_type);
                 }
             }
             trace!("parse_statement with {:?}", token_type);
@@ -1749,10 +1749,9 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             if let Some(TT::IdentifierOrKeyword(
                 directive @ (KK::Deprecated | KK::Experimental | KK::Platform | KK::Library),
             )) = self.tokens.get(token_index).map(RawToken::get_token_type)
+                && let Some(token) = self.tokens.get_mut(token_index)
             {
-                if let Some(token) = self.tokens.get_mut(token_index) {
-                    token.set_token_type(TT::Keyword(directive))
-                }
+                token.set_token_type(TT::Keyword(directive))
             }
 
             line_index -= 1;
@@ -1928,10 +1927,9 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             .checked_sub(1)
             .and_then(|prev_pass_index| self.pass_indices.get(prev_pass_index))
             .and_then(|&token_index| self.tokens.get_mut(token_index))
+            && let TT::IdentifierOrKeyword(keyword_kind) = token.get_token_type()
         {
-            if let TT::IdentifierOrKeyword(keyword_kind) = token.get_token_type() {
-                token.set_token_type(TT::Keyword(keyword_kind));
-            }
+            token.set_token_type(TT::Keyword(keyword_kind));
         }
     }
     fn get_token_type_for_index(&self, index: usize) -> Option<RawTokenType> {
@@ -2019,17 +2017,17 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             .and_then(Self::get_keyword_kind)
     }
     fn consolidate_current_ident(&mut self) {
-        if let Some(token) = self.get_token_mut::<0>() {
-            if let TT::IdentifierOrKeyword(_) = token.get_token_type() {
-                token.set_token_type(TT::Identifier);
-            }
+        if let Some(token) = self.get_token_mut::<0>()
+            && let TT::IdentifierOrKeyword(_) = token.get_token_type()
+        {
+            token.set_token_type(TT::Identifier);
         }
     }
     fn consolidate_current_keyword(&mut self) {
-        if let Some(token) = self.get_token_mut::<0>() {
-            if let TT::IdentifierOrKeyword(keyword_kind) = token.get_token_type() {
-                token.set_token_type(TT::Keyword(keyword_kind));
-            }
+        if let Some(token) = self.get_token_mut::<0>()
+            && let TT::IdentifierOrKeyword(keyword_kind) = token.get_token_type()
+        {
+            token.set_token_type(TT::Keyword(keyword_kind));
         }
     }
     fn set_current_token_type(&mut self, token_type: RawTokenType) {
@@ -2306,10 +2304,10 @@ const PORTABILITY_DIRECTIVES: [KeywordKind; 4] =
     [KK::Deprecated, KK::Experimental, KK::Platform, KK::Library];
 fn keyword_consolidator(keyword_predicate: impl Fn(KeywordKind) -> bool) -> impl Fn(&mut LLP) {
     move |parser| {
-        if let Some(TT::IdentifierOrKeyword(keyword_kind)) = parser.get_current_token_type() {
-            if keyword_predicate(keyword_kind) {
-                parser.consolidate_current_keyword()
-            }
+        if let Some(TT::IdentifierOrKeyword(keyword_kind)) = parser.get_current_token_type()
+            && keyword_predicate(keyword_kind)
+        {
+            parser.consolidate_current_keyword()
         }
         parser.next_token();
     }

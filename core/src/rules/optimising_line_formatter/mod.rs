@@ -85,10 +85,10 @@ impl LogicalLineFileFormatter for OptimisingLineFormatter {
             provided by `TokenSpacing` can be removed at the starts of lines.
         */
         for token_index in 0..olf.formatted_tokens.len() {
-            if let Some(data) = olf.formatted_tokens.get_formatting_data_mut(token_index) {
-                if data.newlines_before > 0 {
-                    data.spaces_before = 0;
-                }
+            if let Some(data) = olf.formatted_tokens.get_formatting_data_mut(token_index)
+                && data.newlines_before > 0
+            {
+                data.spaces_before = 0;
             }
         }
 

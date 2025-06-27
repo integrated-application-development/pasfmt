@@ -534,10 +534,10 @@ fn get_word_token_type(input: &str) -> RawTokenType {
 
     if input.len() <= MAX_WORD_LENGTH {
         let key = hash_keyword(input) as usize;
-        if let Some(Some((candidate, keyword))) = KEYWORD_LOOKUP_TABLE.get(key) {
-            if input.eq_ignore_ascii_case(candidate) {
-                return *keyword;
-            }
+        if let Some(Some((candidate, keyword))) = KEYWORD_LOOKUP_TABLE.get(key)
+            && input.eq_ignore_ascii_case(candidate)
+        {
+            return *keyword;
         }
     }
 
