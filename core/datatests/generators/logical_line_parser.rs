@@ -585,6 +585,32 @@ mod child_lines {
                 _2 |  for var I := 0 to 10 do{2}
                 _^2|    Bar;
             ",
+            anon_routine_with_subroutine = "
+                _1  |Foo(procedure{1}
+                _2^1|  procedure A;
+                _3^1|  begin
+                _4^1|    P;
+                _5^1|  end;
+                _1  |begin{3}
+                _6^3|  B;
+                _1  |end);
+            ",
+            anon_routine_with_subroutine_surrounded_by_sections = "
+                _1   |Foo(procedure{1}
+                _1   |var{2}
+                _2^2 |  V: V;
+                _3^1 |  procedure A;
+                _4^1 |  var
+                _5^1 |    V2: V2;
+                _6^1 |  begin
+                _7^1 |    P;
+                _8^1 |  end;
+                _1   |var{4}
+                _9^4 |  V3: V3;
+                _1   |begin{5}
+                _10^5|  P2;
+                _1   |end);
+            "
         );
     }
 }

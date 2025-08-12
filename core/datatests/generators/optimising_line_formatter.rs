@@ -850,7 +850,170 @@ mod anonymous {
                         begin
                           A;
                         end;
-            "
+            ",
+            with_subroutines = "
+                    A :=
+                        procedure
+                          procedure B;
+                          begin
+                            P;
+                          end;
+                        begin
+                          B;
+                        end;
+
+                    A :=
+                        procedure
+                          procedure A2;
+                          begin
+                            A :=
+                                procedure
+                                  procedure A3;
+                                  begin
+                                    A :=
+                                        procedure
+                                          procedure A4;
+                                          begin
+                                            A :=
+                                                procedure
+                                                  procedure A5;
+                                                  begin
+                                                    A :=
+                                                        procedure
+                                                          procedure A6;
+                                                          begin
+                                                            A :=
+                                                                procedure
+                                                                  procedure A7;
+                                                                  begin
+                                                                    A;
+                                                                  end;
+                                                                begin
+                                                                  A;
+                                                                end;
+                                                          end;
+                                                        begin
+                                                          A;
+                                                        end;
+                                                  end;
+                                                begin
+                                                  A;
+                                                end;
+                                          end;
+                                        begin
+                                          A;
+                                        end;
+                                  end;
+                                begin
+                                  A;
+                                end;
+                          end;
+                        begin
+                          A;
+                        end;
+
+                    A :=
+                        procedure
+                        var
+                          V: V;
+                          procedure B;
+                          var
+                            V2: TV;
+                          begin
+                            A;
+                          end;
+                        var
+                          V3: TV;
+                        begin
+                          P2;
+                        end;
+
+                    A :=
+                        procedure(A: B; C: DDDDDD)
+                          function Foo;
+                          begin
+                          end;
+                        begin
+                          Foo;
+                        end;
+
+                    A :=
+                        procedure(
+                            A: B;
+                            C: DDDDDDD
+                        )
+                          function Foo;
+                          begin
+                          end;
+                        begin
+                          Foo;
+                        end;
+
+                    A :=
+                        function(
+                            A: A;
+                            B: B;
+                            C: C;
+                            D: D
+                        ):
+                            TTTTTTTTTTTTTTTT<
+                                UUUUUUUU
+                            >
+                        var
+                          V: TV;
+                        const
+                          C = 0;
+                          C2 = 0;
+
+                          procedure B(
+                              AAAAAAA: AAAAA
+                          );
+                          var
+                            V2: TV;
+                          begin
+                            A;
+                          end;
+
+                          procedure C;
+                          var
+                            V3: TV;
+                          begin
+                            var A :=
+                                function(
+                                    A: A;
+                                    B: B;
+                                    C: C;
+                                    D: D
+                                ):
+                                    TTTTTTTTTTTTTTTT<
+                                        UUUUUUUU
+                                    >
+                                var
+                                  V4: TV;
+                                const
+                                  C = 0;
+
+                                  procedure D(
+                                      AAAAAAA:
+                                          AAAAA
+                                  );
+                                  var
+                                    V5: TV;
+                                  begin
+                                    A;
+                                  end;
+                                var
+                                  V6: TV;
+                                begin
+                                  A;
+                                end;
+                          end;
+                        var
+                          V7: TV;
+                        begin
+                          A;
+                        end;
+            ",
         );
     }
 }

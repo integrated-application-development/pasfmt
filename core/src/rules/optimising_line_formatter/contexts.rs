@@ -738,6 +738,7 @@ impl<'a> SpecificContextStack<'a> {
                     .get_mut(index)
                     .expect("FormattingContext in context stack should exist");
                 data.is_child_broken = true;
+                data.break_anonymous_routine = Some(true);
             });
         } else if !child_solutions.is_empty() {
             if let Some((_, context)) =
