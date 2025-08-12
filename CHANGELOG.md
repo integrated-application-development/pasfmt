@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Fixed indentation of comments around statements outside of statement lists.
 - Fixed performance issues with heavily nested conditional directives.
+- Fixed formatting of anonymous routines containing subroutines.
 
 ## [0.5.1] - 2025-06-02
 

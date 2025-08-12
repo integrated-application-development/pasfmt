@@ -567,37 +567,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 TT::Keyword(
                     KK::Function | KK::Procedure | KK::Constructor | KK::Destructor | KK::Operator,
                 ) => {
-                    self.set_logical_line_type(LLT::RoutineHeader);
-                    self.parse_routine_header();
-                    let is_forward_declaration = self
-                        .get_current_logical_line_token_types()
-                        .rev()
-                        .any(|token_type| {
-                            matches!(token_type, TT::Keyword(KK::Forward | KK::External))
-                        })
-                        || self.context.contexts.iter().any(|context| {
-                            matches!(
-                                context.context_type,
-                                ContextType::Interface | ContextType::TypeDeclaration
-                            )
-                        });
-                    self.finish_logical_line();
-                    if !is_forward_declaration {
-                        self.parse_block(ParserContext {
-                            context_type: ContextType::SubRoutine,
-                            context_ending_predicate: CEP::Opaque(begin_asm),
-                            level: ParserContextLevel::Level(1),
-                        });
-                        match self.get_current_token_type() {
-                            Some(TT::Keyword(KK::Asm)) => self.parse_asm_block(),
-                            Some(TT::Keyword(KK::Begin)) => {
-                                self.parse_begin_end(ParserContextLevel::Level(1));
-                                self.take_until(no_more_separators());
-                                self.finish_logical_line();
-                            }
-                            _ => {}
-                        }
-                    }
+                    self.parse_routine();
                 }
                 TT::Keyword(KK::Asm) => self.parse_asm_block(),
                 TT::Keyword(KK::Raise) => {
@@ -1316,6 +1286,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
 
     fn parse_anonymous_routine(&mut self) {
         trace!("Parse anonymous routine");
+        let routine_keyword_idx = self.get_current_token_index().unwrap();
         self.next_token(); // procedure/function
         loop {
             let token_type = match self.get_current_token_type() {
@@ -1348,7 +1319,55 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     break;
                 }
                 TT::Op(OK::Semicolon | OK::RParen | OK::RBrack) => break,
+                TT::Keyword(KK::Procedure | KK::Function) => {
+                    self.do_with_context(
+                        ParserContext {
+                            context_type: ContextType::SubRoutine,
+                            context_ending_predicate: CEP::Opaque(never_ending),
+                            level: ParserContextLevel::Parent(
+                                LineParent {
+                                    line_index: *self.current_line.last(),
+                                    global_token_index: routine_keyword_idx,
+                                },
+                                0,
+                            ),
+                        },
+                        |parser| parser.parse_routine(),
+                    );
+                }
                 _ => self.next_token(),
+            }
+        }
+    }
+
+    fn parse_routine(&mut self) {
+        self.set_logical_line_type(LLT::RoutineHeader);
+        self.parse_routine_header();
+        let is_forward_declaration = self
+            .get_current_logical_line_token_types()
+            .rev()
+            .any(|token_type| matches!(token_type, TT::Keyword(KK::Forward | KK::External)))
+            || self.context.contexts.iter().any(|context| {
+                matches!(
+                    context.context_type,
+                    ContextType::Interface | ContextType::TypeDeclaration
+                )
+            });
+        self.finish_logical_line();
+        if !is_forward_declaration {
+            self.parse_block(ParserContext {
+                context_type: ContextType::SubRoutine,
+                context_ending_predicate: CEP::Opaque(begin_asm),
+                level: ParserContextLevel::Level(1),
+            });
+            match self.get_current_token_type() {
+                Some(TT::Keyword(KK::Asm)) => self.parse_asm_block(),
+                Some(TT::Keyword(KK::Begin)) => {
+                    self.parse_begin_end(ParserContextLevel::Level(1));
+                    self.take_until(no_more_separators());
+                    self.finish_logical_line();
+                }
+                _ => {}
             }
         }
     }

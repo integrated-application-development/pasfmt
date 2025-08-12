@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - after case arm (without `begin`-`end`)
   - clause of `do`/`then`/`else` structures (without `begin`-`end`)
   - after compound statement, but before the semicolon
+- Fixed parsing of anonymous routines containing subroutines.
+  - Each logical line in the subroutine is now parsed as a child line of the initial `procedure` or
+    `function` keyword for the anonymous routine.
+- When child lines are broken, the contexts of the parent line now correctly have
+  `break_anonymous_routine` updated to reflect the broken state.
 
 ### Changed
 
