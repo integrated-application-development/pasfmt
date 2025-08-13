@@ -145,7 +145,7 @@ mod tests {
     use crate::lang::TokenType as TT;
     use crate::prelude::*;
 
-    fn to_tokens(types: &[TokenType]) -> Vec<Token> {
+    fn to_tokens(types: &[TokenType]) -> Vec<Token<'_>> {
         types.iter().map(|&t| new_token("", t)).collect()
     }
 

@@ -32,7 +32,7 @@ fn ws_len(whitespace_and_content: &str) -> u32 {
         .count() as u32
 }
 
-pub fn new_token(whitespace_and_content: &str, token_type: TokenType) -> Token {
+pub fn new_token(whitespace_and_content: &str, token_type: TokenType) -> Token<'_> {
     Token::new_ref(
         whitespace_and_content,
         ws_len(whitespace_and_content),

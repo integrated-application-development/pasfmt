@@ -30,7 +30,7 @@ struct LexedToken<'a> {
     token_type: RawTokenType,
 }
 
-fn lex_complete(input: &str) -> Vec<RawToken> {
+fn lex_complete(input: &str) -> Vec<RawToken<'_>> {
     let (remaining, tokens) = lex(input);
 
     // Remaining input is always a programming error; invalid input should turn into 'Unknown' tokens.
@@ -42,7 +42,7 @@ fn lex_complete(input: &str) -> Vec<RawToken> {
     tokens
 }
 
-fn lex(mut input: &str) -> (&str, Vec<RawToken>) {
+fn lex(mut input: &str) -> (&str, Vec<RawToken<'_>>) {
     // Experimentally it was determined that this linear regression on input length is best on average.
     // The performance difference from the default capacity is minor, but measurable.
     let mut tokens = Vec::with_capacity(input.len() / 8);
@@ -68,7 +68,7 @@ fn to_final_token(
         whitespace_count,
         token_content,
         token_type,
-    }: LexedToken,
+    }: LexedToken<'_>,
 ) -> RawToken<'_> {
     let whitespace_count: u32 = whitespace_count
         .try_into()
@@ -1346,7 +1346,7 @@ fn unknown(args: LexArgs) -> OffsetAndTokenType {
     (args.offset, TT::Unknown)
 }
 
-fn eof(input: &str) -> (&str, LexedToken) {
+fn eof(input: &str) -> (&str, LexedToken<'_>) {
     let whitespace_count = count_leading_whitespace(input);
     let (token_content, remaining) = input.split_at(whitespace_count);
     (
