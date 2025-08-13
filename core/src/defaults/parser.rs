@@ -1949,7 +1949,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         }
     }
 
-    fn get_token<const OFFSET: isize>(&self) -> Option<&RawToken> {
+    fn get_token<const OFFSET: isize>(&self) -> Option<&RawToken<'_>> {
         let token_index = self.get_token_index::<OFFSET>()?;
         self.tokens.get(token_index)
     }

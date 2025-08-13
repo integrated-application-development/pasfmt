@@ -348,7 +348,7 @@ impl<C: Configuration> PasFmtConfiguration<C> {
 }
 
 impl<C: Configuration> FormatterConfiguration for PasFmtConfiguration<C> {
-    fn get_paths(&self) -> anyhow::Result<Cow<[String]>> {
+    fn get_paths(&self) -> anyhow::Result<Cow<'_, [String]>> {
         let mut paths = Cow::Borrowed(&self.paths[..]);
         if let Some(arg_file) = &self.files_from {
             paths.to_mut().extend(

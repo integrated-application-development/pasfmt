@@ -1263,7 +1263,7 @@ impl<'a> LineFormattingContexts<'a> {
     }
 
     /// Returns the [`SpecificContextStack`] at a given line index.
-    pub fn get_specific_context_stack(&self, line_index: u32) -> SpecificContextStack {
+    pub fn get_specific_context_stack(&self, line_index: u32) -> SpecificContextStack<'_> {
         SpecificContextStack {
             formatting_contexts: self,
             stack: self

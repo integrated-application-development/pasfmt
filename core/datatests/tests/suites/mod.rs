@@ -23,7 +23,7 @@ struct InputOutput<'i> {
     input: &'i str,
     output: Option<&'i str>,
 }
-fn get_input_output(input: &str) -> InputOutput {
+fn get_input_output(input: &str) -> InputOutput<'_> {
     match input.split_once(FILE_SEPARATOR) {
         Some((input, output)) => InputOutput {
             input,

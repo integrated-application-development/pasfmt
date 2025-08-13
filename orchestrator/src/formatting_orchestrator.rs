@@ -5,7 +5,7 @@ use log::LevelFilter;
 
 pub trait FormatterConfiguration {
     fn is_stdin(&self) -> bool;
-    fn get_paths(&self) -> anyhow::Result<Cow<[String]>>;
+    fn get_paths(&self) -> anyhow::Result<Cow<'_, [String]>>;
     fn log_level(&self) -> LevelFilter;
     fn mode(&self) -> FormatMode;
     fn cursors(&self) -> &[u32];
