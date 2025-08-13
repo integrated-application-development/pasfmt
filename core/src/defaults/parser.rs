@@ -222,12 +222,12 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     }
     fn parse_structures(&mut self) {
         while let Some(token_type) = self.get_current_token_type() {
-            if let Some(context) = self.context.get_ending_context(self) {
+            if let Some(ending_context) = self.context.get_ending_context_idx(self) {
                 trace!(
                     "Context ended, returning from parse_structures with {:?}",
                     token_type
                 );
-                self.context.update_statuses(&context);
+                self.context.update_statuses(ending_context);
                 return;
             }
             trace!("parse_structures with {:?}", token_type);
@@ -876,12 +876,12 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     fn parse_statement(&mut self) {
         while let Some(token_type) = self.get_current_token_type() {
             if let Some(context) = self.get_last_context() {
-                if let Some(context) = self.context.get_ending_context(self) {
+                if let Some(ending_context) = self.context.get_ending_context_idx(self) {
                     trace!(
                         "Context ended, returning from parse_statement with {:?}",
                         token_type
                     );
-                    self.context.update_statuses(&context);
+                    self.context.update_statuses(ending_context);
                     return;
                 }
                 if self.is_at_start_of_line() {
@@ -1229,7 +1229,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             self.finish_logical_line();
             // With no unfinished line, this will add the separators to the last child line
             self.take_separators_on_last_line();
-            if self.context.get_ending_context(self).is_some()
+            if self.context.get_ending_context_idx(self).is_some()
                 || self.get_current_token_type().is_none()
             {
                 // If the parent context above the `Statement` is over, return.
@@ -1750,7 +1750,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     ) {
         while self.get_current_token_type().is_some()
             && !predicate(self)
-            && self.context.get_ending_context(self).is_none()
+            && self.context.get_ending_context_idx(self).is_none()
             && matches!(next_token_op(self), OpResult::Continue)
         {}
     }
@@ -2120,7 +2120,7 @@ fn predicate_or(a: impl Fn(&LLP) -> bool, b: impl Fn(&LLP) -> bool) -> impl Fn(&
     move |parser| a(parser) || b(parser)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 enum ContextEndingPredicate {
     Opaque(fn(&LLP) -> bool),
     Transparent(fn(&LLP) -> bool),
@@ -2358,7 +2358,7 @@ impl ParserContextLevel {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 struct ParserContext {
     context_type: ContextType,
     context_ending_predicate: ContextEndingPredicate,
@@ -2384,35 +2384,31 @@ impl ParserContexts {
         self.is_ended.pop();
     }
 
-    fn get_ending_context(&self, parser: &LLP) -> Option<ParserContext> {
-        for (context, &is_ended) in self.contexts.iter().zip(&self.is_ended).rev() {
+    fn get_ending_context_idx(&self, parser: &LLP) -> Option<usize> {
+        for (idx, (context, &is_ended)) in
+            self.contexts.iter().zip(&self.is_ended).enumerate().rev()
+        {
             if is_ended {
-                return Some(context.clone());
+                return Some(idx);
             }
             match context.context_ending_predicate {
-                CEP::Opaque(predicate) => {
-                    return if predicate(parser) {
-                        Some(context.clone())
-                    } else {
-                        None
-                    }
-                }
+                CEP::Opaque(predicate) => return if predicate(parser) { Some(idx) } else { None },
                 CEP::Transparent(predicate) => {
                     if predicate(parser) {
-                        return Some(context.clone());
+                        return Some(idx);
                     }
                 }
             }
         }
         None
     }
-    fn update_statuses(&mut self, ending_context: &ParserContext) {
+    fn update_statuses(&mut self, ending_context_idx: usize) {
         for (_, is_ended) in self
             .contexts
             .iter()
             .zip(self.is_ended.iter_mut())
             .rev()
-            .take_while_inclusive(|(context, _)| *context != ending_context)
+            .take(self.contexts.len().saturating_sub(ending_context_idx))
         {
             *is_ended = true;
         }
