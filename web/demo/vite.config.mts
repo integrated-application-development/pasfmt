@@ -22,7 +22,7 @@ let keywordGenPlugin = {
       "];";
 
     const filePath = resolve(__dirname, "src/generated/keywords.js");
-    mkdirSync(dirname(filePath));
+    mkdirSync(dirname(filePath), { recursive: true });
     writeFileSync(filePath, content);
     console.log("generated:", filePath);
   },
