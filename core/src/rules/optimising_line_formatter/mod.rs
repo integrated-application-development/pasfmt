@@ -417,6 +417,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             child_solutions: Vec::new(),
         });
 
+        let init_context_stack = formatting_contexts.get_specific_context_stack(0);
         let mut node = FormattingNode {
             starting_ws,
             decision: decision_tree.root(),
@@ -427,13 +428,34 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 line_length: last_line_length,
                 line_index: 0,
                 line: line.1,
-                stack: &formatting_contexts.get_specific_context_stack(0),
+                stack: &init_context_stack,
             }),
         };
         if let Some(base_context) = Rc::make_mut(&mut node.context_data).first_mut() {
             base_context.can_break = base_can_break;
         }
-        node_heap.push(node);
+
+        // The first token in the line is handled a bit differently than the others because of a kind of bootstrapping
+        // problem with the way the code is currently structured; every "node" in the heap is assumed to have one
+        // decision already made (i.e. a non-empty decision tree), and we need to push a node to the heap to start
+        // the main loop.
+        //
+        // To get around this without a decent amount of redesign, we can simply update use the initial node before the
+        // child solutions are set to generate the child solutions, creating one complete initial node for each one.
+        node_heap.extend(
+            self.find_optimal_child_lines_solution(
+                line,
+                0,
+                node.starting_ws,
+                &init_context_stack.with_data(&node),
+                last_line_length,
+                0,
+            )
+            .map_with(node, |node, child_sol| {
+                node.decision.get_mut().child_solutions = child_sol;
+                node
+            }),
+        );
 
         let mut iteration_count = 0;
         let mut node_successors = Vec::new();
@@ -706,7 +728,8 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
 
         let child_line_solutions = self.find_optimal_child_lines_solution(
             line,
-            &next_node,
+            next_node.next_line_index,
+            next_node.starting_ws,
             &contexts.with_data(&next_node),
             token_line_length,
             continuation_count,
@@ -740,14 +763,15 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
     fn find_optimal_child_lines_solution(
         &self,
         line: (usize, &LogicalLine),
-        node: &FormattingNode,
+        next_line_index: u32,
+        starting_ws: LineWhitespace,
         parent_contexts: &SpecificContextDataStack,
         token_line_length: u32,
         parent_continuations: u16,
     ) -> PotentialSolutions {
         let line_parent = LineParent {
             line_index: line.0,
-            global_token_index: line.1.get_tokens()[node.next_line_index as usize],
+            global_token_index: line.1.get_tokens()[next_line_index as usize],
         };
 
         let Some(line_children) = self.line_children.get(&line_parent) else {
@@ -756,7 +780,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         };
 
         // Child lines have a base indentation level 1 greater than their parent
-        let child_starting_ws = node.starting_ws
+        let child_starting_ws = starting_ws
             + LineWhitespace {
                 indentations: 1,
                 continuations: parent_continuations,
@@ -773,8 +797,8 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
 
         // There are some cases, e.g., `then begin` and `else if` that are
         // special. These cases use the same indentation as their parent's line
-        let parent_base_ws = node.starting_ws;
-        let parent_indented_ws = node.starting_ws
+        let parent_base_ws = starting_ws;
+        let parent_indented_ws = starting_ws
             + LineWhitespace {
                 indentations: 1,
                 continuations: 0,
