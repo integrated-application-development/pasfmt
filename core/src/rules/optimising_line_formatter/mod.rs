@@ -864,12 +864,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 }
             }
             Some(TT::Keyword(KK::Else)) => {
-                match (
-                    parent_contexts
-                        .get_last_context(context_matches!(ContextType::ControlFlowBegin))
-                        .map(|(_, data)| data.is_broken | data.is_child_broken),
-                    get_first_child_token(),
-                ) {
+                match get_first_child_token() {
                     // We never want to unwrap an `else`, e.g., `if ... then ... else ...;`
                     /*
                         if ... then
@@ -877,7 +872,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                         else if ... then
                           ...
                     */
-                    (_, Some(TT::Keyword(KK::If))) => {
+                    Some(TT::Keyword(KK::If)) => {
                         if must_break_first_child {
                             Potentials::One(ChildLineOption::BreakAll(parent_indented_ws))
                         } else {
@@ -891,7 +886,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                           ...
                         end
                     */
-                    (_, Some(TT::Keyword(KK::Begin))) => {
+                    Some(TT::Keyword(KK::Begin)) => {
                         if self.settings.break_before_begin || must_break_first_child {
                             Potentials::One(ChildLineOption::BreakAll(parent_base_ws))
                         } else {
