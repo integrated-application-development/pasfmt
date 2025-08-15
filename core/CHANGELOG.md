@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Fixed parsing of anonymous routines containing subroutines.
+  - Each logical line in the subroutine is now parsed as a child line of the initial `procedure` or
+    `function` keyword for the anonymous routine.
+- When child lines are broken, the contexts of the parent line now correctly have
+  `break_anonymous_routine` updated to reflect the broken state.
+- When the first token of a logical line has child lines, those lines are now explored and
+  formatted as usual.
+
 ## 0.5.1 - 2025-06-02
 
 ### Fixed
