@@ -80,7 +80,7 @@ impl Decision {
 /// The decision for the first token in a line is slightly different to that of
 /// a [`Decision`].
 /// - By definition, there can't be any
-///   [`continuations`](LineWhitespace::continuation) for the first token in a
+///   [`continuations`](LineWhitespace::continuations) for the first token in a
 ///   line.
 /// - If the first decision is to be [`Decision::Continue`], the previous (or
 ///   parent) line's length needs to be known to uphold the line length limit
