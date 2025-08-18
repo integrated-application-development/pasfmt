@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unterminated string literals will never mangle other tokens by always breaking after.
 - Improved support for multiline strings. They will now always break before, and
   break surrounding contexts.
+- Anonymous routine declaration section headers are now parsed as child lines of the
+  procedure/function keyword for the anonymous routine (previously in the parent line), and the
+  lines within sections are also parsed as child lines of the procedure/function keyword (previously
+  the parent was the section header). A side-effect of this is the force line-wrapping of anonymous
+  routines that contain any sections.
 
 ## 0.5.1 - 2025-06-02
 

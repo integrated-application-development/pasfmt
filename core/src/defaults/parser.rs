@@ -1296,7 +1296,10 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
 
     fn parse_anonymous_routine(&mut self) {
         trace!("Parse anonymous routine");
-        let routine_keyword_idx = self.get_current_token_index().unwrap();
+        let routine_keyword_parent = LineParent {
+            line_index: *self.current_line.last(),
+            global_token_index: self.get_current_token_index().unwrap(),
+        };
         self.next_token(); // procedure/function
         loop {
             let token_type = match self.get_current_token_type() {
@@ -1311,14 +1314,21 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         KK::Label => ContextType::LabelBlock,
                         _ => ContextType::DeclarationBlock,
                     };
-                    let parent = self.get_line_parent_of_current_token();
 
                     self.set_current_decl_kind(DK::AnonSection);
-                    self.next_token(); // Label/Const/Type/Var
+                    self.do_with_context(
+                        ParserContext {
+                            context_type,
+                            context_ending_predicate: CEP::Opaque(never_ending),
+                            level: ParserContextLevel::Parent(routine_keyword_parent, 0),
+                        },
+                        |parser| parser.next_token(), // Label/Const/Type/Var
+                    );
+
                     self.parse_block(ParserContext {
                         context_type,
                         context_ending_predicate: CEP::Opaque(local_declaration_section),
-                        level: ParserContextLevel::Parent(parent, 1),
+                        level: ParserContextLevel::Parent(routine_keyword_parent, 1),
                     });
                 }
                 TT::Keyword(KK::Begin) => {
@@ -1334,13 +1344,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         ParserContext {
                             context_type: ContextType::SubRoutine,
                             context_ending_predicate: CEP::Opaque(never_ending),
-                            level: ParserContextLevel::Parent(
-                                LineParent {
-                                    line_index: *self.current_line.last(),
-                                    global_token_index: routine_keyword_idx,
-                                },
-                                1,
-                            ),
+                            level: ParserContextLevel::Parent(routine_keyword_parent, 1),
                         },
                         |parser| parser.parse_routine(),
                     );

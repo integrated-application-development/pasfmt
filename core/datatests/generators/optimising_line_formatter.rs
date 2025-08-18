@@ -788,10 +788,18 @@ mod anonymous {
                     );
             ",
             empty_blocks = "
-                    aaa(procedure var begin end);
+                    aaa(
+                        procedure
+                        var
+                        begin
+                        end
+                    );
                     begin
                       aaa(
-                          procedure var begin end
+                          procedure
+                          var
+                          begin
+                          end
                       );
                       begin
                         aaa(
@@ -802,11 +810,24 @@ mod anonymous {
                         );
                       end;
                     end;
-                    aa(procedure const begin end);
-                    aaa(procedure type begin end);
+                    aa(
+                        procedure
+                        const
+                        begin
+                        end
+                    );
+                    aaa(
+                        procedure
+                        type
+                        begin
+                        end
+                    );
 
                     aaa(
-                        procedure const begin end
+                        procedure
+                        const
+                        begin
+                        end
                     );
                     aaa(
                         procedure
@@ -817,7 +838,10 @@ mod anonymous {
                     );
 
                     aaaa(
-                        procedure type begin end
+                        procedure
+                        type
+                        begin
+                        end
                     );
                     aaaa(
                         procedure
@@ -1014,6 +1038,54 @@ mod anonymous {
                           A;
                         end;
             ",
+            with_sections = "
+                    // wrap_column=100
+                    A :=
+                        function
+                        label
+                          B;
+                        begin
+                        end;
+                    A :=
+                        function
+                        const
+                          B = '';
+                        begin
+                        end;
+                    A :=
+                        function
+                        type
+                          C = D;
+                        begin
+                        end;
+                    A :=
+                        function
+                        var
+                          B: C;
+                        begin
+                        end;
+                    A :=
+                        function
+                        threadvar
+                          B: C;
+                        begin
+                        end;
+
+                    A :=
+                        function
+                        label
+                          B;
+                        const
+                          C = '';
+                        type
+                          D = E;
+                        var
+                          F: G;
+                        threadvar
+                          H: I;
+                        begin
+                        end;
+            "
         );
     }
 }
