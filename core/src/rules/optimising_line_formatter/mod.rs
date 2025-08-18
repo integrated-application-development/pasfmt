@@ -206,8 +206,16 @@ impl LineChildren {
 #[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
 enum ChildLineOption {
     ContinueAll,
-    BreakAll(LineWhitespace),
-    ContinueThenBreak(LineWhitespace),
+    BreakAll(ChildWhitespace),
+    ContinueThenBreak(ChildWhitespace),
+}
+
+#[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
+struct ChildWhitespace {
+    /// The base whitespace to start exploring child lines with
+    whitespace: LineWhitespace,
+    /// A negative offset to apply to the indentation of the child line
+    deindent: u8,
 }
 
 #[derive(Hash, PartialEq, Eq)]
@@ -779,12 +787,14 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             return PotentialSolutions::One(vec![]);
         };
 
-        // Child lines have a base indentation level 1 greater than their parent
-        let child_starting_ws = starting_ws
-            + LineWhitespace {
-                indentations: 1,
-                continuations: parent_continuations,
-            };
+        let child_starting_ws = ChildWhitespace {
+            whitespace: starting_ws
+                + LineWhitespace {
+                    indentations: 0,
+                    continuations: parent_continuations,
+                },
+            deindent: 0,
+        };
 
         let get_first_child_token = || {
             line_children
@@ -796,13 +806,16 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         };
 
         // There are some cases, e.g., `then begin` and `else if` that are
-        // special. These cases use the same indentation as their parent's line
-        let parent_base_ws = starting_ws;
-        let parent_indented_ws = starting_ws
-            + LineWhitespace {
-                indentations: 1,
-                continuations: 0,
-            };
+        // special. These cases use the same indentation as their parent's line,
+        // which is achieved by deindenting by one level.
+        let parent_base_ws = ChildWhitespace {
+            whitespace: starting_ws,
+            deindent: 1,
+        };
+        let parent_indented_ws = ChildWhitespace {
+            whitespace: starting_ws,
+            deindent: 0,
+        };
 
         let Some(first_child) = line_children
             .line_indices
@@ -972,21 +985,23 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         starting_options.and_then(|option| {
             trace!("Exploring child lines option {option:?}");
             let child_starting_ws = match option {
-                ChildLineOption::ContinueAll => LineWhitespace::zero(),
-                ChildLineOption::BreakAll(starting_ws)
-                | ChildLineOption::ContinueThenBreak(starting_ws) => starting_ws,
+                ChildLineOption::ContinueAll => ChildWhitespace {
+                    whitespace: LineWhitespace::zero(),
+                    deindent: 0,
+                },
+                ChildLineOption::BreakAll(ws) | ChildLineOption::ContinueThenBreak(ws) => ws,
             };
             let get_first_token_decision = |index, line_length| match option {
                 ChildLineOption::ContinueAll => FirstDecision::Continue {
                     line_length,
                     can_break: false,
                 },
-                ChildLineOption::BreakAll(_) => FirstDecision::Break,
-                ChildLineOption::ContinueThenBreak(_) if index == 0 => FirstDecision::Continue {
+                ChildLineOption::BreakAll(..) => FirstDecision::Break,
+                ChildLineOption::ContinueThenBreak(..) if index == 0 => FirstDecision::Continue {
                     line_length,
                     can_break: true,
                 },
-                ChildLineOption::ContinueThenBreak(_) => FirstDecision::Break,
+                ChildLineOption::ContinueThenBreak(..) => FirstDecision::Break,
             };
 
             let cache_key = ChildLineInitialConditions {
@@ -1006,13 +1021,15 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 .map(|&child_line| (child_line, &self.lines[child_line]))
                 .enumerate()
             {
+                let mut child_whitespace = child_starting_ws.whitespace;
+                child_whitespace.indentations += line.1.get_level();
+                child_whitespace.indentations = child_whitespace
+                    .indentations
+                    .saturating_sub(child_starting_ws.deindent.into());
+
                 let child_solution = self
                     .find_optimal_solution(
-                        child_starting_ws
-                            + LineWhitespace {
-                                indentations: line.1.get_level(),
-                                continuations: 0,
-                            },
+                        child_whitespace,
                         line,
                         get_first_token_decision(child_line_index, last_line_length),
                     )

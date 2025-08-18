@@ -516,7 +516,7 @@ fn parse_line(
             let &(parent_indentation, _) = parsed_lines
                 .get(&LN::Explicit(line_parent.line_index))
                 .ok_or(TestParsingError::InvalidParentReference(parent_marker))?;
-            level -= parent_indentation + 1;
+            level -= parent_indentation;
             Some(line_parent)
         } else {
             None
