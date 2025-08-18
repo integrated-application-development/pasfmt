@@ -597,18 +597,18 @@ mod child_lines {
             ",
             anon_routine_with_subroutine_surrounded_by_sections = "
                 _1   |Foo(procedure{1}
-                _1   |var{2}
-                _2^2 |  V: V;
-                _3^1 |  procedure A;
-                _4^1 |  var
-                _5^1 |    V2: V2;
-                _6^1 |  begin
-                _7^1 |    P;
-                _8^1 |  end;
-                _1   |var{4}
-                _9^4 |  V3: V3;
-                _1   |begin{5}
-                _10^5|  P2;
+                _2^1 |var
+                _3^1 |  V: V;
+                _4^1 |  procedure A;
+                _5^1 |  var
+                _6^1 |    V2: V2;
+                _7^1 |  begin
+                _8^1 |    P;
+                _9^1 |  end;
+                _10^1|var
+                _11^1|  V3: V3;
+                _1   |begin{2}
+                _12^2|  P2;
                 _1   |end);
             "
         );
@@ -1099,9 +1099,9 @@ mod decl_sections {
         fn test_case(decl_section: &str, line_types: &str) -> String {
             format!(
                 "
-                    _1|A := procedure Foo
+                    _999|A := procedure{{1}} Foo
                     {}
-                    1|begin end;
+                    999|begin end;
                     ---
                     {}
                 ",
@@ -1114,7 +1114,7 @@ mod decl_sections {
                 root_dir,
                 one_label = test_case(
                     "
-                        1  |label{1}
+                        1^1|label
                         2^1|  1;
                     ",
                     "
@@ -1123,7 +1123,7 @@ mod decl_sections {
                 ),
                 many_labels = test_case(
                     "
-                        1  |label{1}
+                        1^1|label
                         2^1|  1,ident;
                     ",
                     "
@@ -1132,7 +1132,7 @@ mod decl_sections {
                 ),
                 one_const = test_case(
                     "
-                        1  |const{1}
+                        1^1|const
                         2^1|  CFoo = 1;
                     ",
                     "
@@ -1141,7 +1141,7 @@ mod decl_sections {
                 ),
                 many_consts = test_case(
                     "
-                        1  |const{1}
+                        1^1|const
                         2^1|  CFoo = 1;
                         3^1|  CBar = '1234';
                     ",
@@ -1152,7 +1152,7 @@ mod decl_sections {
                 ),
                 one_resourcestring = test_case(
                     "
-                        1  |resourcestring{1}
+                        1^1|resourcestring
                         2^1|  CFoo = 1;
                     ",
                     "
@@ -1161,7 +1161,7 @@ mod decl_sections {
                 ),
                 many_resourcestrings = test_case(
                     "
-                        1  |resourcestring{1}
+                        1^1|resourcestring
                         2^1|  CFoo = 1;
                         3^1|  CBar = '1234';
                     ",
@@ -1172,7 +1172,7 @@ mod decl_sections {
                 ),
                 one_var = test_case(
                     "
-                        1  |var{1}
+                        1^1|var
                         2^1|  A: TFoo;
                     ",
                     "
@@ -1181,7 +1181,7 @@ mod decl_sections {
                 ),
                 many_vars = test_case(
                     "
-                        1  |var{1}
+                        1^1|var
                         2^1|  A: TFoo;
                         3^1|  B: TFoo;
                     ",
@@ -1192,7 +1192,7 @@ mod decl_sections {
                 ),
                 many_names_var = test_case(
                     "
-                        1  |var{1}
+                        1^1|var
                         2^1|  A, B: TFoo;
                     ",
                     "
@@ -1201,7 +1201,7 @@ mod decl_sections {
                 ),
                 many_names_vars = test_case(
                     "
-                        1  |var{1}
+                        1^1|var
                         2^1|  A, B: TFoo;
                         3^1|  C, D: TFoo;
                     ",
@@ -1212,7 +1212,7 @@ mod decl_sections {
                 ),
                 one_threadvar = test_case(
                     "
-                        1  |threadvar{1}
+                        1^1|threadvar
                         2^1|  A: TFoo;
                     ",
                     "
@@ -1221,7 +1221,7 @@ mod decl_sections {
                 ),
                 many_threadvars = test_case(
                     "
-                        1  |threadvar{1}
+                        1^1|threadvar
                         2^1|  A: TFoo;
                         3^1|  B: TFoo;
                     ",
@@ -1231,45 +1231,45 @@ mod decl_sections {
                     "
                 ),
                 anonymous_argument = "
-                    _1 |Bar(procedure
-                    1  |label{1}
-                    2^1|  1,ident;
-                    1  |const{2}
-                    3^2|  CFoo = 1;
-                    4^2|  CBar = '1234';
-                    1  |var{3}
-                    5^3|  A, B: TFoo;
-                    6^3|  C, D: TFoo;
+                    _1 |Bar(procedure{1}
+                    2^1|label
+                    3^1|  1,ident;
+                    4^1|const
+                    5^1|  CFoo = 1;
+                    6^1|  CBar = '1234';
+                    7^1|var
+                    8^1|  A, B: TFoo;
+                    9^1|  C, D: TFoo;
                     1  |begin end);
                     ---
-                    2:Declaration
                     3:Declaration
-                    4:Declaration
                     5:Declaration
                     6:Declaration
+                    8:Declaration
+                    9:Declaration
                 ",
                 stacked = test_case(
                     "
-                        1  |label{1}
-                        2^1|  A;
-                        1  |const{2}
-                        3^2|  A = '';
-                        1  |resourcestring{3}
-                        4^3|  A = '';
-                        1  |type{4}
-                        5^4|  A = B;
-                        1  |var{5}
-                        6^5|  A: B;
-                        1  |threadvar{6}
-                        7^6|  A: B;
+                        1^1 |label
+                        2^1 |  A;
+                        3^1 |const
+                        4^1 |  A = '';
+                        5^1 |resourcestring
+                        6^1 |  A = '';
+                        7^1 |type
+                        8^1 |  A = B;
+                        9^1 |var
+                        10^1|  A: B;
+                        11^1|threadvar
+                        12^1|  A: B;
                     ",
                     "
                         2:Declaration
-                        3:Declaration
                         4:Declaration
-                        5:Declaration
                         6:Declaration
-                        7:Declaration
+                        8:Declaration
+                        10:Declaration
+                        12:Declaration
                     "
                 ),
             );
@@ -1468,8 +1468,8 @@ mod type_decls {
                         _|  end;
                     ",
                     anonymous_local = "
-                        _1 |A := procedure
-                        _1 |type{1}
+                        _1 |A := procedure{1}
+                        _^1|type
                         _^1|  TFoo = class
                         _^1|  end;
                     ",
@@ -1519,13 +1519,13 @@ mod type_decls {
                     ),
                     anonymous = format!(
                         "
-                            _1 |A := procedure Foo
-                            1  |type{{1}}
-                            2^1|  {};
+                            _1 |A := procedure{{1}} Foo
+                            2^1|type
+                            3^1|  {};
                             1  |begin
                             1  |end;
                             ---
-                            2:Declaration
+                            3:Declaration
                         ",
                         $input,
                     ),
