@@ -601,12 +601,13 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         };
 
         trace!("Parse `then` statement");
+        let mut level = ParserContextLevel::Parent(parent, 1);
         self.parse_block(ParserContext {
             context_type: ContextType::Statement(StatementKind::Normal),
             context_ending_predicate: CEP::Transparent(|llp| {
                 matches!(llp.get_current_token_type(), Some(TT::Keyword(KK::Else)))
             }),
-            level: ParserContextLevel::Parent(parent, 0),
+            level,
         });
 
         if self.context.is_ended.last() == Some(&false) {
@@ -615,16 +616,17 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                 self.next_token(); // else
 
                 trace!("Parse `else` statement");
+                level = ParserContextLevel::Parent(parent, 1);
                 self.parse_block(ParserContext {
                     context_type: ContextType::Statement(StatementKind::Normal),
                     context_ending_predicate: CEP::Transparent(never_ending),
-                    level: ParserContextLevel::Parent(parent, 0),
+                    level,
                 });
             }
         }
 
         trace!("Finished parsing `if` statement");
-        self.take_separators_on_last_line();
+        self.take_separators_on_last_line(level);
         self.finish_logical_line();
     }
 
@@ -650,14 +652,15 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         };
 
         trace!("Parsing `... do` statement");
+        let level = ParserContextLevel::Parent(parent, 1);
         self.parse_block(ParserContext {
             context_type: ContextType::Statement(StatementKind::Normal),
             context_ending_predicate: CEP::Transparent(never_ending),
-            level: ParserContextLevel::Parent(parent, 0),
+            level,
         });
 
         trace!("Finished parsing `... do`");
-        self.take_separators_on_last_line();
+        self.take_separators_on_last_line(level);
         self.finish_logical_line();
     }
 
@@ -769,32 +772,38 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     fn parse_case_arm(&mut self, parent: LineParent) {
         // Parse statement
         trace!("Parsing case arm statement");
+        let level = ParserContextLevel::Parent(parent, 1);
         self.parse_block(ParserContext {
             context_type: ContextType::Statement(StatementKind::Normal),
             context_ending_predicate: CEP::Transparent(never_ending),
-            level: ParserContextLevel::Parent(parent, 0),
+            level,
         });
 
         trace!("Finished parsing case arm statement");
-        self.take_separators_on_last_line();
+        self.take_separators_on_last_line(level);
         self.finish_logical_line();
     }
 
-    fn take_separators_on_last_line(&mut self) {
+    fn take_separators_on_last_line(&mut self, level: ParserContextLevel) {
         if !matches!(self.get_current_token_type(), Some(TT::Op(OK::Semicolon))) {
             return;
         }
         // To add tokens to the last child line, it must be the `current_line`
         self.current_line.push(self.last_finished_line);
 
+        let line_was_empty = self.is_at_start_of_line();
+
         // Context has to be pushed as the parent context may end with `;`,
         // short-circuiting the `take_until`
         self.context.push(ParserContext {
             context_type: ContextType::Utility,
             context_ending_predicate: CEP::Opaque(never_ending),
-            level: ParserContextLevel::Level(0),
+            level,
         });
         self.take_until(no_more_separators()); // ;
+        if line_was_empty {
+            self.finish_logical_line();
+        }
         self.context.pop();
 
         self.current_line.pop();
@@ -1184,17 +1193,18 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         context_ending_predicate: ContextEndingPredicate,
     ) {
         loop {
+            let level = ParserContextLevel::Level(0);
             self.do_with_context(
                 ParserContext {
                     context_type,
                     context_ending_predicate,
-                    level: ParserContextLevel::Level(0),
+                    level,
                 },
                 |parser| parser.parse_structures(),
             );
             self.finish_logical_line();
             // With no unfinished line, this will add the separators to the last child line
-            self.take_separators_on_last_line();
+            self.take_separators_on_last_line(level);
             if self.context.get_ending_context_idx(self).is_some()
                 || self.get_current_token_type().is_none()
             {
@@ -1277,7 +1287,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             context_ending_predicate: CEP::Opaque(|parser| {
                 matches!(parser.get_current_token_type(), Some(TT::Op(OK::RParen)))
             }),
-            level: ParserContextLevel::Parent(parent, 0),
+            level: ParserContextLevel::Parent(parent, 1),
         });
         if let Some(TT::Op(OK::RParen)) = self.get_current_token_type() {
             self.next_token(); // )
@@ -1308,13 +1318,13 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.parse_block(ParserContext {
                         context_type,
                         context_ending_predicate: CEP::Opaque(local_declaration_section),
-                        level: ParserContextLevel::Parent(parent, 0),
+                        level: ParserContextLevel::Parent(parent, 1),
                     });
                 }
                 TT::Keyword(KK::Begin) => {
                     self.parse_begin_end(ParserContextLevel::Parent(
                         self.get_line_parent_of_current_token(),
-                        0,
+                        1,
                     ));
                     break;
                 }
@@ -1329,7 +1339,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                                     line_index: *self.current_line.last(),
                                     global_token_index: routine_keyword_idx,
                                 },
-                                0,
+                                1,
                             ),
                         },
                         |parser| parser.parse_routine(),
@@ -2357,7 +2367,7 @@ struct LocalLogicalLine {
 }
 use LogicalLineType as LLT;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 enum ParserContextLevel {
     /// When a parser context has a parent, the level is used as an absolute level.
     Parent(LineParent, u16),

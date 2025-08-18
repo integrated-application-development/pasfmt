@@ -3411,6 +3411,21 @@ mod semicolons {
                 _^1|  Foo{}
                 1  |end;
             ",
+            after_begin = "
+                _|begin{}
+                _|end;
+            ",
+            after_try_except = "
+                _|try{0}
+                _|except{0}
+                _|else{0}
+                _|end;
+            ",
+            after_try_finally = "
+                _|try{0}
+                _|finally{0}
+                _|end;
+            ",
         );
     }
 }
