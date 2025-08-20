@@ -1,4 +1,4 @@
-//! This module's soul purpose is to reflow [`LogicalLine`]s within the bounds
+//! This module's sole purpose is to reflow [`LogicalLine`]s within the bounds
 //! (where possible) of the line length limit.
 //!
 
