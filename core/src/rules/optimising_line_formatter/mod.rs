@@ -3,6 +3,7 @@
 //!
 
 use std::cell::RefCell;
+use std::collections::hash_map::Entry;
 use std::collections::BinaryHeap;
 use std::rc::Rc;
 
@@ -42,20 +43,7 @@ pub struct OptimisingLineFormatter {
 /// a file.
 impl LogicalLineFileFormatter for OptimisingLineFormatter {
     fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &[LogicalLine]) {
-        let mut line_children: FxHashMap<LineParent, LineChildren> = FxHashMap::default();
-        for (line_index, line) in input.iter().enumerate() {
-            let mut current_line = Some(line);
-            let mut first_parent = true;
-            while let Some(parent) = current_line.and_then(LogicalLine::get_parent) {
-                let token_children = line_children.entry(parent).or_default();
-                if first_parent {
-                    token_children.line_indices.push(line_index);
-                    first_parent = false;
-                }
-                token_children.descendant_count += 1;
-                current_line = input.get(parent.line_index);
-            }
-        }
+        let line_children = Self::get_line_children(input);
 
         let (token_types, token_lengths) = formatted_tokens
             .get_tokens()
@@ -115,6 +103,73 @@ impl OptimisingLineFormatter {
             recon_settings,
         }
     }
+
+    /// Creates a map between tokens and their child lines.
+    ///
+    /// A line's direct parent doesn't necessarily lead to a sequential
+    /// exploration of tokens/child lines. To fix this, the `LineParent` is
+    /// mapped to the nearest previous token on the parent line.
+    fn get_line_children(lines: &[LogicalLine]) -> FxHashMap<LineParent, LineChildren> {
+        let mut tokens_before_gaps = FxHashMap::<usize, Vec<usize>>::default();
+        let mut line_parent_map = FxHashMap::<LineParent, LineParent>::default();
+        let mut line_children_map = FxHashMap::<LineParent, LineChildren>::default();
+
+        let get_line_tokens_before_gaps = |line_index: usize| {
+            let line_tokens = lines[line_index].get_tokens();
+            let mut gaps = line_tokens
+                .iter()
+                .fold((None, vec![]), |(last_index, mut tokens), &token_index| {
+                    tokens.extend(last_index.filter(|&last_index| last_index + 1 != token_index));
+                    (Some(token_index), tokens)
+                })
+                .1;
+            // The last token can been seen to have a "gap" after it
+            gaps.extend(line_tokens.last());
+            gaps
+        };
+
+        for (line_index, line) in lines.iter().enumerate() {
+            let Some(&first_token_index) = line.get_tokens().first() else {
+                continue;
+            };
+            if let Some(parent) = line.get_parent() {
+                let mapped_parent_token = (|| {
+                    let gap_tokens = tokens_before_gaps
+                        .entry(parent.line_index)
+                        .or_insert_with_key(|&line_index| get_line_tokens_before_gaps(line_index));
+                    let gap_index = gap_tokens
+                        .partition_point(|&gap| gap < first_token_index)
+                        .checked_sub(1)?;
+                    gap_tokens.get(gap_index).cloned()
+                })();
+
+                if let (Some(mapped_parent_token), Entry::Vacant(entry)) = (
+                    mapped_parent_token.filter(|&idx| idx != parent.global_token_index),
+                    line_parent_map.entry(parent),
+                ) {
+                    entry.insert(LineParent {
+                        line_index: parent.line_index,
+                        global_token_index: mapped_parent_token,
+                    });
+                }
+            }
+
+            let mut current_line = Some(line);
+            let mut first_parent = true;
+            while let Some(parent) = current_line.and_then(LogicalLine::get_parent) {
+                let line_children = line_children_map
+                    .entry(*line_parent_map.get(&parent).unwrap_or(&parent))
+                    .or_insert_with(|| LineChildren::new(parent));
+                if first_parent {
+                    line_children.line_indices.push(line_index);
+                    first_parent = false;
+                }
+                line_children.descendant_count += 1;
+                current_line = lines.get(parent.line_index);
+            }
+        }
+        line_children_map
+    }
 }
 
 enum FormattingSolutionError {
@@ -129,10 +184,23 @@ struct TokenLength {
     content: u32,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct LineChildren {
+    /// This represents the original parent token of the line. In
+    /// [`OptimisingLineFormatter::get_line_children`] the parent can get
+    /// remapped for sequential traversal.
+    parent_token: usize,
     line_indices: Vec<usize>,
     descendant_count: u32,
+}
+impl LineChildren {
+    fn new(parent: LineParent) -> Self {
+        Self {
+            parent_token: parent.global_token_index,
+            line_indices: vec![],
+            descendant_count: 0,
+        }
+    }
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Copy, Clone)]
@@ -677,11 +745,9 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         token_line_length: u32,
         parent_continuations: u16,
     ) -> PotentialSolutions {
-        let global_token_index = line.1.get_tokens()[node.next_line_index as usize];
-
         let line_parent = LineParent {
             line_index: line.0,
-            global_token_index,
+            global_token_index: line.1.get_tokens()[node.next_line_index as usize],
         };
 
         let Some(line_children) = self.line_children.get(&line_parent) else {
@@ -728,7 +794,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             Some(DR::MustBreak)
         );
 
-        let parent_token_type = self.get_token_type(global_token_index);
+        let parent_token_type = self.get_token_type(line_children.parent_token);
         trace!("Finding child line starting options from parent {parent_token_type:?}");
         let starting_options = match parent_token_type {
             Some(TT::Keyword(
