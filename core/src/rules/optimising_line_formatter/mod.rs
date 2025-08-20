@@ -685,7 +685,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         };
 
         let Some(line_children) = self.line_children.get(&line_parent) else {
-            // There are no child solutions with no child lines
+            trace!("No child lines for current token");
             return PotentialSolutions::One(vec![]);
         };
 
@@ -719,7 +719,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             .first()
             .and_then(|&idx| self.lines.get(idx))
         else {
-            // There are no child solutions with no child lines
+            trace!("Empty child line list for current token");
             return PotentialSolutions::One(vec![]);
         };
 
@@ -728,7 +728,9 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             Some(DR::MustBreak)
         );
 
-        let starting_options = match self.get_token_type(global_token_index) {
+        let parent_token_type = self.get_token_type(global_token_index);
+        trace!("Finding child line starting options from parent {parent_token_type:?}");
+        let starting_options = match parent_token_type {
             Some(TT::Keyword(
                 KK::Label | KK::Const(_) | KK::Type | KK::Var(_) | KK::ThreadVar | KK::Begin,
             )) => {
