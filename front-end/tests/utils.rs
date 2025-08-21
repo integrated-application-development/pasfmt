@@ -9,11 +9,7 @@ pub fn pasfmt() -> Result<assert_cmd::Command, assert_cmd::cargo::CargoError> {
 pub fn fmt(
     arg: impl AsRef<std::ffi::OsStr>,
 ) -> Result<assert_cmd::assert::Assert, assert_cmd::cargo::CargoError> {
-    Ok(pasfmt()?
-        .current_dir(TESTS_DIR)
-        .arg("--log-level=DEBUG")
-        .arg(arg)
-        .assert())
+    Ok(pasfmt()?.arg("--log-level=DEBUG").arg(arg).assert())
 }
 
 pub type DynResult<T> = Result<T, Box<dyn std::error::Error>>;
