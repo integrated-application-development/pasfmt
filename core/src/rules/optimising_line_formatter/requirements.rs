@@ -346,11 +346,14 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 )),
             ) => Some(DR::MustBreak),
             (
-                Some(TT::Comment(
-                    CommentKind::IndividualLine
-                    | CommentKind::InlineLine
-                    | CommentKind::MultilineBlock,
-                )),
+                Some(
+                    TT::Comment(
+                        CommentKind::IndividualLine
+                        | CommentKind::InlineLine
+                        | CommentKind::MultilineBlock,
+                    )
+                    | TT::TextLiteral(TextLiteralKind::Unterminated),
+                ),
                 _,
             ) => Some(DR::MustBreak),
             (Some(TT::ConditionalDirective(_)), _)
