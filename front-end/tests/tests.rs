@@ -8,4 +8,5 @@ mod help;
 #[cfg(windows)]
 mod idempotence;
 mod io_error;
+mod logging;
 mod modes;
