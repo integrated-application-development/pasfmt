@@ -21,40 +21,22 @@ impl Debug for RawDebugLine<'_, '_, '_> {
         let minmax = self.line.1.get_tokens().iter().cloned().minmax();
         let (first, mut last) = minmax.into_option().unwrap_or((0, 0));
 
-        let get_next_line_parent = |line_children: &LineChildren| {
-            let last_child_line_index = *line_children.line_indices.last()?;
-            let last_child_line_token_index = *self
-                .iolf
-                .lines
-                .get(last_child_line_index)?
-                .get_tokens()
-                .last()?;
-            Some(LineParent {
-                line_index: last_child_line_index,
-                global_token_index: last_child_line_token_index,
-            })
-        };
-
-        let mut line_parent = LineParent {
+        let mut current_parent = LineParent {
             line_index: self.line.0,
-            global_token_index: *self
-                .line
-                .1
-                .get_tokens()
-                .iter()
-                .rev()
-                .find(|&&t| !self.iolf.token_types[t].is_comment_or_directive())
-                .unwrap_or(&last),
+            global_token_index: last,
         };
-        while let Some(children) = self.iolf.line_children.get(&line_parent) {
-            if let Some(next_parent) = get_next_line_parent(children) {
-                line_parent = next_parent;
-                if next_parent.global_token_index > last {
-                    last = next_parent.global_token_index;
-                }
-            } else {
+        while let Some(children) = self.iolf.line_children.get(&current_parent) {
+            let Some(&line_index) = children.line_indices.last() else {
                 break;
-            }
+            };
+            let Some(&last_token_index) = self.iolf.lines[line_index].get_tokens().last() else {
+                break;
+            };
+            last = last_token_index;
+            current_parent = LineParent {
+                line_index,
+                global_token_index: last_token_index,
+            };
         }
 
         let included_tokens = (first..=last).flat_map(|token_index| {
