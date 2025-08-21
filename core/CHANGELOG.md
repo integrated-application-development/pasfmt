@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `break_anonymous_routine` updated to reflect the broken state.
 - When the first token of a logical line has child lines, those lines are now explored and
   formatted as usual.
+- Fixed line length calculations for multiline tokens.
 
 ### Changed
 

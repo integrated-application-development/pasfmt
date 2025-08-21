@@ -1055,6 +1055,19 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         decision: Decision,
         token_index: Option<usize>,
     ) -> u32 {
+        if let Some((
+            TT::TextLiteral(TextLiteralKind::MultiLine) | TT::Comment(CommentKind::MultilineBlock),
+            token_content,
+        )) = token_index
+            .and_then(|index| self.formatted_tokens.get_token(index))
+            .map(|(token, _)| (token.get_token_type(), token.get_content()))
+        {
+            // Multiline tokens necessarily have a break in them, so the line
+            // length must be calculated.
+            if let Some(last_line) = token_content.lines().skip(1).last() {
+                return last_line.len() as u32;
+            }
+        }
         match (
             decision,
             prev_decision.get(),
