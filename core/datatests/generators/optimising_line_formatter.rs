@@ -4164,6 +4164,7 @@ mod expressions {
         mixed::generate(root_dir);
         unary::generate(root_dir);
         set::generate(root_dir);
+        strings::generate(root_dir);
     }
 
     mod boolean {
@@ -4652,6 +4653,24 @@ mod expressions {
                                 EEEEEEEEE,
                                 EEEEEEEEE]
                     );
+                ",
+            );
+        }
+    }
+
+    mod strings {
+        use super::*;
+
+        pub fn generate(root_dir: &Path) {
+            generate_test_cases!(
+                root_dir,
+                unterminated = "
+                    A :=
+                        'abc' + '
+                        ;
+                    A :=
+                        '
+                        ;
                 ",
             );
         }

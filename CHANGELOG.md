@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed performance issues with heavily nested conditional directives.
 - Fixed formatting of anonymous routines containing subroutines.
 
+### Changed
+
+- Unterminated string literals will never be merged with other tokens.
+
 ## [0.5.1] - 2025-06-02
 
 ### Fixed
