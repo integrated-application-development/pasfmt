@@ -445,6 +445,14 @@ impl<'a> SpecificContextStack<'a> {
 
         let curr_token_type = self.get_token_type_from_line_index(line_index);
         match (last_real_token_type, curr_token_type) {
+            (_, Some(TT::TextLiteral(TextLiteralKind::MultiLine))) => {
+                // There is necessarily a break within a multiline string
+                // literal so contexts must be updated accordingly
+                self.update_last_matching_context(node, context_matches!(_), |_, data| {
+                    data.is_broken = true;
+                });
+                self.update_operator_precedences(node, true);
+            }
             (_, Some(TT::Comment(CommentKind::InlineBlock | CommentKind::InlineLine))) => {
                 /*
                     When formatting comments, there are some considerations to be made:

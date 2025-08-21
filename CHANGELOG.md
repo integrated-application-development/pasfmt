@@ -16,6 +16,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Unterminated string literals will never be merged with other tokens.
+- Improved support for multiline strings.
+  - A break will be inserted before each multiline string to ensure stylistic consistency.
+  - Surrounding code will be appropriately wrapped.
+  - String contents currently can _not_ be re-indented. Including the closing quotes.
 
 ## [0.5.1] - 2025-06-02
 
