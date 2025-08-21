@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conditional directive parsing now uses a greedy algorithm that avoids the exponential
   performance issues with the old algorithm.
 - Unterminated string literals will never mangle other tokens by always breaking after.
+- Improved support for multiline strings. They will now always break before, and
+  break surrounding contexts.
 
 ## 0.5.1 - 2025-06-02
 

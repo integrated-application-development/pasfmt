@@ -339,11 +339,14 @@ impl InternalOptimisingLineFormatter<'_, '_> {
             }
             (
                 _,
-                Some(TT::Comment(
-                    CommentKind::IndividualLine
-                    | CommentKind::IndividualBlock
-                    | CommentKind::MultilineBlock,
-                )),
+                Some(
+                    TT::Comment(
+                        CommentKind::IndividualLine
+                        | CommentKind::IndividualBlock
+                        | CommentKind::MultilineBlock,
+                    )
+                    | TT::TextLiteral(TextLiteralKind::MultiLine),
+                ),
             ) => Some(DR::MustBreak),
             (
                 Some(
