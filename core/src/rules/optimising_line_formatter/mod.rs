@@ -455,6 +455,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 line,
                 0,
                 node.starting_ws,
+                &decision_tree.root(),
                 &init_context_stack.with_data(&node),
                 last_line_length,
                 0,
@@ -738,6 +739,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             line,
             next_node.next_line_index,
             next_node.starting_ws,
+            &next_node.decision,
             &contexts.with_data(&next_node),
             token_line_length,
             continuation_count,
@@ -768,11 +770,33 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         child_line_solutions.map_with(next_node, get_next_node)
     }
 
+    /// Finds the continuations for a given global token index in the token list
+    fn find_continuations_for_token_index(
+        token_index: usize,
+        tokens: &[usize],
+        decision: &NodeRef<'_, TokenDecision>,
+    ) -> Option<u16> {
+        let search_depth = tokens
+            .iter()
+            .rev()
+            .position(|&global_token_index| global_token_index == token_index)?;
+
+        decision
+            .walk_parents()
+            .skip(search_depth)
+            .find_map(|node| match node.get().decision {
+                Decision::Break { continuations } => Some(continuations),
+                Decision::Continue => None,
+            })
+    }
+
+    #[allow(clippy::too_many_arguments)]
     fn find_optimal_child_lines_solution(
         &self,
         line: (usize, &LogicalLine),
         next_line_index: u32,
         starting_ws: LineWhitespace,
+        decision: &NodeRef<'_, TokenDecision>,
         parent_contexts: &SpecificContextDataStack,
         token_line_length: u32,
         parent_continuations: u16,
@@ -787,11 +811,18 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
             return PotentialSolutions::One(vec![]);
         };
 
+        let starting_continuations = Self::find_continuations_for_token_index(
+            line_children.parent_token,
+            &line.1.get_tokens()[0..(next_line_index as usize)],
+            decision,
+        )
+        .unwrap_or(parent_continuations);
+
         let child_starting_ws = ChildWhitespace {
             whitespace: starting_ws
                 + LineWhitespace {
                     indentations: 0,
-                    continuations: parent_continuations,
+                    continuations: starting_continuations,
                 },
             deindent: 0,
         };
