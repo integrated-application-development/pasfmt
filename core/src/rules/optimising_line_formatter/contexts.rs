@@ -625,22 +625,6 @@ impl<'a> SpecificContextStack<'a> {
             (Some(TT::Keyword(KK::Of)), _) => {
                 self.update_last_matching_context(node, context_matches!(_), apply_pivotal_break);
             }
-            (
-                _,
-                Some(TT::Keyword(KK::Label | KK::Const(_) | KK::Type | KK::Var(_) | KK::ThreadVar)),
-            ) => {
-                let _ = self.update_last_matching_context(
-                    node,
-                    context_matches!(CT::CommaElem | CT::AssignRHS),
-                    |_, data| {
-                        data.break_anonymous_routine.get_or_insert(is_break);
-                    },
-                ) || (self.formatting_contexts.line.get_line_type() != LLT::ForLoop
-                    && self.update_last_matching_context(node, CT::Subject, apply_pivotal_break))
-                    || self.update_last_matching_context(node, context_matches!(_), |_, data| {
-                        data.is_broken |= is_break;
-                    });
-            }
             (Some(TT::Keyword(KK::Uses | KK::Contains | KK::Requires | KK::Exports)), _) => {
                 self.update_last_matching_context(node, CT::Base, apply_pivotal_break);
             }
@@ -1145,15 +1129,6 @@ impl<'a> LineFormattingContexts<'a> {
                     if last_context_type != CT::RoutineHeader =>
                 {
                     contexts.push(CT::AnonHeader);
-                }
-                TT::Keyword(
-                    KK::Label
-                    | KK::Const(DeclKind::AnonSection | DeclKind::Other | DeclKind::Section)
-                    | KK::Type
-                    | KK::Var(DeclKind::AnonSection | DeclKind::Other | DeclKind::Section)
-                    | KK::ThreadVar,
-                ) => {
-                    contexts.pop_until_after(CT::AnonHeader);
                 }
                 TT::Keyword(KK::Begin) => {
                     if contexts.pop_until(CT::CommaElem) == Some(last_context_type) {

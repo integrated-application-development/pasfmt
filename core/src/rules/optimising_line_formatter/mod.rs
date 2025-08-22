@@ -865,17 +865,8 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
         let parent_token_type = self.get_token_type(line_children.parent_token);
         trace!("Finding child line starting options from parent {parent_token_type:?}");
         let starting_options = match parent_token_type {
-            Some(TT::Keyword(
-                KK::Label
-                | KK::Const(_)
-                | KK::Type
-                | KK::Var(_)
-                | KK::ThreadVar
-                | KK::Begin
-                | KK::Procedure
-                | KK::Function,
-            )) => {
-                // Anonymous procedure sections
+            Some(TT::Keyword(KK::Begin | KK::Procedure | KK::Function)) => {
+                // Anonymous routine subroutines and body.
                 match (
                     parent_contexts
                         .get_last_context(context_matches!(
