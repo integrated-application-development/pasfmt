@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-08-25
+
 ### Fixed
 
 - Fixed indentation of comments around statements outside of statement lists.
@@ -193,7 +195,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   ```
 - Format spaces between all tokens (on separate lines)
 
-[Unreleased]: https://github.com/integrated-application-development/pasfmt/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/integrated-application-development/pasfmt/compare/v0.6.0...HEAD
+[0.5.1]: https://github.com/integrated-application-development/pasfmt/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/integrated-application-development/pasfmt/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/integrated-application-development/pasfmt/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/integrated-application-development/pasfmt/compare/v0.4.0-rc2...v0.4.0
