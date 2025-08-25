@@ -56,12 +56,14 @@ fn run_test(input: &str) -> datatest_stable::Result<()> {
         .parser(DelphiLogicalLineParser {})
         .token_consolidator(DistinguishGenericTypeParamsConsolidator {})
         .lines_consolidator(ConditionalDirectiveConsolidator {})
+        .token_ignorer(FormattingToggler {})
         .file_formatter(TokenSpacing {})
         .file_formatter(OptimisingLineFormatter::new(
             OptimisingLineFormatterSettings {
                 max_line_length,
                 iteration_max: 20_000,
                 break_before_begin: false,
+                format_multiline_strings: true,
             },
             reconstruction_settings.clone(),
         ))
@@ -92,22 +94,18 @@ fn trim_string(input: &str) -> Result<String, Box<dyn Error>> {
     let leading_whitespace = input
         .lines()
         .find_or_first(|line| !line.trim().is_empty())
-        .map(|line| line.len() - line.trim_start().len())
-        .unwrap_or(0);
+        .map(|line| &line[0..line.len() - line.trim_start().len()])
+        .unwrap_or("");
     Ok(lines
         .map(|line| {
             let all_whitespace = line.chars().all(char::is_whitespace);
-            match line.split_at_checked(leading_whitespace) {
+            match line.strip_prefix(leading_whitespace) {
                 None if all_whitespace => Ok(line.trim()),
-                None => Err(Box::new(ErrorString(
-                    "Line has less leading whitespace than the first".into(),
-                ))),
-                Some((whitespace, content)) if whitespace.chars().all(char::is_whitespace) => {
-                    Ok(content)
-                }
-                _ => Err(Box::new(ErrorString(
-                    "Line has less leading whitespace than the first".into(),
-                ))),
+                None => Err(Box::new(ErrorString(format!(
+                    "Line has less leading whitespace than the first: {:?}",
+                    line
+                )))),
+                Some(content) => Ok(content),
             }
         })
         .collect::<Result<Vec<_>, _>>()?

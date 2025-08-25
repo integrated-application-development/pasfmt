@@ -30,6 +30,7 @@ pub struct OptimisingLineFormatterSettings {
     pub max_line_length: u32,
     pub iteration_max: u32,
     pub break_before_begin: bool,
+    pub format_multiline_strings: bool,
 }
 
 pub struct OptimisingLineFormatter {
@@ -83,11 +84,58 @@ impl LogicalLineFileFormatter for OptimisingLineFormatter {
             After each line's solution has been finalised, the extra spaces
             provided by `TokenSpacing` can be removed at the starts of lines.
         */
-        for token_index in 0..formatted_tokens.len() {
-            if let Some(data) = formatted_tokens.get_formatting_data_mut(token_index) {
+        for token_index in 0..olf.formatted_tokens.len() {
+            if let Some(data) = olf.formatted_tokens.get_formatting_data_mut(token_index) {
                 if data.newlines_before > 0 {
                     data.spaces_before = 0;
                 }
+            }
+        }
+
+        /*
+            Indenting of multi-line strings is tricky because it requires knowing
+            the intended indentation for the token beforehand, but it also could
+            affect the decisions about where and when to wrap lines.
+
+            In order to break this two-way dependency, we can first wrap all the
+            lines, then update the indentation of the inside of the multi-line strings.
+            But if any multi-line strings in a line are mutated, we need to recalculate
+            the line-wrapping, because the position of tokens after the multi-line string
+            may have changed.
+
+            Technically, these two steps should be alternated until a stable
+            solution is found, but given the current formatting rules, it seems
+            like a second round of multi-line string indenting is not required;
+            the line wrapping caused by indentation of a multi-line string should
+            not cause any multi-line strings to change in indentation.
+        */
+        if !self.olf_settings.format_multiline_strings {
+            return;
+        }
+
+        let string_formatter = multiline_strings::StringFormatter {
+            recon_settings: &self.recon_settings,
+        };
+        let mut lines_to_reflow: Vec<(usize, &LogicalLine)> = vec![];
+        for mut line in input.iter().enumerate() {
+            if string_formatter.format_multiline_strings(line.1, olf.formatted_tokens) {
+                // Need to reflow the line now that the strings have been changed.
+                // All line-wrapping starts from the top-level parent line, though.
+                while let Some(parent) = line.1.get_parent() {
+                    line = (parent.line_index, &input[parent.line_index]);
+                }
+
+                lines_to_reflow.push(line);
+            };
+        }
+
+        // Avoid reformatting the same parent line many times.
+        lines_to_reflow.sort_by_key(|line| line.0);
+        lines_to_reflow.dedup_by_key(|line| line.0);
+
+        for line in lines_to_reflow {
+            if let Some(solution) = olf.format_line(line) {
+                olf.reconstruct_solution(&solution, line.1);
             }
         }
     }
@@ -1291,6 +1339,7 @@ fn is_binary(token_type: TokenType, prev_token_type: Option<TokenType>) -> bool 
 
 mod contexts;
 mod debug;
+mod multiline_strings;
 mod parent_pointer_tree;
 mod requirements;
 mod types;

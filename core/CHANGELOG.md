@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added setting to enable internal formatting of multiline strings: `OptimisingLineFormatterSettings.format_multiline_strings`.
+
 ### Changed
 
 - In order to support mutation of token contents, a few APIs have been adjusted.

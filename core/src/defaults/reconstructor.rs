@@ -592,6 +592,7 @@ mod tests {
                         max_line_length: 30,
                         iteration_max: 1000,
                         break_before_begin: false,
+                        format_multiline_strings: true,
                     },
                     recon.clone(),
                 ))
@@ -716,14 +717,14 @@ A :=
     1
         +
         '''
-'''
+        '''
         +||| |     |Spaces;
 
 A :=
     1
         +
         '''
-    '''
+        '''
         +  | | | | |Spaces;",
             );
         }

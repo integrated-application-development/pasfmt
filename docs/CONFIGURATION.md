@@ -33,6 +33,17 @@ Configuration options can either be specified in a `pasfmt.toml` configuration f
       </td>
     </tr>
     <tr>
+      <td>format_multiline_strings</td>
+      <td>&lt;boolean&gt;</td>
+      <td>true</td>
+      <td>
+        Whether to format the inside of multiline strings.
+        When enabled, the leading whitespace of internal lines will be rewritten to
+        match that of the starting quote, and internal line terminators will be
+        normalised. Trailing whitespace is preserved, however.
+      </td>
+    </tr>
+    <tr>
       <td>encoding</td>
       <td>"native", &lt;NAME&gt;</td>
       <td>"native"</td>
