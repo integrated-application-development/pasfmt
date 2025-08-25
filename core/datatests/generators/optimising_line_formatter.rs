@@ -16,6 +16,7 @@ pub fn generate_test_files(root_dir: &Path) {
     expressions::generate(root_dir);
     attributes::generate(root_dir);
     line_length_violations::generate(root_dir);
+    multiline_strings::generate(root_dir);
     regression::generate(root_dir);
 }
 
@@ -4788,7 +4789,7 @@ mod expressions {
                             '''
                                 +
                                 '''
-                            ''',
+                                ''',
                             D
                         );
                 ",
@@ -4796,24 +4797,63 @@ mod expressions {
                     "
                     A :=
                     '''
+                          a
+                         ''';
+                    A :=
+                    '''
+
+                          a
+
                          ''';
                     A := '''
+                              a
+                                b
+                               c
                               '''.B(11 + 11 + 11);
                     A :=
                     '''
+                                 a
+                                  b
+                                 c
                                '''.B(11 + 11 + 11);
+                    A :=
+                        '''
+                              a
+                               b
+                              c
+                            '''.BBBBBBBB(11 + 11 + 11);
                     ",
                     "
                     A :=
                         '''
-                         ''';
+                         a
+                        ''';
                     A :=
                         '''
-                              '''.B(11 + 11 + 11);
+
+                         a
+
+                        ''';
                     A :=
                         '''
-                               '''
-                            .B(11 + 11 + 11);
+                        a
+                          b
+                         c
+                        '''.B(11 + 11 + 11);
+                    A :=
+                        '''
+                          a
+                           b
+                          c
+                        '''.B(11 + 11 + 11);
+                    A :=
+                        '''
+                          a
+                           b
+                          c
+                        '''.BBBBBBBB(
+                            11 + 11 + 11
+                        );
                     "
                 }
             );
@@ -4908,6 +4948,314 @@ mod line_length_violations {
                             + BBBBBBBBBB // -------
                             + CCCCCCCCCC // -------
                             + DDDDDDDDDD; // ------
+            ",
+        );
+    }
+}
+
+mod multiline_strings {
+    use super::*;
+
+    pub fn generate(root_dir: &Path) {
+        generate_test_cases!(
+            root_dir,
+            empty = {
+                "
+                const
+                  S =
+                      '''
+                ''';
+                ",
+                "
+                const
+                  S =
+                      '''
+                      ''';
+                "
+            },
+            extra_quotes = {
+                "
+                const
+                  S =
+                      '''''
+                ''''
+                ''''';
+
+                  S =
+                      '''''''
+                ''''''
+                ''''''';
+                ",
+                "
+                const
+                  S =
+                      '''''
+                      ''''
+                      ''''';
+
+                  S =
+                      '''''''
+                      ''''''
+                      ''''''';
+                "
+            },
+            ignored_if_indent_invalid = "
+                const
+                  S =
+                      '''
+                \t \x01c
+                \t \x01\x02a
+                \t \x01\x02''';
+
+                  S =
+                      '''
+                a''';
+
+                  S =
+                      '''
+                      a
+                a''';
+
+                  S =
+                      '''
+                      a
+                      a''';
+            ",
+            blank_interior_line_is_trimmed = {
+                "
+                const
+                  S =
+                      '''
+                \t \x01\x02a
+                \t \x01\x02
+                \t \x01\x02''';
+                ",
+                "
+                const
+                  S =
+                      '''
+                      a
+
+                      ''';
+                "
+            },
+            partial_prefix_on_blank_line = {
+                "
+                const
+                  S =
+                      '''
+                \t \x01\x02a
+                \t \x01
+                \t \x01\x02''';
+
+                  S =
+                      '''
+                \t \x01\x02a
+                \t \x01
+                \t
+
+                \t \x01\x02''';
+                ",
+                "
+                const
+                  S =
+                      '''
+                      a
+
+                      ''';
+
+                  S =
+                      '''
+                      a
+
+
+
+                      ''';
+                "
+            },
+            normalise_trailing_line_separators = {
+                "const S = '''\na\rb\r\nc\n''';",
+                "const\n  S =\n      '''\n      a\n      b\n      c\n      ''';",
+            },
+            trailing_spaces_are_not_trimmed = {
+                "const S = '''\na \nb\t\n''';",
+                "const\n  S =\n      '''\n      a \n      b\t\n      ''';",
+            },
+            normalise_leading_whitespace = {
+                "
+                const
+                  S =
+                    '''
+                  a
+                  b
+                  ''';
+
+                  S =
+                    '''
+                \t\ta
+                \t\tb
+                \t\t''';
+
+                  S =
+                    '''
+                        a
+                        b
+                         c
+                        ''';
+
+                  S =
+                    '''
+                    \ta
+                    \tb
+                    \t c
+                    \t''';
+
+                  S =
+                    '''
+                \t\x01\x0F\x19\x20\ta
+                \t\x01\x0F\x19\x20\t''';
+
+                  S =
+                      '''
+                \t \x01\x00\x02a
+                \t \x01\x00\x02\x01b
+                \t \x01\x00\x02  c
+                \t \x01\x00\x02d
+                \t \x01\x00\x02''';
+                ",
+                "
+                const
+                  S =
+                      '''
+                      a
+                      b
+                      ''';
+
+                  S =
+                      '''
+                      a
+                      b
+                      ''';
+
+                  S =
+                      '''
+                      a
+                      b
+                       c
+                      ''';
+
+                  S =
+                      '''
+                      a
+                      b
+                       c
+                      ''';
+
+                  S =
+                      '''
+                      a
+                      ''';
+
+                  S =
+                      '''
+                      a
+                      \x01b
+                        c
+                      d
+                      ''';
+                "
+            },
+            in_child_lines = {
+                "
+                A :=
+                    procedure
+                    const
+                      C = '''
+                        a
+                      ''';
+                    begin
+                      B := '''
+                      a
+                      '''.format(aaaaaaaa,b);
+
+                      B := '''
+                      a
+                      '''.format(aaaaaaaa,bb);
+
+                      C :=
+                          procedure
+                          begin
+                            B := '''
+                            a
+                            '''.format(aa,b);
+
+                            B := '''
+                            a
+                            '''.format(aa,bb);
+                      end;
+                    end;
+                ",
+                "
+                A :=
+                    procedure
+                    const
+                      C =
+                          '''
+                            a
+                          ''';
+                    begin
+                      B :=
+                          '''
+                          a
+                          '''.format(aaaaaaaa, b);
+
+                      B :=
+                          '''
+                          a
+                          '''.format(
+                              aaaaaaaa,
+                              bb
+                          );
+
+                      C :=
+                          procedure
+                          begin
+                            B :=
+                                '''
+                                a
+                                '''.format(aa, b);
+
+                            B :=
+                                '''
+                                a
+                                '''.format(
+                                    aa,
+                                    bb
+                                );
+                          end;
+                    end;
+                "
+            },
+            ignored_tokens = "
+                // pasfmt off
+                A :=
+                    '''
+                a
+                b
+                ''';
+
+                A :=
+                    '''
+                            a
+                            b
+                            ''';
+
+                // pasfmt on
+                A :=
+                    '''
+                    a
+                    b
+                    ''';
             ",
         );
     }

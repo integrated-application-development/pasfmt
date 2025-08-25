@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Added formatting for multiline string interior whitespace. Enabled by default with new setting `format_multiline_strings`.
+  1. Indentation is normalised to align the trailing quote with the leading quote. Lines in the
+    middle are adjusted to retain their original significant leading whitespace.
+  2. Internal line endings are normalised to match the configured line ending.
+  3. Invalid multiline strings are left untouched.
+
 ## [0.6.0] - 2025-08-25
 
 ### Fixed

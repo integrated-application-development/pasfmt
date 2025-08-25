@@ -145,6 +145,7 @@ enum BeginStyle {
 pub struct FormattingConfig {
     wrap_column: u32,
     begin_style: BeginStyle,
+    format_multiline_strings: bool,
 
     encoding: InternalEncoding,
 
@@ -171,6 +172,7 @@ impl Default for FormattingConfig {
             encoding: InternalEncoding::default(),
             wrap_column: 120,
             begin_style: BeginStyle::default(),
+            format_multiline_strings: true,
         }
     }
 }
@@ -204,6 +206,7 @@ impl From<&FormattingConfig> for OptimisingLineFormatterSettings {
             max_line_length: value.wrap_column,
             iteration_max: 20_000,
             break_before_begin: matches!(value.begin_style, BeginStyle::Always_Wrap),
+            format_multiline_strings: value.format_multiline_strings,
         }
     }
 }
@@ -227,6 +230,17 @@ at the same indentation as the statement it is within.\
                     ",
                 hint: "[ auto | always_wrap ]",
                 default: format!("{:?}", defaults.begin_style).to_lowercase(),
+            },
+            ConfigItem {
+                name: "format_multiline_strings",
+                description: "\
+Whether to format the inside of multiline strings.
+When enabled, the leading whitespace of internal lines will be rewritten to
+match that of the starting quote, and internal line terminators will be
+normalised. Trailing whitespace is preserved, however.\
+                    ",
+                hint: "<boolean>",
+                default: defaults.format_multiline_strings.to_string(),
             },
             ConfigItem {
                 name: "encoding",

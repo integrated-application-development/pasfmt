@@ -8,6 +8,12 @@ Available configuration options:
   If "always_wrap", the `begin` will always be placed on the next line
   at the same indentation as the statement it is within.
 
+[36mformat_multiline_strings[0m [3m<boolean>[0m (default: [33mtrue[0m)
+  Whether to format the inside of multiline strings.
+  When enabled, the leading whitespace of internal lines will be rewritten to
+  match that of the starting quote, and internal line terminators will be
+  normalised. Trailing whitespace is preserved, however.
+
 [36mencoding[0m [3mnative | <NAME>[0m (default: [33mnative[0m)
   The encoding to use when reading and writing files.
   If "native":
