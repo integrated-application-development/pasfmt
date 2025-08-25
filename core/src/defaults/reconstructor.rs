@@ -50,8 +50,7 @@ impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
         let mut must_break = false;
 
         formatted_tokens
-            .get_tokens()
-            .iter()
+            .tokens()
             .for_each(|(token, formatting_data)| {
                 let is_eof = matches!(token.get_token_type(), TokenType::Eof);
 
@@ -168,7 +167,7 @@ struct NonBreakingWs {
 }
 
 impl DelphiLogicalLinesReconstructor {
-    fn ws_len(&self, token: &(&Token, FormattingData)) -> usize {
+    fn ws_len(&self, token: (&Token, &FormattingData)) -> usize {
         if token.1.is_ignored() {
             token.0.get_leading_whitespace().len()
         } else {
@@ -178,7 +177,7 @@ impl DelphiLogicalLinesReconstructor {
         }
     }
 
-    fn nonbreaking_ws_len(&self, token: &(&Token, FormattingData)) -> NonBreakingWs {
+    fn nonbreaking_ws_len(&self, token: (&Token, &FormattingData)) -> NonBreakingWs {
         if token.1.is_ignored() {
             let leading_ws = token.0.get_leading_whitespace();
             let nl_pos = leading_ws.rfind('\n');
@@ -216,13 +215,9 @@ impl DelphiLogicalLinesReconstructor {
         col
     }
 
-    fn col_for_token_end_post_fmt(
-        &self,
-        tokens: &[(&Token, FormattingData)],
-        mut idx: usize,
-    ) -> usize {
+    fn col_for_token_end_post_fmt(&self, tokens: &FormattedTokens, mut idx: usize) -> usize {
         let mut col = 0;
-        while let Some(token) = tokens.get(idx) {
+        while let Some(token) = tokens.get_token(idx) {
             idx = idx.wrapping_sub(1);
             let content = token.0.get_content();
             col += content.len();
@@ -242,7 +237,7 @@ impl DelphiLogicalLinesReconstructor {
 
     fn offset_for_token(&self, formatted_tokens: &FormattedTokens, token_idx: usize) -> usize {
         let mut pos = 0;
-        for (idx, token) in formatted_tokens.get_tokens().iter().enumerate() {
+        for (idx, token) in formatted_tokens.tokens().enumerate() {
             pos += self.ws_len(token);
             if idx >= token_idx {
                 break;
@@ -270,7 +265,7 @@ impl CursorTracker for CursorTrackerImpl<'_> {
                 Some(t) => t,
                 None => {
                     // cursor is out of bounds, set it to the last position in the file, if possible
-                    if let Some(t) = formatted_tokens.get_tokens().last() {
+                    if let Some(t) = formatted_tokens.tokens().next_back() {
                         cursor.tok_pos = TokPos::InContent {
                             offset: t.0.get_content().len() as u32,
                         };
@@ -314,10 +309,9 @@ impl CursorTracker for CursorTrackerImpl<'_> {
                         // can try to keep it at the same column if possible (so long as that doesn't
                         // move it between tokens).
 
-                        let col_end = self.reconstructor.col_for_token_end_post_fmt(
-                            formatted_tokens.get_tokens(),
-                            cursor.tok_idx,
-                        );
+                        let col_end = self
+                            .reconstructor
+                            .col_for_token_end_post_fmt(formatted_tokens, cursor.tok_idx);
                         let col_start = col_end - tok.get_content().len();
                         let col_ws_start =
                             col_start - self.reconstructor.nonbreaking_ws_len(token).len;
@@ -355,19 +349,25 @@ mod tests {
         FormattingData::from(("", true))
     }
 
+    macro_rules! tokens {
+        [ $( ($token:expr, $formatting_data:expr $(,)? ) ),* $(,)? ] => {
+            FormattedTokens::new(&mut [ $($token),* ], vec![ $($formatting_data),* ])
+        };
+    }
+
     #[test]
     fn all_tokens_with_data_from_token() {
         run_test(
-            FormattedTokens::new(vec![
+            tokens![
                 (
-                    &new_token("\n\n  token1", TokenType::Unknown),
+                    new_token("\n\n  token1", TokenType::Unknown),
                     FormattingData::from("\n\n  "),
                 ),
                 (
-                    &new_token(" token2", TokenType::Unknown),
+                    new_token(" token2", TokenType::Unknown),
                     FormattingData::from(" "),
                 ),
-            ]),
+            ],
             "\n\n  token1 token2",
         );
     }
@@ -379,10 +379,10 @@ mod tests {
         let mut formatting_data2 = FormattingData::default();
         formatting_data2.spaces_before = 1;
         run_test(
-            FormattedTokens::new(vec![
-                (&new_token("token1", TokenType::Unknown), formatting_data1),
-                (&new_token("token2", TokenType::Unknown), formatting_data2),
-            ]),
+            tokens![
+                (new_token("token1", TokenType::Unknown), formatting_data1),
+                (new_token("token2", TokenType::Unknown), formatting_data2),
+            ],
             "   token1 token2",
         );
     }
@@ -394,10 +394,10 @@ mod tests {
         let mut formatting_data2 = FormattingData::default();
         formatting_data2.indentations_before = 1;
         run_test(
-            FormattedTokens::new(vec![
-                (&new_token("token1", TokenType::Unknown), formatting_data1),
-                (&new_token("token2", TokenType::Unknown), formatting_data2),
-            ]),
+            tokens![
+                (new_token("token1", TokenType::Unknown), formatting_data1),
+                (new_token("token2", TokenType::Unknown), formatting_data2),
+            ],
             "      token1  token2",
         );
     }
@@ -409,10 +409,10 @@ mod tests {
         let mut formatting_data2 = FormattingData::default();
         formatting_data2.continuations_before = 1;
         run_test(
-            FormattedTokens::new(vec![
-                (&new_token("token1", TokenType::Unknown), formatting_data1),
-                (&new_token("token2", TokenType::Unknown), formatting_data2),
-            ]),
+            tokens![
+                (new_token("token1", TokenType::Unknown), formatting_data1),
+                (new_token("token2", TokenType::Unknown), formatting_data2),
+            ],
             "      token1  token2",
         );
     }
@@ -422,28 +422,28 @@ mod tests {
         let mut formatting_data1 = FormattingData::default();
         formatting_data1.newlines_before = 3;
         run_test(
-            FormattedTokens::new(vec![
-                (&new_token(" token1", TokenType::Unknown), formatting_data1),
+            tokens![
+                (new_token(" token1", TokenType::Unknown), formatting_data1),
                 (
-                    &new_token("\n   token2", TokenType::Unknown),
+                    new_token("\n   token2", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
-            ]),
+            ],
             "\n\n\ntoken1\n   token2",
         );
         let mut formatting_data2 = FormattingData::default();
         formatting_data2.newlines_before = 3;
         run_test(
-            FormattedTokens::new(vec![
+            tokens![
                 (
-                    &new_token(" token1", TokenType::Unknown),
+                    new_token(" token1", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
                 (
-                    &new_token("\n   token2", TokenType::Unknown),
+                    new_token("\n   token2", TokenType::Unknown),
                     formatting_data2,
                 ),
-            ]),
+            ],
             " token1\n\n\ntoken2",
         );
     }
@@ -451,16 +451,16 @@ mod tests {
     #[test]
     fn no_tokens_with_data() {
         run_test(
-            FormattedTokens::new(vec![
+            tokens![
                 (
-                    &new_token(" token1", TokenType::Unknown),
+                    new_token(" token1", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
                 (
-                    &new_token("\n   token2", TokenType::Unknown),
+                    new_token("\n   token2", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
-            ]),
+            ],
             " token1\n   token2",
         );
     }
@@ -468,13 +468,13 @@ mod tests {
     #[test]
     fn trailing_newlines() {
         run_test(
-            FormattedTokens::new(vec![
+            tokens![
                 (
-                    &new_token("token1", TokenType::Unknown),
+                    new_token("token1", TokenType::Unknown),
                     ignored_formatting_data(),
                 ),
-                (&new_token("\n", TokenType::Eof), ignored_formatting_data()),
-            ]),
+                (new_token("\n", TokenType::Eof), ignored_formatting_data()),
+            ],
             "token1\n",
         );
     }
@@ -482,10 +482,10 @@ mod tests {
     #[test]
     fn unrepresentable_leading_whitespace() {
         run_test(
-            FormattedTokens::new(vec![(
-                &new_token("\n \n\ttoken1", TokenType::Unknown),
+            tokens![(
+                new_token("\n \n\ttoken1", TokenType::Unknown),
                 ignored_formatting_data(),
-            )]),
+            )],
             "\n \n\ttoken1",
         );
     }
@@ -493,37 +493,37 @@ mod tests {
     #[test]
     fn singleline_comment_safety() {
         run_test(
-            FormattedTokens::new(vec![
+            tokens![
                 (
-                    &new_token("//", TokenType::Comment(CommentKind::IndividualLine)),
+                    new_token("//", TokenType::Comment(CommentKind::IndividualLine)),
                     FormattingData::from(""),
                 ),
                 (
-                    &new_token("A", TokenType::Identifier),
+                    new_token("A", TokenType::Identifier),
                     FormattingData::from(" "),
                 ),
                 (
-                    &new_token("//", TokenType::Comment(CommentKind::InlineLine)),
+                    new_token("//", TokenType::Comment(CommentKind::InlineLine)),
                     FormattingData::from(""),
                 ),
                 (
-                    &new_token("A", TokenType::Identifier),
+                    new_token("A", TokenType::Identifier),
                     ignored_formatting_data(),
                 ),
                 (
-                    &new_token("{}", TokenType::Comment(CommentKind::InlineBlock)),
+                    new_token("{}", TokenType::Comment(CommentKind::InlineBlock)),
                     FormattingData::from(""),
                 ),
                 (
-                    &new_token("A", TokenType::Identifier),
+                    new_token("A", TokenType::Identifier),
                     FormattingData::from(""),
                 ),
                 (
-                    &new_token("//", TokenType::Comment(CommentKind::InlineBlock)),
+                    new_token("//", TokenType::Comment(CommentKind::InlineBlock)),
                     FormattingData::from(""),
                 ),
-                (&new_token("", TokenType::Eof), FormattingData::from("")),
-            ]),
+                (new_token("", TokenType::Eof), FormattingData::from("")),
+            ],
             "//\n A//\nA{}A//",
         );
     }
@@ -567,8 +567,8 @@ mod tests {
         struct AddSpaces;
         impl LogicalLineFileFormatter for AddSpaces {
             fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, _: &[LogicalLine]) {
-                for idx in 0..formatted_tokens.get_tokens().len() {
-                    let (tok, fmt) = formatted_tokens.get_token_mut(idx).unwrap();
+                for (tok, fmt) in formatted_tokens.tokens_mut() {
+                    let Ok(tok) = tok else { continue };
                     if matches!(tok.get_token_type(), TokenType::Identifier,)
                         && tok.get_content() == "Spaces"
                     {

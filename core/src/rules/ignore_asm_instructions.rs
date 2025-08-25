@@ -26,7 +26,7 @@ mod tests {
     struct OneSpaceBetweenLineTokens {}
     impl LogicalLineFileFormatter for OneSpaceBetweenLineTokens {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, _input: &[LogicalLine]) {
-            for token_index in 1..formatted_tokens.get_tokens().len() {
+            for token_index in 1..formatted_tokens.len() {
                 if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token_index)
                 {
                     if formatting_data.newlines_before == 0 {

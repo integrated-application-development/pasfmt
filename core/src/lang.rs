@@ -549,49 +549,104 @@ impl FormattingData {
     }
 }
 
+pub enum MutTokenErr {
+    /// The token is ignored, and therefore cannot be mutated.
+    TokenIgnored,
+}
+
 pub struct FormattedTokens<'a> {
-    tokens: Vec<(&'a Token<'a>, FormattingData)>,
+    tokens: &'a mut [Token<'a>],
+    /// Formatting metadata for each token, with the invariant that the length
+    /// will always match the length of [field@FormattedTokens::tokens]
+    fmt: Vec<FormattingData>,
 }
 impl<'a> FormattedTokens<'a> {
-    pub fn new_from_tokens(tokens: &'a [Token<'a>], ignored_tokens: &TokenMarker) -> Self {
-        FormattedTokens {
-            tokens: tokens
-                .iter()
-                .enumerate()
-                .map(|(i, token)| {
-                    let formatting_data = FormattingData::from((
-                        token.get_leading_whitespace(),
-                        ignored_tokens.is_marked(&i),
-                    ));
-                    (token, formatting_data)
-                })
-                .collect(),
+    pub fn new_from_tokens(tokens: &'a mut [Token<'a>], ignored_tokens: &TokenMarker) -> Self {
+        let fmt = tokens
+            .iter_mut()
+            .enumerate()
+            .map(|(i, token)| {
+                FormattingData::from((token.get_leading_whitespace(), ignored_tokens.is_marked(&i)))
+            })
+            .collect();
+        FormattedTokens { tokens, fmt }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn new(tokens: &'a mut [Token<'a>], formatting_data: Vec<FormattingData>) -> Self {
+        assert_eq!(
+            tokens.len(),
+            formatting_data.len(),
+            "Length of tokens and formatting_data arguments should be equal"
+        );
+
+        Self {
+            tokens,
+            fmt: formatting_data,
         }
     }
-    pub fn new(tokens: Vec<(&'a Token<'a>, FormattingData)>) -> Self {
-        FormattedTokens { tokens }
-    }
-    pub fn get_tokens(&self) -> &Vec<(&'a Token<'a>, FormattingData)> {
-        &self.tokens
+
+    #[expect(clippy::len_without_is_empty)]
+    pub fn len(&self) -> usize {
+        self.tokens.len()
     }
 
-    pub fn get_token(&self, index: usize) -> Option<&(&'a Token<'a>, FormattingData)> {
-        self.tokens.get(index)
+    pub fn tokens(
+        &self,
+    ) -> impl DoubleEndedIterator<Item = (&Token<'a>, &FormattingData)> + ExactSizeIterator {
+        self.tokens.iter().zip(&self.fmt)
     }
 
-    pub fn get_token_mut(&mut self, index: usize) -> Option<&mut (&'a Token<'a>, FormattingData)> {
-        self.tokens.get_mut(index)
+    fn map_tok_ignored<'s>(
+        (tok, fmt): (&'s mut Token<'a>, &'s mut FormattingData),
+    ) -> (
+        Result<&'s mut Token<'a>, MutTokenErr>,
+        &'s mut FormattingData,
+    ) {
+        if fmt.is_ignored() {
+            (Err(MutTokenErr::TokenIgnored), fmt)
+        } else {
+            (Ok(tok), fmt)
+        }
+    }
+
+    pub fn tokens_mut(
+        &mut self,
+    ) -> impl DoubleEndedIterator<Item = (Result<&mut Token<'a>, MutTokenErr>, &mut FormattingData)>
+           + ExactSizeIterator {
+        self.tokens
+            .iter_mut()
+            .zip(&mut self.fmt)
+            .map(Self::map_tok_ignored)
+    }
+
+    pub fn get_token(&self, index: usize) -> Option<(&Token<'a>, &FormattingData)> {
+        self.tokens.get(index).zip(self.fmt.get(index))
+    }
+
+    /// Try to get a mutable reference to a token at the provided index, along with its formatting data.
+    ///
+    /// If the index is out of bounds, [Option::None] is returned.
+    ///
+    /// If the index is in bounds but the token is ignored, [Option::Some] is returned containing [Result::Err].
+    pub fn get_token_mut(
+        &mut self,
+        index: usize,
+    ) -> Option<(Result<&mut Token<'a>, MutTokenErr>, &mut FormattingData)> {
+        let fmt = self.fmt.get_mut(index)?;
+        let tok = self.tokens.get_mut(index)?;
+        Some(Self::map_tok_ignored((tok, fmt)))
     }
 
     pub fn get_formatting_data(&self, index: usize) -> Option<&FormattingData> {
-        self.tokens.get(index).map(|t| &t.1)
+        self.fmt.get(index)
     }
 
     pub fn get_formatting_data_mut(&mut self, index: usize) -> Option<&mut FormattingData> {
-        self.tokens.get_mut(index).map(|t| &mut t.1)
+        self.fmt.get_mut(index)
     }
     pub fn get_token_type_for_index(&self, index: usize) -> Option<TokenType> {
-        self.tokens.get(index).map(|t| t.0.get_token_type())
+        self.tokens.get(index).map(|t| t.get_token_type())
     }
 }
 
@@ -741,6 +796,11 @@ impl<'a> Token<'a> {
             ws_len,
             token_type,
         }
+    }
+
+    pub fn set_content(&mut self, content: String) {
+        self.ws_len = 0;
+        self.content = Cow::Owned(content);
     }
 
     pub(crate) fn get_str(&self) -> &str {
