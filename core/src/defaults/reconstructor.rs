@@ -30,12 +30,21 @@ struct CursorTrackerImpl<'cursor> {
 
 enum TokPos {
     /// Position of a cursor inside a token
-    InContent {
+    Content {
         /// Byte offset relative to the start of the token contents (not whitespace)
         offset: u32,
     },
+
+    /// Position of a cursor inside a multiline token
+    MultilineContent {
+        /// Byte distance of the cursor from the next line break
+        reverse_col: u16,
+        /// The number of line breaks between the cursor and the end of the token content
+        newlines_after_cursor: u16,
+    },
+
     /// Position of a cursor in the whitespace before a token
-    InWhitespace {
+    Whitespace {
         /// Column of the cursor (in bytes), measured from the previous line break
         col: u16,
         /// The number of line breaks between the cursor and the subsequent token
@@ -118,14 +127,40 @@ impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
         let cursors = cursor_positions
             .into_iter()
             .map(|(tok_pos, cursor, tok_idx)| {
-                let tok_idx = tok_idx.unwrap_or(tokens.len());
+                let Some(tok_idx) = tok_idx else {
+                    return InternalCursor {
+                        cursor,
+                        tok_idx: tokens.len(),
+                        tok_pos: TokPos::Content { offset: 0 },
+                    };
+                };
+                let tok = &tokens[tok_idx];
 
                 let tok_pos = if tok_pos >= 0 {
-                    TokPos::InContent {
-                        offset: tok_pos as u32,
+                    if matches!(
+                        tok.get_token_type(),
+                        RawTokenType::TextLiteral(TextLiteralKind::MultiLine)
+                            | RawTokenType::Comment(CommentKind::MultilineBlock)
+                    ) {
+                        let content_after_cursor = &tok.get_content()[tok_pos as usize..];
+                        let reverse_col = content_after_cursor
+                            .split('\n')
+                            .next()
+                            .map(|line| line.len())
+                            .unwrap_or(content_after_cursor.len());
+                        let newlines_after_cursor =
+                            (content_after_cursor.split('\n').count() - 1) as u16;
+
+                        TokPos::MultilineContent {
+                            reverse_col: reverse_col as u16,
+                            newlines_after_cursor,
+                        }
+                    } else {
+                        TokPos::Content {
+                            offset: tok_pos as u32,
+                        }
                     }
                 } else {
-                    let tok = &tokens[tok_idx];
                     let leading_ws = tok.get_leading_whitespace();
                     let (ws_before_cursor, ws_after_cursor) =
                         &leading_ws.split_at(
@@ -140,7 +175,7 @@ impl LogicalLinesReconstructor for DelphiLogicalLinesReconstructor {
                             + Self::col_for_token_end_pre_fmt(tokens, tok_idx.wrapping_sub(1))
                     };
 
-                    TokPos::InWhitespace {
+                    TokPos::Whitespace {
                         col: col as u16,
                         newlines_after_cursor,
                     }
@@ -253,7 +288,7 @@ impl CursorTracker for CursorTrackerImpl<'_> {
         for cursor in &mut self.cursors {
             match deleted_token.cmp(&cursor.tok_idx) {
                 Ordering::Less => cursor.tok_idx -= 1,
-                Ordering::Equal => cursor.tok_pos = TokPos::InContent { offset: 0 },
+                Ordering::Equal => cursor.tok_pos = TokPos::Content { offset: 0 },
                 Ordering::Greater => {}
             }
         }
@@ -266,7 +301,7 @@ impl CursorTracker for CursorTrackerImpl<'_> {
                 None => {
                     // cursor is out of bounds, set it to the last position in the file, if possible
                     if let Some(t) = formatted_tokens.tokens().next_back() {
-                        cursor.tok_pos = TokPos::InContent {
+                        cursor.tok_pos = TokPos::Content {
                             offset: t.0.get_content().len() as u32,
                         };
                         t
@@ -283,11 +318,25 @@ impl CursorTracker for CursorTrackerImpl<'_> {
                 .offset_for_token(formatted_tokens, cursor.tok_idx);
 
             cursor.cursor.0 = match cursor.tok_pos {
-                TokPos::InContent { offset } => {
+                TokPos::Content { offset } => {
                     // offset into the token content, but don't go over the end of the token if its length has changed
                     new_token_offset as u32 + offset.min(tok.get_content().len() as u32)
                 }
-                TokPos::InWhitespace {
+                TokPos::MultilineContent {
+                    reverse_col,
+                    newlines_after_cursor,
+                } => {
+                    let lines = tok.get_content().rsplit('\n');
+                    let offset_from_end = lines
+                        .take(newlines_after_cursor.into())
+                        // +1 for the separator
+                        .map(|line| line.len() + 1)
+                        .sum::<usize>()
+                        + reverse_col as usize;
+
+                    (new_token_offset + tok.get_content().len() - offset_from_end) as u32
+                }
+                TokPos::Whitespace {
                     col,
                     newlines_after_cursor,
                 } => {
@@ -703,7 +752,18 @@ A := 1     + '''
 '''  + | | | | |Spaces;
 
 A := 1     + '''
-    '''  + | | | | | Spaces;",
+    '''  + | | | | | Spaces;
+
+A := '''
+|a|aaaa| | |bb| |c|
+| | | |a|
+|
+d|
+|''';
+
+A := '''
+|  d
+ | |''';",
                 "\
 A
     = 1
@@ -725,7 +785,20 @@ A :=
         +
         '''
         '''
-        +  | | | | |Spaces;",
+        +  | | | | |Spaces;
+
+A :=
+    '''
+    |a|aaaa| | |bb| |c|
+    | | | |a|
+|
+    d|
+    |''';
+
+A :=
+    '''
+  |  d
+   | |''';",
             );
         }
     }
