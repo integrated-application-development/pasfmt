@@ -3,7 +3,7 @@ use crate::{lang::*, traits::LogicalLineFormatter};
 pub struct EofNewline {}
 impl LogicalLineFormatter for EofNewline {
     fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, _input: &LogicalLine) {
-        let eof_index = formatted_tokens.get_tokens().len() - 1;
+        let eof_index = formatted_tokens.len() - 1;
         if let Some(token_formatting_data) = formatted_tokens
             .get_token_type_for_index(eof_index)
             .filter(|typ| matches!(typ, TokenType::Eof))

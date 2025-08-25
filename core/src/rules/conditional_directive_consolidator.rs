@@ -175,7 +175,7 @@ mod tests {
         let (mut lines, mut tokens) = DelphiLogicalLineParser {}.parse(tokens);
         consolidate_n_times(&mut tokens, &mut lines, n);
         let mut formatted_tokens =
-            FormattedTokens::new_from_tokens(&tokens, &TokenMarker::default());
+            FormattedTokens::new_from_tokens(&mut tokens, &TokenMarker::default());
         for line in lines {
             if let Some(&first) = line.get_tokens().first() {
                 let data = formatted_tokens

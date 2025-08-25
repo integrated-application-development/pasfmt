@@ -6,7 +6,7 @@ use crate::prelude::*;
 pub struct TokenSpacing {}
 impl LogicalLineFileFormatter for TokenSpacing {
     fn format(&self, formatted_tokens: &mut FormattedTokens, _input: &[LogicalLine]) {
-        for token_index in 0..formatted_tokens.get_tokens().len() {
+        for token_index in 0..formatted_tokens.len() {
             let (spaces_before, spaces_after) = match formatted_tokens
                 .get_token_type_for_index(token_index)
             {
@@ -119,10 +119,9 @@ fn space_operator(
     let token_type_by_idx = |token_idx: usize| formatted_tokens.get_token_type_for_index(token_idx);
     let prev_real_token_type = |token_idx: usize| {
         formatted_tokens
-            .get_tokens()
-            .iter()
+            .tokens()
             .rev()
-            .skip(formatted_tokens.get_tokens().len() - token_idx)
+            .skip(formatted_tokens.len() - token_idx)
             .find_map(|token| {
                 Some(token.0.get_token_type()).filter(|t| !t.is_comment_or_directive())
             })

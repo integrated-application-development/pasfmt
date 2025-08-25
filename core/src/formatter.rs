@@ -126,7 +126,7 @@ impl Formatter {
             Some(cursors.as_mut()),
         );
 
-        let mut formatted_tokens = FormattedTokens::new_from_tokens(&tokens, &ignored_tokens);
+        let mut formatted_tokens = FormattedTokens::new_from_tokens(&mut tokens, &ignored_tokens);
         for formatter in self.logical_line_formatters.iter() {
             formatter.format(&mut formatted_tokens, &lines);
         }
@@ -669,7 +669,7 @@ mod tests {
     struct AddSpaceBeforeEverything;
     impl LogicalLineFileFormatter for AddSpaceBeforeEverything {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, _: &[LogicalLine]) {
-            for i in 0..formatted_tokens.get_tokens().len() {
+            for i in 0..formatted_tokens.len() {
                 formatted_tokens
                     .get_formatting_data_mut(i)
                     .unwrap()
@@ -966,7 +966,7 @@ else
     impl LogicalLineFormatter for LogicalLinesOnNewLines {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             if let Some(&first_token) = input.get_tokens().first() {
-                if first_token != 0 && first_token != formatted_tokens.get_tokens().len() - 1 {
+                if first_token != 0 && first_token != formatted_tokens.len() - 1 {
                     if let Some(formatting_data) =
                         formatted_tokens.get_formatting_data_mut(first_token)
                     {
@@ -1158,7 +1158,7 @@ else
     impl LogicalLineFormatter for RetainSpacesLogcialLinesOnNewLines {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             let first_token = *input.get_tokens().first().unwrap();
-            if first_token != 0 && first_token != formatted_tokens.get_tokens().len() - 1 {
+            if first_token != 0 && first_token != formatted_tokens.len() - 1 {
                 if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(first_token)
                 {
                     formatting_data.newlines_before = 1;

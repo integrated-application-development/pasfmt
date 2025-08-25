@@ -46,8 +46,7 @@ impl LogicalLineFileFormatter for OptimisingLineFormatter {
         let line_children = Self::get_line_children(input);
 
         let (token_types, token_lengths) = formatted_tokens
-            .get_tokens()
-            .iter()
+            .tokens()
             .map(|token| {
                 (
                     token.0.get_token_type(),
@@ -84,7 +83,7 @@ impl LogicalLineFileFormatter for OptimisingLineFormatter {
             After each line's solution has been finalised, the extra spaces
             provided by `TokenSpacing` can be removed at the starts of lines.
         */
-        for token_index in 0..formatted_tokens.get_tokens().len() {
+        for token_index in 0..formatted_tokens.len() {
             if let Some(data) = formatted_tokens.get_formatting_data_mut(token_index) {
                 if data.newlines_before > 0 {
                     data.spaces_before = 0;

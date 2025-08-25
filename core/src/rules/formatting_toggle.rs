@@ -95,7 +95,7 @@ mod tests {
     struct AddSpaceBeforeEverything {}
     impl LogicalLineFileFormatter for AddSpaceBeforeEverything {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, _input: &[LogicalLine]) {
-            for token_index in 0..formatted_tokens.get_tokens().len() {
+            for token_index in 0..formatted_tokens.len() {
                 if let Some(formatting_data) = formatted_tokens
                     .get_token_type_for_index(token_index)
                     .filter(|token_type| token_type != &TokenType::Eof)

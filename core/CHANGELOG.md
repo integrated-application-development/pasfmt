@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- In order to support mutation of token contents, a few APIs have been adjusted.
+  1. `Token::set_content` was added.
+  2. `FormattedTokens`
+      * Methods `new_from_tokens`, `new`, and `get_token` were adjusted to either expect exclusive
+        references to tokens as arguments, or return exclusive references to tokens as part of the
+        result.
+      * Method `get_tokens` was deleted and replaced by `tokens`, which returns an iterator instead
+        of a reference to a vector.
+      * Method `get_token_mut` was added to provide a way to safely retrieve mutatable references to
+        tokens (alongside the mutable formatting data), protecting against mutating ignored tokens.
+      * Method `tokens_mut` was added to provide an iterable equivalent to `get_token_mut`,
+        mirroring the relationship between `get_token` and `tokens`.
+
+### Removed
+
+- `FormattedTokens::new` was removed from the public API, because it was intended only for internal
+  testing use.
+
 ## 0.6.0 - 2025-08-25
 
 ### Fixed
