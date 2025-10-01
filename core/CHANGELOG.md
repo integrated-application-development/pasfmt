@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added setting to enable internal formatting of multiline strings: `OptimisingLineFormatterSettings.format_multiline_strings`.
 - Added `LowercaseKeywords` to convert instances of keywords to lowercase.
+- Added `CommentFormatter` to format the interior of comments.
 
 ### Changed
 

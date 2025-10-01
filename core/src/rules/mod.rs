@@ -1,3 +1,4 @@
+pub mod comment_contents;
 pub mod conditional_directive_consolidator;
 pub mod deindent_package_directives;
 pub mod eof_newline;
@@ -8,6 +9,7 @@ pub mod lowercase_keywords;
 pub mod optimising_line_formatter;
 pub mod token_spacing;
 
+pub use comment_contents::*;
 pub use conditional_directive_consolidator::*;
 pub use deindent_package_directives::*;
 pub use eof_newline::*;

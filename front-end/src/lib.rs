@@ -323,6 +323,7 @@ pub fn make_formatter(config: &FormattingConfig) -> Formatter {
         .token_ignorer(IgnoreAsmIstructions {})
         .file_formatter(TokenSpacing {})
         .file_formatter(LowercaseKeywords {})
+        .file_formatter(CommentFormatter {})
         .line_formatter(FormatterSelector::new(
             |logical_line_type| match logical_line_type {
                 LogicalLineType::Eof => Some(eof_newline_formatter),
