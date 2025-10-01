@@ -16,6 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   3. Invalid multiline strings are left untouched.
 - All keywords are now set to lowercase. This includes reserved words (like `begin` and `const`) but also includes
   non-reserved words (like `absolute` and `override`) when used in the context that makes them special.
+- Added formatting for the interior of inline comments
+  - If no whitespace exists after the `//` (or `///`), one space is added.
+  - Trailing whitespace at the end of the comment is trimmed.
 
 ## [0.6.0] - 2025-08-25
 
