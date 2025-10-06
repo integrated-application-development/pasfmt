@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added formatting for the interior of inline comments
   - If no whitespace exists after the `//` (or `///`), one space is added.
   - Trailing whitespace at the end of the comment is trimmed.
+- All compiler directives are now set to uppercase. This includes switch directives (e.g. `{$O+}`), parameter directives
+  (e.g. `{$HINTS on}`), and conditional directives (e.g. `{$IFDEF Foo}`).
 
 ## [0.6.0] - 2025-08-25
 
