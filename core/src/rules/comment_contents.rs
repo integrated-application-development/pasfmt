@@ -1,8 +1,17 @@
+use itertools::Itertools;
+
 use crate::prelude::*;
 
 pub struct CommentFormatter {}
 
 fn format_line_comment(tok: &mut Token) {
+    fn comment_is_separator(comment: &str) -> bool {
+        let comment = comment.trim_ascii_end();
+        comment.len() >= 10
+            && comment.chars().next().is_some_and(|b| !b.is_alphanumeric())
+            && comment.chars().all_equal()
+    }
+
     let content = tok.get_content();
     let mut new_content: Option<String> = None;
     let Some(mut comment) = content.strip_prefix("//") else {
@@ -16,6 +25,7 @@ fn format_line_comment(tok: &mut Token) {
         .bytes()
         .next()
         .is_some_and(|b| !b.is_ascii_whitespace())
+        && !comment_is_separator(comment)
     {
         let mut str = String::with_capacity(content.len() + 1);
         str.push_str(&content[..content.len() - comment.len()]);
@@ -198,6 +208,44 @@ mod tests {
         slash_after_doc = {
             "////",
             "/// /",
+        },
+        separators_ignored = {
+            "
+            //----------
+            //----------\x20\x09
+            // ----------
+            //--------------------
+            //++++++++++
+            //,,,,,,,,,,
+            //__________
+            //##########
+            //[[[[[[[[[[
+            ",
+            "
+            //----------
+            //----------
+            // ----------
+            //--------------------
+            //++++++++++
+            //,,,,,,,,,,
+            //__________
+            //##########
+            //[[[[[[[[[[
+            ",
+        },
+        not_quite_separators_not_ignored = {
+            "
+            //---------
+            //---------+
+            //++-+++++++
+            //OOOOOOOOOO
+            ",
+            "
+            // ---------
+            // ---------+
+            // ++-+++++++
+            // OOOOOOOOOO
+            ",
         },
     );
 
