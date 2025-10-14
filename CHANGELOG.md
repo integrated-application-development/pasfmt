@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   non-reserved words (like `absolute` and `override`) when used in the context that makes them special.
 - Added formatting for the interior of inline comments
   - If no whitespace exists after the `//` (or `///`), one space is added.
+    - "separator" lines are exempt, defined as a comment containing only 10 or more repetitions of a
+      non-alphanumeric character.
   - Trailing whitespace at the end of the comment is trimmed.
 - All compiler directives are now set to uppercase. This includes switch directives (e.g. `{$O+}`), parameter directives
   (e.g. `{$HINTS on}`), and conditional directives (e.g. `{$IFDEF Foo}`).
