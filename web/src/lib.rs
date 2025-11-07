@@ -2,6 +2,9 @@ use pasfmt::{make_formatter, FormattingConfig};
 use pasfmt_core::prelude::FileOptions;
 use wasm_bindgen::prelude::*;
 
+// Everything here needs to be kept backwards-compatible, because the web demo
+// uses the same JavaScript to interface with many versions of the WASM module.
+
 #[wasm_bindgen]
 pub struct SettingsWrapper {
     config: FormattingConfig,
