@@ -1,5 +1,3 @@
-import init, { fmt, default_settings_toml, SettingsWrapper } from "../../pkg";
-
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 
 // support for ini, good enough for our TOML config
@@ -21,7 +19,106 @@ import "monaco-editor/esm/vs/editor/contrib/wordOperations/browser/wordOperation
 // custom delphi tokenizer
 import * as delphi from "./delphi";
 
-await init();
+const BASE_URL = import.meta.env.BASE_URL;
+
+const url = new URL(window.location.href);
+const version_param = url.searchParams.get("version");
+const source_param = url.searchParams.get("source");
+const settings_param = url.searchParams.get("settings");
+
+// All use of this needs to be compatible with all supported versions of the WASM module.
+let pasfmt: any;
+
+// Load a specific version
+const loadWasmVersion = async (version: string) => {
+  // Dynamically import the JS glue code
+  const mod = import.meta.env.DEV
+    ? await import("../../pkg/web.js")
+    : await import(/* @vite-ignore */ `${BASE_URL}pkg/${version}/web.js`);
+
+  await mod.default();
+
+  console.log(`Loaded WASM module version: ${version}`);
+
+  pasfmt = mod;
+};
+
+const loadVersion = async () => {
+  await loadWasmVersion(versionPicker.value);
+};
+
+const versionPicker = document.getElementById(
+  "version-picker"
+)! as HTMLSelectElement;
+
+await fetch(`${BASE_URL}versions.json`)
+  .then((res) => res.json())
+  .then((versions: Array<string>) => {
+    versions.forEach((v) => {
+      const opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      versionPicker.appendChild(opt);
+    });
+
+    if (version_param !== null) {
+      const decoded = atob(version_param);
+      versionPicker.value = decoded;
+      if (!versionPicker.value) {
+        console.log(`Invalid version from search parameters: ${decoded}`);
+      }
+    } else {
+      versionPicker.value = versions[0];
+    }
+  })
+  .then(loadVersion);
+
+const showLoadingSpinner = () => {
+  versionPicker.disabled = true;
+  versionPicker.classList.add('loading')
+}
+
+const hideLoadingSpinner = () => {
+  versionPicker.disabled = false;
+  versionPicker.classList.remove('loading')
+}
+
+versionPicker.addEventListener("change", async () => {
+  showLoadingSpinner();
+  await loadVersion();
+  hideLoadingSpinner();
+  updateSetingsOnVersionChange();
+  formatEditors();
+});
+
+const updateSetingsOnVersionChange = () => {
+  const new_valid_keys = defaultSettings()
+    .split("\n")
+    .map((line) => line.split("=")[0].trim());
+  const new_settings = settingsEditor
+    .getValue()
+    .split("\n")
+    .map((line) => {
+      if (!line.includes("=")) {
+        return line;
+      }
+
+      const commented_out = "#(unavailable)";
+      if (line.startsWith(commented_out)) {
+        line = line.substring(commented_out.length);
+      }
+
+      let key = line.split("=")[0].trim();
+      if (new_valid_keys.includes(key)) {
+        return line;
+      } else {
+        return commented_out + line;
+      }
+    })
+    .join("\n");
+
+  settingsEditor.setValue(new_settings);
+};
 
 const diffEditorContainer = document.getElementById("diffpane")!;
 const sideBySideContainer = document.getElementById("editpane")!;
@@ -52,13 +149,14 @@ const settingsEditor = monaco.editor.create(settingsDiv, {
 const resetDefaultSettingsButton = document.getElementById(
   "resetToDefaultSettings"
 )!;
-const resetSettings = () => settingsEditor.setValue(default_settings_toml());
+const defaultSettings = (): string => pasfmt.default_settings_toml();
+const resetSettings = () => settingsEditor.setValue(defaultSettings());
 resetSettings();
 resetDefaultSettingsButton.onclick = resetSettings;
 
 const parseSettings = () => {
   try {
-    return new SettingsWrapper(settingsEditor.getValue());
+    return new pasfmt.SettingsWrapper(settingsEditor.getValue());
   } catch (error) {
     throw new Error("Failed to parse settings", {
       cause: error,
@@ -208,7 +306,7 @@ const formatEditors = () => {
   try {
     let settingsObj = parseSettings();
     updateRulers(settingsObj.max_line_len());
-    formattedModel.setValue(fmt(originalModel.getValue(), settingsObj));
+    formattedModel.setValue(pasfmt.fmt(originalModel.getValue(), settingsObj));
   } catch (error) {
     console.log(error);
     renderErrorInModel(error, formattedModel);
@@ -245,19 +343,15 @@ document
   .getElementById("sample-picker")!
   .addEventListener("change", loadSample);
 
-const url = new URL(window.location.href);
-let source = url.searchParams.get("source");
-let settings = url.searchParams.get("settings");
-
-if (source !== null) {
-  let decoded = atob(source);
+if (source_param !== null) {
+  let decoded = atob(source_param);
   originalEditor.setValue(decoded);
 } else {
-  loadSampleFile("/pasfmt/examples/simple.pas");
+  loadSampleFile(`${BASE_URL}examples/simple.pas`);
 }
 
-if (settings !== null) {
-  let decoded = atob(settings);
+if (settings_param !== null) {
+  let decoded = atob(settings_param);
   settingsEditor.setValue(decoded);
 }
 
@@ -267,6 +361,7 @@ const shareExample = document.getElementById(
 shareExample.onclick = () => {
   url.searchParams.set("source", btoa(originalEditor.getValue()));
   url.searchParams.set("settings", btoa(settingsEditor.getValue()));
+  url.searchParams.set("version", btoa(versionPicker.value));
   window.history.replaceState(null, "", url);
   navigator.clipboard.writeText(window.location.href);
 };
