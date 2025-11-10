@@ -168,10 +168,10 @@ const closeModalButton = document.getElementById(
   "closeModal"
 ) as HTMLButtonElement;
 
-const setSettingsBorderCol = (col) =>
+const setSettingsBorderCol = (col: string) =>
   document.documentElement.style.setProperty("--settings-border", col);
 
-let settingsErrorTimeout;
+let settingsErrorTimeout: number;
 let settingsValid = true;
 settingsModel.onDidChangeContent(() => {
   clearTimeout(settingsErrorTimeout);
@@ -273,7 +273,7 @@ document
   .getElementById("toggle-view")!
   .addEventListener("click", toggleDiffView);
 
-const renderErrorInModel = (error, model) => {
+const renderErrorInModel = (error: any, model: monaco.editor.ITextModel) => {
   const errorMessage =
     error + (error.cause ? `\nCaused by: ${error.cause}` : "");
   const markers = [
@@ -290,11 +290,11 @@ const renderErrorInModel = (error, model) => {
   monaco.editor.setModelMarkers(model, "", markers);
 };
 
-const clearErrorsInModel = (model) => {
+const clearErrorsInModel = (model: monaco.editor.ITextModel) => {
   monaco.editor.setModelMarkers(model, "", []);
 };
 
-const updateRulers = (maxLineLen) => {
+const updateRulers = (maxLineLen: number) => {
   originalEditor.updateOptions({ rulers: [makeRuler(maxLineLen)] });
   formattedEditor.updateOptions({ rulers: [makeRuler(maxLineLen)] });
   if (diffEditor !== undefined) {
