@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Added formatting for multiline string interior whitespace. Enabled by default with new setting `format_multiline_strings`.
   1. Indentation is normalised to align the trailing quote with the leading quote. Lines in the
-    middle are adjusted to retain their original significant leading whitespace.
+     middle are adjusted to retain their original significant leading whitespace.
   2. Internal line endings are normalised to match the configured line ending.
   3. Invalid multiline strings are left untouched.
 - All keywords are now set to lowercase. This includes reserved words (like `begin` and `const`) but also includes
@@ -213,7 +213,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Format spaces between all tokens (on separate lines)
 
 [Unreleased]: https://github.com/integrated-application-development/pasfmt/compare/v0.6.0...HEAD
-[0.5.1]: https://github.com/integrated-application-development/pasfmt/compare/v0.5.1...v0.6.0
+[0.6.0]: https://github.com/integrated-application-development/pasfmt/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/integrated-application-development/pasfmt/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/integrated-application-development/pasfmt/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/integrated-application-development/pasfmt/compare/v0.4.0-rc2...v0.4.0
