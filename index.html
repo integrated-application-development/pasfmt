@@ -25,7 +25,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>pasfmt demo</title>
-    <link rel="icon" type="image/ico" href="/pasfmt/img/pasfmt.ico" />
+    <link rel="icon" type="image/ico" href="/pasfmt/img/pasfmt.ico">
     <style>
       @media (prefers-color-scheme: light) {
         :root {
@@ -64,15 +64,12 @@
         display: flex;
       }
       #github-logo {
+        margin-left: auto;
         margin-right: 1em;
       }
       #github-logo img {
         height: 1.5em;
         vertical-align: middle;
-      }
-      #version-picker {
-        margin-right: 1em;
-        margin-left: auto;
       }
       #editpane {
         display: flex;
@@ -129,33 +126,8 @@
       .label {
         margin: 10px 0 5px;
       }
-
-      .loading {
-        --stripe1: color-mix(in srgb, Canvas, CanvasText 10%);
-        --stripe2: color-mix(in srgb, Canvas, CanvasText 20%);
-        background-image: repeating-linear-gradient(
-          45deg,
-          var(--stripe1) 0,
-          var(--stripe1) 10px,
-          var(--stripe2) 10px,
-          var(--stripe2) 20px
-        );
-        background-size: 28px 60px;
-        animation: stripes 1s linear infinite;
-        text-shadow: 0 0 0 CanvasText;
-        border-radius: 4px;
-        cursor: wait;
-      }
-      @keyframes stripes {
-        0% {
-          background-position: 0 0;
-        }
-        100% {
-          background-position: 28px 0;
-        }
-      }
     </style>
-    <script type="module" crossorigin src="/pasfmt/assets/index-Cc1k73Qe.js"></script>
+    <script type="module" crossorigin src="/pasfmt/assets/index-D9bO0pfm.js"></script>
     <link rel="stylesheet" crossorigin href="/pasfmt/assets/index-fDKxwPAk.css">
   </head>
   <body>
@@ -175,11 +147,7 @@
         <option value="/pasfmt/examples/simple.pas">simple</option>
       </select>
       <button id="share-example">Share Example</button>
-      <select name="version picker" id="version-picker"></select>
-      <a
-        id="github-logo"
-        href="https://github.com/integrated-application-development/pasfmt/"
-      >
+      <a id="github-logo" href="https://github.com/integrated-application-development/pasfmt/">
         <img src="/pasfmt/img/github.svg" alt="github logo" />
       </a>
     </div>
