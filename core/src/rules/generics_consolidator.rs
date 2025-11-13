@@ -64,28 +64,27 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                         ),
                     ) => {}
                     Some(TokenType::Op(OperatorKind::GreaterThan(_))) => {
-                        if comma_found {
-                            if let Some(
+                        if comma_found
+                            && let Some(
                                 TokenType::Identifier
                                 | TokenType::Op(OperatorKind::AddressOf)
                                 | TokenType::Keyword(KeywordKind::Not),
                             ) = tokens.get(next_idx + 1).map(TokenData::get_token_type)
-                            {
-                                // cases where it cannot be generics
-                                //   Foo(X < Y, U > V)
-                                //   Foo(X < Y, U > @V)
-                                //   Foo(X < Y, U > not V)
+                        {
+                            // cases where it cannot be generics
+                            //   Foo(X < Y, U > V)
+                            //   Foo(X < Y, U > @V)
+                            //   Foo(X < Y, U > not V)
 
-                                // cases where it is ambiguous but we prefer to treat it as generics
-                                //   Foo(X < Y, U > +V)
-                                //   Foo(X < Y, U > -V)
-                                //   Foo(X < Y, U > (V))
-                                //   Foo(X < Y, U > [V])
+                            // cases where it is ambiguous but we prefer to treat it as generics
+                            //   Foo(X < Y, U > +V)
+                            //   Foo(X < Y, U > -V)
+                            //   Foo(X < Y, U > (V))
+                            //   Foo(X < Y, U > [V])
 
-                                // cases where it must be generics
-                                //   Foo(X < Y, U > /V)   (or any other binary operator)
-                                break;
-                            }
+                            // cases where it must be generics
+                            //   Foo(X < Y, U > /V)   (or any other binary operator)
+                            break;
                         }
 
                         let closed_state = state.pop().unwrap();

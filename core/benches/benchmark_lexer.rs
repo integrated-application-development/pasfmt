@@ -1,8 +1,8 @@
 use std::{ops::Range, time::Duration};
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use pasfmt_core::prelude::*;
-use rand::{seq::SliceRandom, Rng};
+use rand::{Rng, seq::SliceRandom};
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("lexer");

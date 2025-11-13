@@ -337,7 +337,7 @@ impl<'a> SpecificContextStack<'a> {
     /// indices. Typically for modification.
     pub(super) fn ctx_iter_indices(
         &self,
-    ) -> impl Iterator<Item = (usize, Ref<'a, FormattingContext>)> {
+    ) -> impl Iterator<Item = (usize, Ref<'a, FormattingContext>)> + use<'a> {
         self.stack
             .into_iter()
             .flat_map(|stack| stack.walk_parents())
@@ -374,11 +374,12 @@ impl<'a> SpecificContextStack<'a> {
         filter: impl ContextFilter,
         operation: impl Fn(Ref<'_, FormattingContext>, &mut FormattingContextState),
     ) -> bool {
-        if let Some((context, data)) = self.get_last_matching_context_mut(node, filter) {
-            operation(context, data);
-            true
-        } else {
-            false
+        match self.get_last_matching_context_mut(node, filter) {
+            Some((context, data)) => {
+                operation(context, data);
+                true
+            }
+            _ => false,
         }
     }
     fn update_operator_precedences(&self, node: &mut FormattingNode, is_break: bool) {
@@ -732,12 +733,11 @@ impl<'a> SpecificContextStack<'a> {
                 data.is_child_broken = true;
                 data.break_anonymous_routine = Some(true);
             });
-        } else if !child_solutions.is_empty() {
-            if let Some((_, context)) =
+        } else if !child_solutions.is_empty()
+            && let Some((_, context)) =
                 self.get_last_matching_context_mut(node, CT::ControlFlowBegin)
-            {
-                context.can_break = false;
-            }
+        {
+            context.can_break = false;
         }
     }
 }
@@ -1282,7 +1282,7 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
             member_access_contexts: NodeRefSet::new(),
         }
     }
-    fn type_stack(&self) -> impl Iterator<Item = ContextType> + 'builder {
+    fn type_stack(&self) -> impl Iterator<Item = ContextType> + use<'builder> {
         self.current_context
             .walk_parents_data()
             .map(|index| index.context_type)

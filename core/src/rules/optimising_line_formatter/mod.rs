@@ -3,8 +3,8 @@
 //!
 
 use std::cell::RefCell;
-use std::collections::hash_map::Entry;
 use std::collections::BinaryHeap;
+use std::collections::hash_map::Entry;
 use std::rc::Rc;
 
 use debug::DebugFormattingNode;
@@ -85,10 +85,10 @@ impl LogicalLineFileFormatter for OptimisingLineFormatter {
             provided by `TokenSpacing` can be removed at the starts of lines.
         */
         for token_index in 0..olf.formatted_tokens.len() {
-            if let Some(data) = olf.formatted_tokens.get_formatting_data_mut(token_index) {
-                if data.newlines_before > 0 {
-                    data.spaces_before = 0;
-                }
+            if let Some(data) = olf.formatted_tokens.get_formatting_data_mut(token_index)
+                && data.newlines_before > 0
+            {
+                data.spaces_before = 0;
             }
         }
 
@@ -591,8 +591,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                     if last_line_length > self.settings.max_line_length {
                         trace!(
                             "Last line length {} > max line length {}, line is too long",
-                            last_line_length,
-                            self.settings.max_line_length
+                            last_line_length, self.settings.max_line_length
                         );
                         if let Some((indiff, _stack)) = indifference_line {
                             trace!(
@@ -649,7 +648,9 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                             // indifferent and add its possibilities.
 
                             if let Some((indiff, stack)) = indifference_line {
-                                trace!("Returning to first `Indifferent` decision to push all successors");
+                                trace!(
+                                    "Returning to first `Indifferent` decision to push all successors"
+                                );
                                 node_successors.extend(get_solutions(
                                     NL::Break,
                                     indiff.clone(),
@@ -714,7 +715,9 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                         trace!("Continuing to explore single successor branch");
                     } else {
                         if let Some((indiff, stack)) = indifference_line {
-                            trace!("Multiple successors found, returning to first `Indifferent` decision to push all successors");
+                            trace!(
+                                "Multiple successors found, returning to first `Indifferent` decision to push all successors"
+                            );
                             node_successors.extend(get_solutions(
                                 NL::Break,
                                 indiff.clone(),

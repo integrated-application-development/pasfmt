@@ -5,14 +5,14 @@ use std::{
     fs::OpenOptions,
     io::Read,
     path::{Path, PathBuf},
-    process::{exit, Command},
+    process::{Command, exit},
     time::Duration,
 };
 use walkdir::WalkDir;
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 
-use pasfmt::{format, FormattingConfig};
+use pasfmt::{FormattingConfig, format};
 use pasfmt_orchestrator::predule::*;
 
 pasfmt_config!(Config<FormattingConfig>);

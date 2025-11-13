@@ -469,7 +469,10 @@ impl Display for TestParsingError {
                 write!(f, "{PREFIX}marker must succeed another token '{input}'")
             }
             TestParsingError::NoLineTypeDelimiter(input) => {
-                write!(f, "{PREFIX}no logical line type declaration delimiter '{input}' (expected `number:LogicalLineType`)")
+                write!(
+                    f,
+                    "{PREFIX}no logical line type declaration delimiter '{input}' (expected `number:LogicalLineType`)"
+                )
             }
             TestParsingError::InvalidLogicalLineType(input) => {
                 write!(f, "{PREFIX}invalid logical line type '{input}'")

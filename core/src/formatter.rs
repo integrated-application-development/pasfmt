@@ -842,10 +842,10 @@ else
     impl LogicalLineFormatter for AddSpaceBeforeIdentifier {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             for &token in input.get_tokens() {
-                if formatted_tokens.get_token_type_for_index(token) == Some(TokenType::Identifier) {
-                    if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token) {
-                        formatting_data.spaces_before = 1;
-                    }
+                if formatted_tokens.get_token_type_for_index(token) == Some(TokenType::Identifier)
+                    && let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token)
+                {
+                    formatting_data.spaces_before = 1;
                 }
             }
         }
@@ -965,15 +965,13 @@ else
     struct LogicalLinesOnNewLines;
     impl LogicalLineFormatter for LogicalLinesOnNewLines {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
-            if let Some(&first_token) = input.get_tokens().first() {
-                if first_token != 0 && first_token != formatted_tokens.len() - 1 {
-                    if let Some(formatting_data) =
-                        formatted_tokens.get_formatting_data_mut(first_token)
-                    {
-                        formatting_data.spaces_before = 0;
-                        formatting_data.newlines_before = 1;
-                    }
-                }
+            if let Some(&first_token) = input.get_tokens().first()
+                && first_token != 0
+                && first_token != formatted_tokens.len() - 1
+                && let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(first_token)
+            {
+                formatting_data.spaces_before = 0;
+                formatting_data.newlines_before = 1;
             }
         }
     }
@@ -1158,11 +1156,11 @@ else
     impl LogicalLineFormatter for RetainSpacesLogcialLinesOnNewLines {
         fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, input: &LogicalLine) {
             let first_token = *input.get_tokens().first().unwrap();
-            if first_token != 0 && first_token != formatted_tokens.len() - 1 {
-                if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(first_token)
-                {
-                    formatting_data.newlines_before = 1;
-                }
+            if first_token != 0
+                && first_token != formatted_tokens.len() - 1
+                && let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(first_token)
+            {
+                formatting_data.newlines_before = 1;
             }
         }
     }

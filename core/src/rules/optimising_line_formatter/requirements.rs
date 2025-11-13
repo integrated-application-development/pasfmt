@@ -1,9 +1,9 @@
+use super::InternalOptimisingLineFormatter;
+use super::SpecificContextDataStack;
 use super::contexts::*;
 use super::get_operator_precedence;
 use super::is_binary;
 use super::types::DecisionRequirement;
-use super::InternalOptimisingLineFormatter;
-use super::SpecificContextDataStack;
 use crate::lang::*;
 
 use super::contexts::ContextType as CT;

@@ -28,20 +28,19 @@ impl LogicalLineFileFormatter for TokenSpacing {
                 _ => max_one_either_side(token_index, formatted_tokens),
             };
 
-            if let Some(spaces_before) = spaces_before {
-                if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token_index)
-                {
-                    formatting_data.spaces_before = spaces_before;
-                }
+            if let Some(spaces_before) = spaces_before
+                && let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(token_index)
+            {
+                formatting_data.spaces_before = spaces_before;
             }
 
             if let Some(spaces_after) = spaces_after {
                 let next_idx = token_index + 1;
                 let next_token_type = formatted_tokens.get_token_type_for_index(next_idx);
-                if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(next_idx) {
-                    if next_token_type != Some(TT::Eof) {
-                        formatting_data.spaces_before = spaces_after;
-                    }
+                if let Some(formatting_data) = formatted_tokens.get_formatting_data_mut(next_idx)
+                    && next_token_type != Some(TT::Eof)
+                {
+                    formatting_data.spaces_before = spaces_after;
                 }
             }
         }

@@ -9,14 +9,14 @@ use std::{
 
 use anstyle::AnsiColor;
 use anyhow::Context;
-pub use clap::{self, error::ErrorKind, CommandFactory, Parser};
+pub use clap::{self, CommandFactory, Parser, error::ErrorKind};
 use clap::{
-    builder::{PossibleValuesParser, StyledStr, Styles, TypedValueParser},
     Args, ValueEnum,
+    builder::{PossibleValuesParser, StyledStr, Styles, TypedValueParser},
 };
 
 use config::{Config, File, FileFormat};
-use log::{debug, LevelFilter};
+use log::{LevelFilter, debug};
 
 use crate::formatting_orchestrator::FormatterConfiguration;
 
@@ -389,7 +389,7 @@ impl<C: Configuration> FormatterConfiguration for PasFmtConfiguration<C> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use assert_fs::{prelude::*, TempDir};
+    use assert_fs::{TempDir, prelude::*};
     use serde::Deserialize;
     use spectral::prelude::*;
 

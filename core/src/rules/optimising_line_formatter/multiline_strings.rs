@@ -43,17 +43,18 @@ impl StringFormatter<'_> {
             let base_indentation = &last_line[0..count_leading_whitespace(last_line)];
 
             if base_indentation.len() != last_line.trim_end_matches('\'').len() {
-                log::warn!("Last line of multiline string contains non-whitespace before trailing quote: {last_line:?}");
+                log::warn!(
+                    "Last line of multiline string contains non-whitespace before trailing quote: {last_line:?}"
+                );
                 continue;
             };
 
             if let Some(new_string_contents) =
                 self.try_rewrite_string(tok.get_content(), fmt, base_indentation)
+                && new_string_contents != tok.get_content()
             {
-                if new_string_contents != tok.get_content() {
-                    tok.set_content(new_string_contents);
-                    changed = true
-                }
+                tok.set_content(new_string_contents);
+                changed = true
             }
         }
         changed
@@ -83,7 +84,9 @@ impl StringFormatter<'_> {
                     continue;
                 }
 
-                log::warn!("Whitespace inside line of multiline string does not match whitespace before trailing quote: {line:?}");
+                log::warn!(
+                    "Whitespace inside line of multiline string does not match whitespace before trailing quote: {line:?}"
+                );
                 return None;
             };
 
