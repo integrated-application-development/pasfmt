@@ -37,7 +37,7 @@ log = "0.4"
 memchr = "2.7.2"
 paste = "1.0.15"
 predicates = "3.1.0"
-rand = "0.8.5"
+rand = "0.8.6"
 rayon = "1.10.0"
 serde = "1.0.201"
 spectral = { version = "0.6.0", default-features = false }
