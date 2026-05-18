@@ -1,10 +1,10 @@
 use super::InternalOptimisingLineFormatter;
 use super::SpecificContextDataStack;
 use super::contexts::*;
-use super::get_operator_precedence;
 use super::is_binary;
 use super::types::DecisionRequirement;
 use crate::lang::*;
+use crate::rules::optimising_line_formatter::OperatorPrecedence;
 
 use super::contexts::ContextType as CT;
 use super::types::DecisionRequirement as DR;
@@ -214,7 +214,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 .map(|(_, data)| data.is_broken | data.is_child_broken)
                 .if_else_or_default(DR::MustBreak, DR::Indifferent),
             (prev, Some(op @ (TT::Op(_) | TT::Keyword(_))))
-                if get_operator_precedence(op).is_some() && is_binary(op, prev) =>
+                if op.get_operator_precedence().is_some() && is_binary(op, prev) =>
             {
                 contexts_data
                     .iter()
@@ -239,7 +239,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 .map(|(_, data)| data.is_broken | data.is_child_broken)
                 .if_else_or_default(DR::MustBreak, DR::Indifferent),
             (Some(op @ (TT::Op(_) | TT::Keyword(_))), _)
-                if get_operator_precedence(op).is_some() =>
+                if op.get_operator_precedence().is_some() =>
             {
                 DR::MustNotBreak
             }
