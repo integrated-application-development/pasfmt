@@ -648,7 +648,7 @@ impl<'a> SpecificContextStack<'a> {
                 }
             }
             (prev, Some(op @ (TT::Op(_) | TT::Keyword(_))))
-                if super::get_operator_precedence(op).is_some() && is_binary(op, prev) =>
+                if op.get_operator_precedence().is_some() && is_binary(op, prev) =>
             {
                 self.update_operator_precedences(node, is_break);
             }
@@ -933,7 +933,7 @@ impl<'a> LineFormattingContexts<'a> {
                         TT::ConditionalDirective(kind) if kind.is_else() => {
                             contexts.push_operators();
                         }
-                        op if super::get_operator_precedence(op).is_some()
+                        op if op.get_operator_precedence().is_some()
                             && is_binary(op, prev_prev_token_type) =>
                         {
                             contexts.push_operators();
@@ -1108,10 +1108,9 @@ impl<'a> LineFormattingContexts<'a> {
                         contexts.fluent(contexts.current_context.clone());
                     }
                 }
-                op if super::get_operator_precedence(op).is_some()
-                    && is_binary(op, prev_token_type) =>
-                {
-                    let op_prec = super::get_operator_precedence(op).unwrap();
+
+                op if op.get_operator_precedence().is_some() && is_binary(op, prev_token_type) => {
+                    let op_prec = op.get_operator_precedence().unwrap();
                     contexts.pop_until_and_retain(CT::Precedence(op_prec));
                 }
                 TT::Keyword(KK::Of) if matches!(next_token_type, Some(TT::Keyword(KK::Object))) => {

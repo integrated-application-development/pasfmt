@@ -1258,41 +1258,47 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
 
 const HIGHEST_PRECEDENCE: u8 = 0;
 const LOWEST_PRECEDENCE: u8 = 5;
-fn get_operator_precedence(token_type: TokenType) -> Option<u8> {
-    match token_type {
-        TT::Op(OK::Dot) => Some(0),
+trait OperatorPrecedence {
+    fn get_operator_precedence(self) -> Option<u8>;
+}
 
-        TT::Op(OK::AddressOf) | TT::Keyword(KK::Not) => Some(1),
+impl OperatorPrecedence for TokenType {
+    fn get_operator_precedence(self) -> Option<u8> {
+        match self {
+            TT::Op(OK::Dot) => Some(0),
 
-        TT::Op(OK::Star | OK::Slash)
-        | TT::Keyword(KK::Div | KK::Mod | KK::And | KK::Shl | KK::Shr | KK::As) => Some(2),
+            TT::Op(OK::AddressOf) | TT::Keyword(KK::Not) => Some(1),
 
-        TT::Op(OK::Plus | OK::Minus) | TT::Keyword(KK::Or | KK::Xor) => Some(3),
+            TT::Op(OK::Star | OK::Slash)
+            | TT::Keyword(KK::Div | KK::Mod | KK::And | KK::Shl | KK::Shr | KK::As) => Some(2),
 
-        TT::Op(
-            OK::Equal(EqKind::Comp)
-            | OK::NotEqual
-            | OK::LessThan(ChK::Comp)
-            | OK::GreaterThan(ChK::Comp)
-            | OK::LessEqual
-            | OK::GreaterEqual,
-        )
-        | TT::Keyword(KK::In(InKind::Op) | KK::Is) => Some(4),
-        // The import clause `in`s is most simply represented as a precedence
-        // relationship
-        TT::Keyword(KK::In(InKind::Import)) => Some(4),
-        TT::Op(OK::DotDot) => Some(5),
+            TT::Op(OK::Plus | OK::Minus) | TT::Keyword(KK::Or | KK::Xor) => Some(3),
 
-        TT::Op(_)
-        | TT::Identifier
-        | TT::Keyword(_)
-        | TT::TextLiteral(_)
-        | TT::NumberLiteral(_)
-        | TT::ConditionalDirective(_)
-        | TT::CompilerDirective
-        | TT::Comment(_)
-        | TT::Eof
-        | TT::Unknown => None,
+            TT::Op(
+                OK::Equal(EqKind::Comp)
+                | OK::NotEqual
+                | OK::LessThan(ChK::Comp)
+                | OK::GreaterThan(ChK::Comp)
+                | OK::LessEqual
+                | OK::GreaterEqual,
+            )
+            | TT::Keyword(KK::In(InKind::Op) | KK::Is) => Some(4),
+            // The import clause `in`s is most simply represented as a precedence
+            // relationship
+            TT::Keyword(KK::In(InKind::Import)) => Some(4),
+            TT::Op(OK::DotDot) => Some(5),
+
+            TT::Op(_)
+            | TT::Identifier
+            | TT::Keyword(_)
+            | TT::TextLiteral(_)
+            | TT::NumberLiteral(_)
+            | TT::ConditionalDirective(_)
+            | TT::CompilerDirective
+            | TT::Comment(_)
+            | TT::Eof
+            | TT::Unknown => None,
+        }
     }
 }
 
