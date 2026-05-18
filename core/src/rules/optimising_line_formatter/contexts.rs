@@ -775,12 +775,6 @@ impl<'a> LineFormattingContexts<'a> {
         token_types: &'a [TokenType],
         context_tree: &'a ParentPointerTree<FormattingContext>,
     ) -> Self {
-        let get_token_type_from_line_index = |line_index| {
-            token_types
-                .get(*line.get_tokens().get(line_index as usize)?)
-                .cloned()
-        };
-
         let builder_context_tree = Self::new_tree();
         let mut contexts = LineFormattingContextsBuilder::new(&builder_context_tree);
 
@@ -822,18 +816,35 @@ impl<'a> LineFormattingContexts<'a> {
             }
         }
 
-        let mut prev_prev_token_type = None;
-        let mut prev_token_type = None;
-        let mut prev_semantic_token_type = None;
-        let mut current = get_token_type_from_line_index(0);
-        let mut next_token_type = get_token_type_from_line_index(1);
+        let mut prev_token_types: Vec<TokenType> = Vec::with_capacity(line.get_tokens().len());
+        macro_rules! last_semantic_token_type {
+            () => {
+                last_semantic_token_type!(0)
+            };
+            ($i: expr) => {
+                prev_token_types
+                    .iter()
+                    .rev()
+                    .filter(|tt| !tt.is_comment_or_directive())
+                    .nth($i)
+            };
+        }
+        let mut next_token_types = line
+            .get_tokens()
+            .iter()
+            .rev()
+            .map(|id| token_types[*id])
+            .collect::<Vec<_>>();
+        let mut current = next_token_types.pop();
         while let Some(current_token_type) = current {
             if !current_token_type.is_comment_or_compiler_directive() {
                 let last_context_type = contexts.current_context.get().context_type;
                 // New contexts relating to the previous token are pushed here
                 // to avoid including any leading comments
-                if let (Some(prev_token_type), Some(prev_directive_token_type)) =
-                    (prev_token_type, prev_semantic_token_type)
+                if let Some(prev_token_type) = prev_token_types
+                    .iter()
+                    .rev()
+                    .find(|tt| !tt.is_comment_or_compiler_directive())
                 {
                     match (prev_token_type, last_context_type) {
                         (TT::Op(OK::LParen | OK::LBrack | OK::LessThan(ChK::Generic)), _)
@@ -858,7 +869,7 @@ impl<'a> LineFormattingContexts<'a> {
                         }
                         _ => {}
                     }
-                    match prev_directive_token_type {
+                    match prev_token_type {
                         TT::Keyword(KK::Of) => {
                             contexts.push(CT::Subject);
                             contexts.push_expression();
@@ -908,7 +919,10 @@ impl<'a> LineFormattingContexts<'a> {
                             contexts.push_expression();
                         }
                         TT::Keyword(KK::Abstract)
-                            if matches!(prev_prev_token_type, Some(TT::Keyword(KK::Class))) => {}
+                            if matches!(
+                                last_semantic_token_type!(1),
+                                Some(TT::Keyword(KK::Class))
+                            ) => {}
                         TT::Keyword(kk) if kk.is_directive() => {
                             contexts.push_expression();
                         }
@@ -934,7 +948,7 @@ impl<'a> LineFormattingContexts<'a> {
                             contexts.push_operators();
                         }
                         op if op.get_operator_precedence().is_some()
-                            && is_binary(op, prev_prev_token_type) =>
+                            && is_binary(*op, last_semantic_token_type!(1).cloned()) =>
                         {
                             contexts.push_operators();
                         }
@@ -952,7 +966,7 @@ impl<'a> LineFormattingContexts<'a> {
                         TT::Op(OK::LessThan(ChevronKind::Generic)) => BracketKind::Angle,
                         _ => BracketKind::Round,
                     };
-                    let (typ, cont_delta) = match prev_token_type {
+                    let (typ, cont_delta) = match last_semantic_token_type!() {
                         // routine invocations
                         Some(TT::Identifier | TT::Op(OK::GreaterThan(ChevronKind::Generic))) => {
                             (BracketStyle::BreakClose, 1)
@@ -1094,7 +1108,10 @@ impl<'a> LineFormattingContexts<'a> {
                 }
                 TT::Op(OK::Dot) if CT::Precedence(0) == last_context_type => {
                     contexts.retain_current();
-                    if matches!(prev_token_type, Some(TT::Op(OK::RParen | OK::RBrack))) {
+                    if matches!(
+                        last_semantic_token_type!(),
+                        Some(TT::Op(OK::RParen | OK::RBrack))
+                    ) {
                         /*
                             Fluency is considered after () and [] because
                             they allow for arbitrary computation which will
@@ -1109,11 +1126,15 @@ impl<'a> LineFormattingContexts<'a> {
                     }
                 }
 
-                op if op.get_operator_precedence().is_some() && is_binary(op, prev_token_type) => {
+                op if op.get_operator_precedence().is_some()
+                    && is_binary(op, last_semantic_token_type!().cloned()) =>
+                {
                     let op_prec = op.get_operator_precedence().unwrap();
                     contexts.pop_until_and_retain(CT::Precedence(op_prec));
                 }
-                TT::Keyword(KK::Of) if matches!(next_token_type, Some(TT::Keyword(KK::Object))) => {
+                TT::Keyword(KK::Of)
+                    if matches!(next_token_types.last(), Some(TT::Keyword(KK::Object))) =>
+                {
                     contexts.pop_until_after(CT::AnonHeader);
                 }
                 TT::Keyword(KK::Then | KK::Do | KK::Of) => {
@@ -1134,7 +1155,7 @@ impl<'a> LineFormattingContexts<'a> {
                     contexts.pop_until_after(CT::AnonHeader);
                 }
                 TT::Keyword(KK::Abstract)
-                    if matches!(prev_token_type, Some(TT::Keyword(KK::Class))) => {}
+                    if matches!(last_semantic_token_type!(), Some(TT::Keyword(KK::Class))) => {}
                 TT::Keyword(kk) if kk.is_directive() => {
                     if contexts.pop_until(CT::DirectiveList) != Some(CT::DirectiveList) {
                         if contexts
@@ -1179,15 +1200,8 @@ impl<'a> LineFormattingContexts<'a> {
                 _ => {}
             }
 
-            if !current_token_type.is_comment_or_directive() {
-                prev_prev_token_type = prev_token_type;
-                prev_token_type = current;
-            }
-            if !current_token_type.is_comment_or_compiler_directive() {
-                prev_semantic_token_type = current;
-            }
-            current = next_token_type;
-            next_token_type = get_token_type_from_line_index(contexts.line_index + 1);
+            prev_token_types.extend(current);
+            current = next_token_types.pop();
         }
 
         contexts.finalise();
