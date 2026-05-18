@@ -679,12 +679,13 @@ impl<'a> SpecificContextStack<'a> {
         {
             if let Some(data) = Rc::make_mut(&mut node.context_data).get_mut(ctx_index) {
                 match ctx.context_type {
-                    CT::ConditionalDirective => {
-                        if curr_token_type.is_some_and(|t| !t.is_comment_or_compiler_directive()) {
-                            data.can_break &= data.is_child_broken | is_break;
-                            data.one_element_per_line
-                                .get_or_insert(data.is_child_broken | is_break);
-                        }
+                    CT::ConditionalDirective
+                        if curr_token_type
+                            .is_some_and(|t| !t.is_comment_or_compiler_directive()) =>
+                    {
+                        data.can_break &= data.is_child_broken | is_break;
+                        data.one_element_per_line
+                            .get_or_insert(data.is_child_broken | is_break);
                     }
                     CT::TypedAssignment | CT::ForLoop | CT::RaiseAt => {
                         data.is_broken |= data.is_child_broken
@@ -700,15 +701,11 @@ impl<'a> SpecificContextStack<'a> {
                             data.one_element_per_line = Some(true);
                         }
                     }
-                    CT::MemberAccess => {
-                        if is_break {
-                            data.one_element_per_line = Some(true);
-                        }
+                    CT::MemberAccess if is_break => {
+                        data.one_element_per_line = Some(true);
                     }
-                    CT::CommaElem | CT::AssignRHS => {
-                        if is_break {
-                            data.break_anonymous_routine = Some(true);
-                        }
+                    CT::CommaElem | CT::AssignRHS if is_break => {
+                        data.break_anonymous_routine = Some(true);
                     }
                     _ => {}
                 }
@@ -1095,22 +1092,20 @@ impl<'a> LineFormattingContexts<'a> {
                     contexts.last_context_mut().context_type = CT::RaiseAt;
                     contexts.push(CT::Subject);
                 }
-                TT::Op(OK::Dot) => {
-                    if CT::Precedence(0) == last_context_type {
-                        contexts.retain_current();
-                        if matches!(prev_token_type, Some(TT::Op(OK::RParen | OK::RBrack))) {
-                            /*
-                                Fluency is considered after () and [] because
-                                they allow for arbitrary computation which will
-                                harm the readability of a chained expression on
-                                a single line.
+                TT::Op(OK::Dot) if CT::Precedence(0) == last_context_type => {
+                    contexts.retain_current();
+                    if matches!(prev_token_type, Some(TT::Op(OK::RParen | OK::RBrack))) {
+                        /*
+                            Fluency is considered after () and [] because
+                            they allow for arbitrary computation which will
+                            harm the readability of a chained expression on
+                            a single line.
 
-                                <> and just pure names are more likely to be
-                                simple. Generics are seen as an extension of the
-                                identifier.
-                            */
-                            contexts.fluent(contexts.current_context.clone());
-                        }
+                            <> and just pure names are more likely to be
+                            simple. Generics are seen as an extension of the
+                            identifier.
+                        */
+                        contexts.fluent(contexts.current_context.clone());
                     }
                 }
                 op if super::get_operator_precedence(op).is_some()
