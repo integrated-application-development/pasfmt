@@ -157,6 +157,7 @@ method_directive_consolidation_test!(
 method_directive_ident_consolidation_test!(
     forward = { "FORWARD" },
     external = { "EXTERNAL" },
+    noreturn = { "NORETURN" },
     name = { "NAME dll_name" },
     index = { "INDEX 1" },
     delayed = { "DELAYED" },
