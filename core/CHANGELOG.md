@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `KeywordKind::is_generic_constraint`.
 - Added support for Delphi 13 `unmanaged` generic constraint.
 - Added support for `if else` ternary expressions.
+- Added support for `not in` and `is not` compound operators.
 
 ## 0.7.0 - 2025-11-11
 

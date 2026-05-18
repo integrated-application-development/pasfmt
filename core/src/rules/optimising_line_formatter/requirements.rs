@@ -213,6 +213,9 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 .get_last_context(CT::RaiseAt)
                 .map(|(_, data)| data.is_broken | data.is_child_broken)
                 .if_else_or_default(DR::MustBreak, DR::Indifferent),
+            (Some(op1), Some(op2)) if (op1, op2).get_operator_precedence().is_some() => {
+                DR::MustNotBreak
+            }
             (prev, Some(op @ (TT::Op(_) | TT::Keyword(_))))
                 if op.get_operator_precedence().is_some() && is_binary(op, prev.as_ref()) =>
             {
