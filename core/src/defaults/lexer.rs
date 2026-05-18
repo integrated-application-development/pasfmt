@@ -321,7 +321,7 @@ const fn make_byte_map<T: Copy>(map: &[(ByteSet<'_>, T)], default: T) -> [T; 256
 // endregion: byte-set
 
 // region: keywords
-const KEYWORDS: [(&str, RawTokenType); 122] = [
+const KEYWORDS: [(&str, RawTokenType); 123] = [
     ("absolute", TT::IdentifierOrKeyword(KK::Absolute)),
     ("abstract", TT::IdentifierOrKeyword(KK::Abstract)),
     ("align", TT::IdentifierOrKeyword(KK::Align)),
@@ -385,6 +385,7 @@ const KEYWORDS: [(&str, RawTokenType); 122] = [
     ("near", TT::IdentifierOrKeyword(KK::Near)),
     ("nil", TT::Keyword(KK::Nil)),
     ("nodefault", TT::IdentifierOrKeyword(KK::NoDefault)),
+    ("noreturn", TT::IdentifierOrKeyword(KK::NoReturn)),
     ("not", TT::Keyword(KK::Not)),
     ("object", TT::Keyword(KK::Object)),
     ("of", TT::Keyword(KK::Of)),

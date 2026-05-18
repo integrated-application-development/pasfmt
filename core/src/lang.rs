@@ -146,6 +146,7 @@ pub enum KeywordKind {
     Name,
     Near,
     NoDefault,
+    NoReturn,
     On,
     Operator,
     Out,
@@ -192,6 +193,7 @@ impl KeywordKind {
                 | KeywordKind::Abstract
                 | KeywordKind::Final
                 | KeywordKind::Inline
+                | KeywordKind::NoReturn
                 | KeywordKind::Assembler
                 | KeywordKind::Cdecl
                 | KeywordKind::Pascal
