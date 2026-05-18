@@ -420,6 +420,15 @@ impl<'a> SpecificContextStack<'a> {
             )
             .cloned()
     }
+    fn get_next_real_token_type_from_line_index(&self, line_index: u32) -> Option<TokenType> {
+        self.formatting_contexts
+            .line
+            .get_tokens()
+            .iter()
+            .skip(line_index as usize + 1)
+            .map(|index| self.formatting_contexts.token_types[*index])
+            .find(|token_type| !token_type.is_comment_or_compiler_directive())
+    }
 
     /// Updates all contexts to reflect the decision provided.
     pub(super) fn update_contexts(&self, node: &mut FormattingNode, decision: RawDecision) {
@@ -662,6 +671,18 @@ impl<'a> SpecificContextStack<'a> {
                     _ => {}
                 }
             }
+            (Some(op1), Some(op2)) if (op1, op2).get_operator_precedence().is_some() => {
+                // In the middle of a compound operator, do nothing
+            }
+            (_, Some(op @ (TT::Op(_) | TT::Keyword(_))))
+                if self
+                    .get_next_real_token_type_from_line_index(line_index)
+                    .is_some_and(|token_type| {
+                        (op, token_type).get_operator_precedence().is_some()
+                    }) =>
+            {
+                self.update_operator_precedences(node, is_break);
+            }
             (prev, Some(op @ (TT::Op(_) | TT::Keyword(_))))
                 if op.get_operator_precedence().is_some() && is_binary(op, prev.as_ref()) =>
             {
@@ -852,6 +873,15 @@ impl<'a> LineFormattingContexts<'a> {
             .map(|id| token_types[*id])
             .collect::<Vec<_>>();
         let mut current = next_token_types.pop();
+
+        fn next_real_token_type(token_types: &[TokenType]) -> Option<TokenType> {
+            token_types
+                .iter()
+                .rev()
+                .find(|token_type| !token_type.is_comment_or_compiler_directive())
+                .cloned()
+        }
+
         while let Some(current_token_type) = current {
             if !current_token_type.is_comment_or_compiler_directive() {
                 let last_context_type = contexts.current_context.get().context_type;
@@ -980,6 +1010,21 @@ impl<'a> LineFormattingContexts<'a> {
                             contexts.push_operators();
                         }
                         TT::ConditionalDirective(kind) if kind.is_else() => {
+                            contexts.push_operators();
+                        }
+                        op if (op, &current_token_type)
+                            .get_operator_precedence()
+                            .is_some() =>
+                        {
+                            // In the middle of a compound operator, do nothing
+                        }
+                        op if prev_token_types
+                            .iter()
+                            .rev()
+                            .nth(1)
+                            .and_then(|prev| (prev, op).get_operator_precedence())
+                            .is_some() =>
+                        {
                             contexts.push_operators();
                         }
                         op if op.get_operator_precedence().is_some()
@@ -1197,6 +1242,22 @@ impl<'a> LineFormattingContexts<'a> {
                     }
                 }
 
+                op if prev_token_types
+                    .last()
+                    .and_then(|prev| (prev, &op).get_operator_precedence())
+                    .is_some() =>
+                {
+                    // We are in the middle of a compound operator, do nothing
+                }
+                op if next_real_token_type(&next_token_types)
+                    .and_then(|next| (op, next).get_operator_precedence())
+                    .is_some() =>
+                {
+                    let op_prec = next_real_token_type(&next_token_types)
+                        .and_then(|next| (op, next).get_operator_precedence())
+                        .unwrap();
+                    contexts.pop_until_and_retain(CT::Precedence(op_prec));
+                }
                 op if op.get_operator_precedence().is_some()
                     && is_binary(op, last_semantic_token_type!()) =>
                 {
@@ -2259,6 +2320,17 @@ mod tests {
                 1 Base          ^-----------
                 1 Precedence(3) ^-----------
                 1 Precedence(2) ^-----$
+            "},
+            not_in_operator = {"
+                                AA + BB not in CC
+                1 Base          ^----------------
+                1 Precedence(4) ^----------------
+                1 Precedence(3) ^-----$
+            "},
+            is_not_operator = {"
+                                AA is not BB
+                1 Base          ^-----------
+                1 Precedence(4) ^-----------
             "},
             routine_arguments = {"
                                 AA(BB, CC) + DD

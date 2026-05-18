@@ -361,6 +361,7 @@ mod comments {
         child_lines::generate(root_dir);
         conditional_directives::generate(root_dir);
         individual_block::generate(root_dir);
+        compound_operators::generate(root_dir);
     }
 
     mod midline_line {
@@ -702,6 +703,44 @@ mod comments {
                       A;
                     "
                 }
+            );
+        }
+    }
+
+    mod compound_operators {
+        use super::*;
+
+        pub fn generate(root_dir: &Path) {
+            generate_test_cases!(
+                root_dir,
+                not_in = "
+                    AA := AAA {} not {} in {} BBB;
+                    AAA :=
+                        AAA {} not {} in {} BBB;
+                    AAA :=
+                        AAAAA {}
+                            not {} in {} BBBB;
+                    AAA :=
+                        AAAAA {}
+                            not {} in {} BBBBBBBBB;
+                    AAA :=
+                        AAAAA
+                            {}
+                            not
+                            {} in
+                            {} BBBBBBBBB;
+                    AAA :=
+                        AAAAA
+                            {
+                            }
+                            not
+                            {
+                            }
+                            in
+                            {
+                            }
+                            BBBBBBBBB;
+                ",
             );
         }
     }
@@ -4343,6 +4382,51 @@ mod expressions {
                                 and CCCCCCCC))
                             and DDDDDDD;
 
+                ",
+                compound = "
+                    A := AAAAAAAA not in BBBBBBBB;
+                    A :=
+                        AAAAAAAA not in BBBBBBBBB;
+                    A :=
+                        AAAAAAAAA
+                            not in BBBBBBBBB;
+                    A :=
+                        AAAAAAAAA
+                            not in BBBBBBBBBBBBBBB;
+                    A :=
+                        AAAAAA + BBBBBB + CCCCCCCC
+                            not in DDDDDDDDDDDDDD;
+                    A :=
+                        AAAAAA + BBBBBB + CCCCCCCC
+                            not in DDDDD + EEEEEE;
+                    A :=
+                        AAAAAAA
+                                + BBBBBBB
+                                + CCCCCCC
+                            not in DDDDDDDDDDDDDD;
+                    A :=
+                        AAAAAA + BBBBBB + CCCCCCCC
+                            not in DDDDDD
+                                + EEEEEE;
+                    A := AAAAAAAA is not BBBBBBBB;
+                    A :=
+                        AAAAAAAA is not BBBBBBBBB;
+                    A :=
+                        AAAAAAAAA
+                            is not BBBBBBBBB;
+                    A :=
+                        AAAAAAAAA
+                            is not BBBBBBBBBBBBBBB;
+                    A := (AAA not in [DDD + EEE]);
+                    A :=
+                        (AAAA not in [DDD + EEE]);
+                    A :=
+                        (AAAAA
+                            not in [DDD + EEE]);
+                    A :=
+                        (AAAAA
+                            not in [
+                                DDDDD + EEEE]);
                 ",
             );
         }

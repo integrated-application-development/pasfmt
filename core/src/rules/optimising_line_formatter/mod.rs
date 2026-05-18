@@ -1259,11 +1259,11 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
 const HIGHEST_PRECEDENCE: u8 = 0;
 const LOWEST_PRECEDENCE: u8 = 5;
 trait OperatorPrecedence {
-    fn get_operator_precedence(self) -> Option<u8>;
+    fn get_operator_precedence(&self) -> Option<u8>;
 }
 
-impl OperatorPrecedence for TokenType {
-    fn get_operator_precedence(self) -> Option<u8> {
+impl OperatorPrecedence for &TokenType {
+    fn get_operator_precedence(&self) -> Option<u8> {
         match self {
             TT::Op(OK::Dot) => Some(0),
 
@@ -1299,6 +1299,26 @@ impl OperatorPrecedence for TokenType {
             | TT::Eof
             | TT::Unknown => None,
         }
+    }
+}
+impl OperatorPrecedence for TokenType {
+    fn get_operator_precedence(&self) -> Option<u8> {
+        (&self).get_operator_precedence()
+    }
+}
+impl OperatorPrecedence for (&TokenType, &TokenType) {
+    fn get_operator_precedence(&self) -> Option<u8> {
+        match self {
+            // Compound operators `not in` and `is not`
+            (TT::Keyword(KK::Not), op @ TT::Keyword(KK::In(InKind::Op)))
+            | (op @ TT::Keyword(KK::Is), TT::Keyword(KK::Not)) => op.get_operator_precedence(),
+            _ => None,
+        }
+    }
+}
+impl OperatorPrecedence for (TokenType, TokenType) {
+    fn get_operator_precedence(&self) -> Option<u8> {
+        (&self.0, &self.1).get_operator_precedence()
     }
 }
 
