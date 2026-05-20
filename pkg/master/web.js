@@ -79,6 +79,21 @@ function takeFromExternrefTable0(idx) {
     wasm.__externref_table_dealloc(idx);
     return value;
 }
+/**
+ * @returns {string}
+ */
+export function default_settings_toml() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.default_settings_toml();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
 
 function _assertClass(instance, klass) {
     if (!(instance instanceof klass)) {
@@ -103,22 +118,6 @@ export function fmt(src, settings) {
         return getStringFromWasm0(ret[0], ret[1]);
     } finally {
         wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-    }
-}
-
-/**
- * @returns {string}
- */
-export function default_settings_toml() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.default_settings_toml();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
     }
 }
 
