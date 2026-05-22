@@ -1493,9 +1493,12 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
         self.contexts_to_remove
             .extend(self.contexts.into_iter().filter(|node_ref| {
                 let ctx = node_ref.get();
-                ctx.ending_token == Some(ctx.starting_token)
-                    || ctx.ending_token.is_none()
-                        && matches!(ctx.context_type, CT::CommaList | CT::Assignment)
+                let is_single_token = ctx.ending_token == Some(ctx.starting_token)
+                  // `self.line_index` is the the index after the last token
+                    || ctx.starting_token + 1 == self.line_index;
+                let is_commalist_or_assignment = ctx.ending_token.is_none()
+                    && matches!(ctx.context_type, CT::CommaList | CT::Assignment);
+                is_single_token || is_commalist_or_assignment
             }));
 
         // If an `Brackets` context is in an expression or guard clause, then
@@ -2100,7 +2103,6 @@ mod tests {
                 1 Assignment   ^----$--------
                 1 AssignLHS    ^----$
                 1 BGenerics      ^--$
-                1 AssignRHS             ^----
             "},
             commas = {"
                           type AA<AA, BB, CC> = class end;
@@ -2109,7 +2111,6 @@ mod tests {
                 1 AssignLHS    ^------------$
                 1 BGenerics      ^----------$
                 0 CommaList       ^--------$
-                1 AssignRHS                     ^----
             "},
             semicolons = {"
                           type AA<AA; BB; CC> = class end;
@@ -2118,7 +2119,6 @@ mod tests {
                 1 AssignLHS    ^------------$
                 1 BGenerics      ^----------$
                 0 SemicolonList   ^--------$
-                1 AssignRHS                     ^----
             "},
             constraints = {"
                            type AA<AA: class, constructor; BB: record> = class end;
@@ -2130,7 +2130,6 @@ mod tests {
                 1 SemicolonElem    ^--------------------$
                 0 CommaList            ^----------------$
                 1 SemicolonElem                            ^--------$
-                1 AssignRHS                                              ^----
             "},
         )]
         fn generics(input: &str) -> Result<(), DslParseError> {
