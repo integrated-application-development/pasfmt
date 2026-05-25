@@ -97,6 +97,7 @@ pub(super) enum ContextType {
     // Nested
     Type,
     Precedence(u8),
+    IfElse,
     AssignLHS,
     AssignRHS,
     ControlFlowBegin,
@@ -105,6 +106,7 @@ pub(super) enum ContextType {
     MemberAccess,
     Subject,
     GuardClause,
+    ExpressionGuardClause,
     AnonHeader,
 }
 use ContextType as CT;
@@ -519,6 +521,15 @@ impl<'a> SpecificContextStack<'a> {
             (Some(TT::Op(OK::Colon)), _) => {
                 self.update_last_matching_context(node, context_matches!(_), apply_pivotal_break);
             }
+            (Some(TT::Keyword(KK::Then)), _) => {
+                // if-else expression `then`
+                self.update_last_matching_context(node, CT::IfElse, |_, data| {
+                    data.is_broken |= is_break;
+                    data.can_break &= is_break;
+                    data.one_element_per_line.get_or_insert(is_break);
+                });
+                self.update_last_matching_context(node, CT::Subject, apply_pivotal_break);
+            }
             (Some(TT::Keyword(KK::If | KK::While | KK::Until | KK::On | KK::Case)), _) => {
                 self.update_last_matching_context(node, CT::ControlFlowBegin, |_, data| {
                     data.is_broken |= is_break;
@@ -540,9 +551,13 @@ impl<'a> SpecificContextStack<'a> {
                 });
             }
             (Some(TT::Keyword(KK::Else)), _) => {
-                self.update_last_matching_context(node, CT::ControlFlowBegin, |_, data| {
-                    data.is_broken |= is_break;
-                });
+                self.update_last_matching_context(
+                    node,
+                    context_matches!(CT::ControlFlowBegin | CT::Subject),
+                    |_, data| {
+                        data.is_broken |= is_break;
+                    },
+                );
             }
             (_, Some(TT::Keyword(KK::Begin | KK::End))) => {
                 self.update_last_matching_context(node, CT::ControlFlowBegin, |_, data| {
@@ -690,6 +705,7 @@ impl<'a> SpecificContextStack<'a> {
                     CT::TypedAssignment | CT::ForLoop | CT::RaiseAt => {
                         data.is_broken |= data.is_child_broken
                     }
+                    CT::ExpressionGuardClause => data.is_broken |= data.is_child_broken,
                     CT::AssignLHS
                         if self.formatting_contexts.line.get_line_type() == LLT::Assignment =>
                     {
@@ -895,7 +911,26 @@ impl<'a> LineFormattingContexts<'a> {
                             contexts.push_expression();
                         }
                         TT::Keyword(KK::If | KK::While | KK::On | KK::Until | KK::Case) => {
-                            contexts.push(CT::GuardClause);
+                            contexts.push(
+                                if prev_token_types
+                                    .iter()
+                                    .filter(|tt| !tt.is_comment_or_directive())
+                                    .count()
+                                    == 1
+                                {
+                                    CT::GuardClause
+                                } else {
+                                    CT::ExpressionGuardClause
+                                },
+                            );
+                            contexts.push_expression();
+                        }
+                        TT::Keyword(KK::Then) => {
+                            // if-else expressions
+                            contexts.push_expression();
+                        }
+                        TT::Keyword(KK::Else) => {
+                            // if-else expressions
                             contexts.push_expression();
                         }
                         TT::Keyword(KK::With) => {
@@ -1077,12 +1112,48 @@ impl<'a> LineFormattingContexts<'a> {
                         _ => {}
                     }
                 }
+                TT::Keyword(KK::If) if contexts.line_index != 0 => {
+                    // if-else expression
+                    if let Some(tt) = prev_token_types.last()
+                        && tt != &TT::Keyword(KK::Else)
+                    {
+                        // Don't push another context in the `else if` case
+                        contexts.push((CT::IfElse, 0));
+                    }
+                }
                 TT::Keyword(KK::If | KK::While | KK::With | KK::On) => {
                     contexts.push_utility((CT::ControlFlowBegin, 0));
                     contexts.push(CT::ControlFlow);
                 }
                 TT::Keyword(KK::Else) => {
-                    contexts.pop_until(CT::ControlFlowBegin);
+                    if let Some(CT::IfElse) =
+                        contexts.pop_until(context_matches!(CT::ControlFlowBegin | CT::IfElse))
+                    {
+                        // This is to ensure nested if-else expressions are popped off the stack.
+                        // They will already have their `ending_token` set.
+                        while contexts.last_context_mut().ending_token.is_some() {
+                            contexts.pop();
+                            contexts.pop_until(CT::IfElse);
+                        }
+                        if contexts.last_context_mut().context_type == CT::IfElse
+                            && next_token_types
+                                .iter()
+                                .rev()
+                                .find(|tt| !tt.is_comment_or_compiler_directive())
+                                .is_some_and(|tt| tt != &TT::Keyword(KK::If))
+                        {
+                            // Only set the ending on bare `else`, i.e., not `else if`
+                            contexts.last_context_mut().ending_token = Some(contexts.line_index)
+                        }
+                    }
+                    if next_token_types
+                        .iter()
+                        .next_back()
+                        .is_some_and(|tt| tt != &TT::Keyword(KK::If))
+                    {
+                        // `Subject` shouldn't be pushed if it is an `else if`
+                        contexts.push(CT::Subject);
+                    }
                 }
                 TT::Keyword(KK::Case | KK::Until) => {
                     contexts.push(CT::ControlFlow);
@@ -1137,7 +1208,13 @@ impl<'a> LineFormattingContexts<'a> {
                 {
                     contexts.pop_until_after(CT::AnonHeader);
                 }
-                TT::Keyword(KK::Then | KK::Do | KK::Of) => {
+                TT::Keyword(KK::Then) => {
+                    contexts.pop_until_and_retain(context_matches!(CT::GuardClause));
+                    contexts.pop_until(context_matches!(CT::IfElse | CT::ControlFlow));
+                    contexts.push(CT::Subject);
+                }
+                TT::Keyword(KK::Do | KK::Of) => {
+                    contexts.pop_until_and_retain(context_matches!(CT::GuardClause));
                     contexts.pop_until(context_matches!(CT::ControlFlow | CT::ForLoop));
                 }
                 TT::Keyword(KK::Function | KK::Procedure)
@@ -1795,9 +1872,11 @@ mod tests {
                     "TypedAssignment" => Ok(CT::TypedAssignment),
                     "AssignLHS" => Ok(CT::AssignLHS),
                     "AssignRHS" => Ok(CT::AssignRHS),
+                    "IfElse" => Ok(CT::IfElse),
 
                     "ControlFlow" => Ok(CT::ControlFlow),
                     "GuardClause" => Ok(CT::GuardClause),
+                    "EGuardClause" => Ok(CT::ExpressionGuardClause),
                     "ControlFlowBegin" => Ok(CT::ControlFlowBegin),
                     "MemberAccess" => Ok(CT::MemberAccess),
                     "ForLoop" => Ok(CT::ForLoop),
@@ -2222,6 +2301,71 @@ mod tests {
             "},
         )]
         fn control_flow(input: &str) -> Result<(), DslParseError> {
+            assert_contexts(input)
+        }
+
+        #[yare::parameterized(
+            assignment = {"
+                                A := if AA = BB then CC + DD else EE - FF;
+                1 Base          ^-----------------------------------------
+                1 AssignRHS          ^----------------------------------$
+                0 IfElse             ^--------------------------$--------
+                1 EGuardClause          ^-----$
+                1 Precedence(4)         ^-----$
+                1 Subject                       ^----------$
+                1 Precedence(3)                      ^-----$
+                1 Subject                                    ^----------$
+                1 Precedence(3)                                   ^-----$
+            "},
+            nested_if = {"
+                                A := if AA = BB then if CC = DD then EE + FF else GG - HH else HH * II;
+                1 Base          ^----------------------------------------------------------------------
+                1 AssignRHS          ^---------------------------------------------------------------$
+                0 IfElse             ^-------------------------------------------------------$--------
+                1 EGuardClause          ^-----$
+                1 Precedence(4)         ^-----$
+                1 Subject                       ^---------------------------------------$
+                0 IfElse                             ^--------------------------$--------
+                1 EGuardClause                          ^-----$
+                1 Precedence(4)                         ^-----$
+                1 Subject                                       ^----------$
+                1 Precedence(3)                                      ^-----$
+                1 Subject                                                    ^----------$
+                1 Precedence(3)                                                   ^-----$
+                1 Subject                                                                 ^----------$
+                1 Precedence(2)                                                                ^-----$
+            "},
+            // Wrap the nested expression to avoid the `else if` behaviour
+            nested_else = {"
+                                A := if AA = BB then CC = DD else (if EE + FF then GG - HH else HH * II);
+                1 Base          ^------------------------------------------------------------------------
+                1 AssignRHS          ^-----------------------------------------------------------------$
+                0 IfElse             ^-----------------------$------------------------------------------
+                1 EGuardClause          ^-----$
+                1 Precedence(4)         ^-----$
+                1 Subject                       ^----------$
+                1 Precedence(4)                      ^-----$
+                1 Subject                                     ^----------------------------------------$
+                0 IParens                                         ^------------------------------------$
+                0 IfElse                                           ^--------------------------$--------
+                1 EGuardClause                                        ^-----$
+                1 Precedence(3)                                       ^-----$
+                1 Subject                                                     ^----------$
+                1 Precedence(3)                                                    ^-----$
+                1 Subject                                                                  ^----------$
+                1 Precedence(2)                                                                 ^-----$
+            "},
+            else_if = {"
+                                A := if AA then BB else if CC then DD else EE;
+                1 Base          ^---------------------------------------------
+                1 AssignRHS          ^--------------------------------------$
+                0 IfElse             ^-----------------------------------$---
+                1 Subject                  ^-----$
+                1 Subject                                     ^-----$
+                1 Subject                                             ^-----$
+            "},
+        )]
+        fn ternary(input: &str) -> Result<(), DslParseError> {
             assert_contexts(input)
         }
 

@@ -278,7 +278,20 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 .get_last_context(CT::ControlFlowBegin)
                 .map(|(_, data)| data.is_child_broken)
                 .if_else_or_default(DR::MustBreak, DR::Indifferent),
-            (_, Some(TT::Keyword(KK::Else))) => DR::MustBreak,
+            (_, Some(TT::Keyword(KK::Else))) => contexts_data
+                .get_last_context(context_matches!(CT::IfElse))
+                .map(|(_, data)| data.is_broken | data.is_child_broken)
+                .if_else_or(DR::MustBreak, DR::MustNotBreak, DR::MustBreak),
+            (Some(TT::Keyword(KK::Then)), Some(TT::Keyword(KK::If))) => DR::MustBreak,
+            (Some(TT::Keyword(KK::Then)), _) => contexts_data
+                .get_last_context(context_matches!(CT::IfElse))
+                .and_then(|(_, data)| data.one_element_per_line)
+                .if_else_or_default(DR::MustBreak, DR::MustNotBreak),
+            (Some(TT::Keyword(KK::Else)), Some(TT::Keyword(KK::If))) => DR::MustNotBreak,
+            (Some(TT::Keyword(KK::Else)), _) => contexts_data
+                .get_last_context(context_matches!(CT::IfElse))
+                .map(|(_, data)| data.is_broken | data.is_child_broken)
+                .if_else_or(DR::MustBreak, DR::MustNotBreak, DR::MustBreak),
             (Some(_), Some(TT::Keyword(KK::Begin))) => contexts_data
                 .get_last_context(context_matches!(CT::CommaElem | CT::AssignRHS))
                 .and_then(|(_, data)| data.break_anonymous_routine)
