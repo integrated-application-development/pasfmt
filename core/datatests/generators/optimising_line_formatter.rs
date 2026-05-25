@@ -3019,16 +3019,16 @@ mod control_flows {
                 inline = "
                     if A then
                     else if AAAAAA and BBBBBB then
-                      Bar;
+                      Bar
                     else if AAAAAAAAA
                         and BBBBBBBBB then
-                      Bar;
+                      Bar
                     else if AAAAAAAAAA
                         and BBBBBBBBBB
                         and CCCCCCCCCC then
-                      Bar;
+                      Bar
                     else if Foo(AAA, BB, CCC) then
-                      Bar;
+                      Bar
                     else if Foo(
                         AAAA,
                         BBBBBB,
@@ -3058,7 +3058,7 @@ mod control_flows {
                     end
                     else if AA(A, B, C) then begin
                       Bar;
-                    end;
+                    end
                     else if AAA(AAA, BB, CCC) then
                     begin
                       Bar;
