@@ -31,6 +31,7 @@ pub fn generate_test_files(root_dir: &Path) {
     routine_implementations::generate(root_dir);
     control_flows::generate(root_dir);
     statements::generate(root_dir);
+    ternary::generate(root_dir);
     attributes::generate(root_dir);
     semicolons::generate(root_dir);
     regression::generate(root_dir);
@@ -3255,6 +3256,25 @@ mod statements {
                 raise_at = "raise Exception.Create() at ReturnAddress + Foo",
             );
         }
+    }
+}
+
+mod ternary {
+    use super::*;
+
+    pub fn generate(root_dir: &Path) {
+        generate_test_cases!(
+            root_dir,
+            assignment = "
+                _|A := if A then B else C;
+            ",
+            nested = "
+                _|A := if if A then B else C then
+                      if A then B else C
+                    else
+                      if A then B else C;
+            ",
+        );
     }
 }
 

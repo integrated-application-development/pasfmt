@@ -432,6 +432,31 @@ mod comments {
                             and FFFFFFFFFFFF then
                       ;
                 ",
+                ternary = "
+                    A :=
+                        if A then
+                            B
+                        else //
+                            if C then D else E;
+                    A :=
+                        if A then
+                            B
+                        else //
+                            if CCCCC then
+                                D
+                            else
+                                E;
+                    A :=
+                        if A then
+                            B
+                        else //
+                            if C then
+                                DDDDD //
+                            else if a then
+                                E
+                            else
+                                d;
+                ",
             );
         }
     }
@@ -4244,6 +4269,7 @@ mod expressions {
         unary::generate(root_dir);
         set::generate(root_dir);
         strings::generate(root_dir);
+        ternary::generate(root_dir);
     }
 
     mod boolean {
@@ -4862,6 +4888,162 @@ mod expressions {
                         );
                     "
                 }
+            );
+        }
+    }
+
+    mod ternary {
+        use super::*;
+
+        pub fn generate(root_dir: &Path) {
+            generate_test_cases!(
+                root_dir,
+                basic_assignment = "
+                    A := if B then C else D;
+                    AAAAAAAA :=
+                        if B then C else D;
+                    AAAAAAAA :=
+                        if BBBBBBB then
+                            CC
+                        else
+                            DD;
+                ",
+                nested_must_wrap = "
+                    // wrap_column=41                        |
+                    // A := if B then if C then D else E else F;
+                    A :=
+                        if B then
+                            if C then D else E
+                        else
+                            F;
+                ",
+                nested = "
+                    A :=
+                        if B then
+                            if CCCCC then D else E
+                        else
+                            F;
+                    A :=
+                        if B then
+                            if CCCCCC then
+                                D
+                            else
+                                E
+                        else
+                            F;
+                    A :=
+                        if BBBBBBB + BBBBBBBB then
+                            if CCCCCC + CCCCC then
+                                DDDDDDDDDD + DDDDD
+                            else
+                                EEEEEEEEE + EEEEEE
+                        else
+                            FFFFFFFF + FFFFFFFFFF;
+                    A :=
+                        if BBBBBBBB
+                                + BBBBBBBB then
+                            if CCCCC + CCCCCC then
+                                DDDDDDDDDD + DDDDD
+                            else
+                                EEEEEEEEE + EEEEEE
+                        else
+                            FFFFFFFF + FFFFFFFFFF;
+                    A :=
+                        if BBBBBBB + BBBBBBBB then
+                            if CCCCCCC
+                                    + CCCCCCC then
+                                DDDDDDDDDD + DDDDD
+                            else
+                                EEEEEEEEE + EEEEEE
+                        else
+                            FFFFFFFF + FFFFFFFFFF;
+                    A :=
+                        if BBBBBBB + BBBBBBBB then
+                            if CCCCC + CCCCCC then
+                                DDDDDDDDDD
+                                    + DDDDDD
+                            else
+                                EEEEEEEEE + EEEEEE
+                        else
+                            FFFFFFFF + FFFFFFFFFF;
+                    A :=
+                        if BBBBBBB + BBBBBBBB then
+                            if CCCCC + CCCCCC then
+                                DDDDDDDDDD + DDDDD
+                            else
+                                EEEEEEEEE
+                                    + EEEEEEE
+                        else
+                            FFFFFFFF + FFFFFFFFFF;
+                    A :=
+                        if BBBBBBB + BBBBBBBB then
+                            if CCCCCC + CCCCC then
+                                DDDDDDDDDD + DDDDD
+                            else
+                                EEEEEEEEE + EEEEEE
+                        else
+                            FFFFFFFFF
+                                + FFFFFFFFFF;
+                    A :=
+                        if BBBBBBBB
+                                + BBBBBBBB then
+                            if CCCCCC
+                                    + CCCCCC then
+                                DDDDDDDDDD + DDDDD
+                            else
+                                EEEEEEEEE
+                                    + EEEEEEE
+                        else
+                            FFFFFFFFF + FFFFFFFFF;
+                ",
+                anonymous = "
+                    AAAAAAAA :=
+                        if BBBBBBB then
+                            (procedure
+                            begin
+                              A := B;
+                              B := A;
+                            end)()
+                        else
+                            (procedure
+                            begin
+                              A := B;
+                              B := A;
+                            end)();
+                    AAAAAAAA :=
+                        if BBBBBBB then
+                            if True then
+                                (procedure
+                                begin
+                                  A := B;
+                                  B := A;
+                                end)()
+                            else
+                                (procedure
+                                begin
+                                  A := B;
+                                  B := A;
+                                end)()
+                        else if True then
+                            (procedure
+                            begin
+                              A := B;
+                              B := A;
+                            end)()
+                        else //
+                            if True then
+                                (procedure
+                                begin
+                                  A := B;
+                                  B := A;
+                                end)()
+                            else
+                                (procedure
+                                begin
+                                  A := B;
+                                  B := A;
+                                end)();
+                ",
             );
         }
     }
