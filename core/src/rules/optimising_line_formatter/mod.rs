@@ -1307,7 +1307,7 @@ impl OperatorPrecedence for TokenType {
 ///
 /// Returns whether the given [`TokenType`] is a binary operator by looking at
 /// its previous (real) token type
-fn is_binary(token_type: TokenType, prev_token_type: Option<TokenType>) -> bool {
+fn is_binary(token_type: TokenType, prev_token_type: Option<&TokenType>) -> bool {
     match token_type {
         TT::Op(OK::Plus | OK::Minus | OK::AddressOf) | TT::Keyword(KK::Not) => {}
         _ => return true,

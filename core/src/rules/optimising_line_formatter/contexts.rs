@@ -648,7 +648,7 @@ impl<'a> SpecificContextStack<'a> {
                 }
             }
             (prev, Some(op @ (TT::Op(_) | TT::Keyword(_))))
-                if op.get_operator_precedence().is_some() && is_binary(op, prev) =>
+                if op.get_operator_precedence().is_some() && is_binary(op, prev.as_ref()) =>
             {
                 self.update_operator_precedences(node, is_break);
             }
@@ -948,7 +948,7 @@ impl<'a> LineFormattingContexts<'a> {
                             contexts.push_operators();
                         }
                         op if op.get_operator_precedence().is_some()
-                            && is_binary(*op, last_semantic_token_type!(1).cloned()) =>
+                            && is_binary(*op, last_semantic_token_type!(1)) =>
                         {
                             contexts.push_operators();
                         }
@@ -1127,7 +1127,7 @@ impl<'a> LineFormattingContexts<'a> {
                 }
 
                 op if op.get_operator_precedence().is_some()
-                    && is_binary(op, last_semantic_token_type!().cloned()) =>
+                    && is_binary(op, last_semantic_token_type!()) =>
                 {
                     let op_prec = op.get_operator_precedence().unwrap();
                     contexts.pop_until_and_retain(CT::Precedence(op_prec));
