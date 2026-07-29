@@ -1449,8 +1449,44 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         parser.parse_expression();
                     }
                 }
+                // Generics
                 Some(TT::Op(OK::LessThan(_))) => {
-                    parser.skip_pair();
+                    let paren_level = parser.paren_level;
+                    let brack_level = parser.brack_level;
+                    let generic_level = parser.generic_level;
+                    let mut in_constraint = false;
+                    parser.next_token();
+                    while (parser.paren_level != paren_level
+                        || parser.brack_level != brack_level
+                        || parser.generic_level != generic_level)
+                        && parser.get_current_token_type().is_some()
+                    {
+                        match parser.get_current_token_type() {
+                            Some(TT::Op(OK::Colon)) => {
+                                /*
+                                    E.g., function <A: BB>();
+                                    In constraint      ^
+                                */
+                                in_constraint = true;
+                            }
+                            Some(TT::Op(OK::Semicolon)) => {
+                                /*
+                                    E.g., function <A: BB; C: DD>();
+                                    Not in constraint      ^
+                                */
+                                in_constraint = false;
+                            }
+                            Some(TT::IdentifierOrKeyword(kk)) if kk.is_generic_constraint() => {
+                                if in_constraint {
+                                    parser.consolidate_current_keyword();
+                                } else {
+                                    parser.consolidate_current_ident();
+                                }
+                            }
+                            _ => {}
+                        }
+                        parser.next_token();
+                    }
                 }
                 Some(TT::Op(OK::Semicolon)) => {
                     parser.next_token();
