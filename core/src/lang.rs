@@ -172,6 +172,7 @@ pub enum KeywordKind {
     StdCall,
     Stored,
     Strict,
+    Unmanaged,
     Unsafe,
     VarArgs,
     Virtual,
@@ -264,6 +265,7 @@ impl KeywordKind {
                 | KeywordKind::Class
                 | KeywordKind::Constructor
                 | KeywordKind::Interface
+                | KeywordKind::Unmanaged
         )
     }
 }

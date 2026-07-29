@@ -627,6 +627,13 @@ casing_token_consolidation_test!(
     strict,
     identifier = { "type foo = class STRICT: STRICT; strict private STRICT: STRICT end;" },
 );
+casing_token_consolidation_test!(
+    generic_constraint,
+    unmanaged = {
+        "function UNMANAGED<UNMANAGED: unmanaged, unmanaged; UNMANAGED: unmanaged, unmanaged>(UNMANAGED: UNMANAGED; UNMANAGED: UNMANAGED);"
+    },
+    fake = { "function SEALED<UNMANAGED: SEALED; UNMANAGED: STRICT>(UNMANAGED: UNMANAGED);" },
+);
 
 /*
     In cases like these, `helper` can be both an identifier and a keyword based on the conditional
