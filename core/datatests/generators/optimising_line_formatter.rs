@@ -2640,7 +2640,7 @@ mod routines {
                     procedure Apples<
                         AA, BB: record;
                         AAAAAAAAAA, BBBBBBBB:
-                            IInterface;
+                            interface;
                         AAAAAAAA,
                         BBBBBBBB,
                         CCCCCCC: record;
@@ -2651,12 +2651,18 @@ mod routines {
                         CC:
                             constructor,
                             record,
+                            interface,
                             class;
+                        CC:
+                            AAAAAAAA,
+                            BBBBBBBB,
+                            CCCCCCCC,
+                            DDDDDDDD;
                         CC:
                             constructor,
                             record,
                             class,
-                            IInterface
+                            interface
                     >();
                 ",
                 generic_routines_and_params = "
