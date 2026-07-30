@@ -3447,7 +3447,12 @@ mod regression {
                 _|  Protected = 0;
                 _|  Public = 0;
                 _|  Published = 0;
-            "
+            ",
+            non_generic_statements = "
+                _|A := B < C;
+                _|raise D(E > F);
+                _|X := Y;
+            ",
         );
     }
 }

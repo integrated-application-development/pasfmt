@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed parsing of logical lines with sequential `<` and `>` comparisons.
+
 ### Added
 
 - Added support for Delphi 13 `noreturn` directive.
