@@ -1795,6 +1795,10 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     }
 
     fn finish_logical_line(&mut self) {
+        self.generic_level = 0;
+        self.brack_level = 0;
+        self.paren_level = 0;
+
         if self.is_at_start_of_line() {
             self.get_current_logical_line_mut().line_type = LLT::Unknown;
             return;
