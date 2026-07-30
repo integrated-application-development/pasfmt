@@ -108,7 +108,7 @@ fn assert_lines(
                 error_message.push_str(&format!(
                     "{} - line type: {:?}\n",
                     format_line(index, &line.line, tokens),
-                    &line.line.get_line_type()
+                    line.line.get_line_type()
                 ))
             });
 

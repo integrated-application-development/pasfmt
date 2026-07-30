@@ -75,7 +75,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
                 let parens_requirement = contexts_data
                     .get_last_context(context_matches!(CT::Brackets(_, _) | CT::SemicolonList))
                     .and_then(|(ctx, data)| {
-                        Some(data.is_broken).filter(|_| ctx.context_type() != CT::SemicolonList)
+                        (ctx.context_type() != CT::SemicolonList).then_some(data.is_broken)
                     })
                     .if_else_map(DR::MustBreak, DR::Indifferent);
 
