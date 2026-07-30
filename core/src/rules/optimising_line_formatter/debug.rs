@@ -320,8 +320,7 @@ impl Debug for DebugFormattingSolution<'_, '_, '_> {
                 token_decision.requirement,
                 token_decision.decision,
                 token_decision.last_line_length,
-                &self
-                    .line_contexts
+                self.line_contexts
                     .get_specific_context_stack(line_index as u32)
                     .with_data(&recon_node)
                     .parents_support_break()
