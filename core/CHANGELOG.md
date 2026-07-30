@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed parsing of logical lines with sequential `<` and `>` comparisons.
+- Fixed formatting of `interface` as a generic constraint.
 
 ### Added
 
 - Added support for Delphi 13 `noreturn` directive.
+- Added `KeywordKind::is_generic_constraint`.
 
 ## 0.7.0 - 2025-11-11
 

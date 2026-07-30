@@ -44,6 +44,7 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                     Some(TokenType::Op(OperatorKind::Comma)) => {
                         comma_found = true;
                     }
+                    Some(TokenType::Keyword(kk)) if kk.is_generic_constraint() => {}
                     // all the other tokens you can include in a generic type parameter list
                     Some(
                         TokenType::Identifier
@@ -54,10 +55,7 @@ impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
                         | TokenType::Comment(_)
                         | TokenType::ConditionalDirective(_)
                         | TokenType::Keyword(
-                            KeywordKind::Class
-                            | KeywordKind::Record
-                            | KeywordKind::Constructor
-                            | KeywordKind::String
+                            KeywordKind::String
                             | KeywordKind::Array
                             | KeywordKind::Set
                             | KeywordKind::Of,

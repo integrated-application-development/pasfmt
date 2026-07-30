@@ -256,6 +256,16 @@ impl KeywordKind {
                 | KeywordKind::Type
         )
     }
+
+    pub fn is_generic_constraint(&self) -> bool {
+        matches!(
+            self,
+            KeywordKind::Record
+                | KeywordKind::Class
+                | KeywordKind::Constructor
+                | KeywordKind::Interface
+        )
+    }
 }
 
 /// Used to distinguish the semantic meanings of `=`
