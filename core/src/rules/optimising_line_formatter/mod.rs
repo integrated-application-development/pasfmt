@@ -1063,6 +1063,23 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 },
                 ChildLineOption::BreakAll(ws) | ChildLineOption::ContinueThenBreak(ws) => ws,
             };
+            /*
+                Lines with the `LLT::ParentLineChildComment` line type are
+                formatted to the parent's level.
+
+                E.g.,
+                ```
+                if A then
+                  B
+                // This comment
+                else
+                  C;
+                ```
+            */
+            let get_child_starting_ws = |line_type| match line_type {
+                LLT::ParentLineChildComment => parent_base_ws,
+                _ => child_starting_ws,
+            };
             let get_first_token_decision = |index, line_length| match option {
                 ChildLineOption::ContinueAll => FirstDecision::Continue {
                     line_length,
@@ -1093,6 +1110,7 @@ impl<'this> InternalOptimisingLineFormatter<'this, '_> {
                 .map(|&child_line| (child_line, &self.lines[child_line]))
                 .enumerate()
             {
+                let child_starting_ws = get_child_starting_ws(line.1.get_line_type());
                 let mut child_whitespace = child_starting_ws.whitespace;
                 child_whitespace.indentations += line.1.get_level();
                 child_whitespace.indentations = child_whitespace

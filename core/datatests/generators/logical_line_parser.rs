@@ -195,6 +195,7 @@ mod comments {
     pub fn generate(root_dir: &Path) {
         inline::generate(root_dir);
         individual::generate(root_dir);
+        before_context_end::generate(root_dir);
     }
 
     mod inline {
@@ -506,6 +507,146 @@ mod comments {
                 block = "{inline block}",
                 line = "// inline line",
                 multiline = "{\nfoo\n}"
+            );
+        }
+    }
+
+    mod before_context_end {
+        use super::*;
+
+        pub fn generate(root_dir: &Path) {
+            generate_test_cases!(
+                root_dir,
+                compound = "
+                    _|begin
+                    _|  A := B + C
+                    _|  //
+                    _|end
+                ",
+                compound_with_conditional = "
+                    _|begin
+                    _|{$IFDEF A}
+                    _|  A := B + C
+                    _|{$ENDIF}
+                    _|  //
+                    _|end
+                ",
+                anonymous = "
+                    _1  |A := procedure
+                    _1  |begin{1}
+                    _^1 |  A := B + C
+                    _^1 |  //
+                    _1  |end;
+                ",
+                if_else = "
+                    _   |begin
+                    _1  |  if A then{1}
+                    _^1 |    A := B + C
+                    _^1 |    //
+                    _1  |  else{2}
+                    _^2 |    B := C + D
+                    _   |  //
+                    _   |end
+                ",
+                if_else_begin = "
+                    _   |begin
+                    _1  |  if A then{1}
+                    _^1 |    //
+                    _^1 |    begin
+                    _^1 |      //
+                    _^1 |    end
+                    _1  |  else{2}
+                    _^2 |    B := C + D
+                    _   |  //
+                    _   |end
+                ",
+                for_in = "
+                    _   |begin
+                    _1  |  for A in B do{1}
+                    _^1 |    A := B + C
+                    _   |  //
+                    _   |end
+                ",
+                for_to = "
+                    _   |begin
+                    _1  |  for A := B to C do{1}
+                    _^1 |    A := B + C
+                    _   |  //
+                    _   |end
+                ",
+                while_do = "
+                    _   |begin
+                    _1  |  while A do{1}
+                    _^1 |    A := B + C
+                    _   |  //
+                    _   |end
+                ",
+                initialization_finalization = "
+                    _|initialization
+                    _|  A := B + C
+                    _|  //
+                    _|finalization
+                    _|  A := B + C
+                    _|  //
+                    _|end.
+                ",
+                initialization = "
+                    _|initialization
+                    _|  A := B + C
+                    _|  //
+                    _|end.
+                ",
+                case = "
+                    _  |case A of
+                    _1 |  B:{1}
+                    _^1|    A := B + C
+                    _  |  //
+                    _  |end.
+                ",
+                case_else = "
+                    _  |case A of
+                    _1 |  B:{1}
+                    _^1|    A := B + C
+                    _  |  //
+                    _  |else
+                    _  |  A := B + C
+                    _  |  //
+                    _  |end.
+                ",
+                repeat = "
+                    _|repeat
+                    _|  A := B + C
+                    _|  //
+                    _|until False;
+                ",
+                try_except = "
+                    _  |try
+                    _  |  A := B + C
+                    _  |  //
+                    _  |except
+                    _1 |  on A do{1}
+                    _^1|    A := B + C
+                    _  |  //
+                    _  |end;
+                ",
+                try_bare_except = "
+                    _|try
+                    _|  A := B + C
+                    _|  //
+                    _|except
+                    _|  A := B + C
+                    _|  //
+                    _|end;
+                ",
+                try_finally = "
+                    _|try
+                    _|  A := B + C
+                    _|  //
+                    _|finally
+                    _|  A := B + C
+                    _|  //
+                    _|end;
+                ",
             );
         }
     }

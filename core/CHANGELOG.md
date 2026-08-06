@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed parsing of logical lines with sequential `<` and `>` comparisons.
 - Fixed formatting of `interface` as a generic constraint.
 - Fixed formatting of comments in directive blocks.
+- Fixed formatting of comments after statements without semicolons.
 
 ### Added
 

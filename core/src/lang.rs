@@ -461,6 +461,7 @@ pub enum LogicalLineType {
     CaseArm,
     Declaration,
     VariantRecordCaseArm,
+    ParentLineChildComment,
     Unknown,
     Voided,
 }
