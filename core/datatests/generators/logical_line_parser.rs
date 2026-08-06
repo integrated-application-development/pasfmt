@@ -162,6 +162,28 @@ mod directives {
                     1:CompilerDirective
                 ",
                 mid_line = "_ |A {$J+} := B {$C+} + C {$C-};",
+                directive_comments = "
+                    _|{$IFDEF A}
+                    _|  // Line comment
+                    _|  {$DEFINE B}
+                    _|  { Block Comment }
+                    _|  {$DEFINE C}
+                    _|  {.$DEFINE C}
+                    _|  {
+                          Multiline comment
+                        }
+                    _|  {$DEFINE D}
+                    _|{$ENDIF}
+                ",
+                non_directive_comments = "
+                    _|{$IFDEF A}
+                    _|// Comment
+                    _|procedure A;
+                    _|{$ELSE}
+                    _|// Comment
+                    _|procedure A;
+                    _|{$ENDIF}
+                ",
             );
         }
     }

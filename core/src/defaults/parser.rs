@@ -68,11 +68,10 @@ fn parse_file(tokens: &mut [RawToken]) -> Vec<LogicalLine> {
     let tree = DirectiveTree::parse(tokens);
 
     let mut lines = FxHashMap::default();
-    let mut attributed_directives = FxHashSet::default();
+    let mut skipped_tokens = FxHashSet::default();
     for pass_tokens in tree.passes() {
         let pass_lines =
-            InternalDelphiLogicalLineParser::new(tokens, &pass_tokens, &mut attributed_directives)
-                .parse();
+            InternalDelphiLogicalLineParser::new(tokens, &pass_tokens, &mut skipped_tokens).parse();
         /*
             This pass over the tokens ensures that their consolidated token type
             is cemented after the first run that encounters them.
@@ -87,12 +86,17 @@ fn parse_file(tokens: &mut [RawToken]) -> Vec<LogicalLine> {
 
     let mut directive_lines = vec![];
     let mut directive_level = 0;
-    for (token_index, token) in tokens
-        .iter()
-        .enumerate()
-        .filter(|(token_index, _)| !attributed_directives.contains(token_index))
-    {
+    for (token_index, token) in tokens.iter().enumerate().filter(|(token_index, token)| {
+        matches!(token.get_token_type(), TT::ConditionalDirective(_))
+            || skipped_tokens.contains(token_index)
+    }) {
         match token.get_token_type() {
+            TT::Comment(_) => directive_lines.push(LocalLogicalLine {
+                parent: None,
+                level: directive_level,
+                tokens: vec![token_index],
+                line_type: LLT::Unknown,
+            }),
             TT::CompilerDirective => directive_lines.push(LocalLogicalLine {
                 parent: None,
                 level: directive_level,
@@ -171,7 +175,7 @@ struct InternalDelphiLogicalLineParser<'a, 'b> {
     paren_level: u32,
     brack_level: u32,
     generic_level: u32,
-    attributed_directives: &'a mut FxHashSet<usize>,
+    skipped_tokens: &'a mut FxHashSet<usize>,
     last_finished_line: LogicalLineRef,
 }
 use InternalDelphiLogicalLineParser as LLP;
@@ -179,7 +183,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     fn new(
         tokens: &'a mut [RawToken<'b>],
         pass_indices: &'a [usize],
-        attributed_directives: &'a mut FxHashSet<usize>,
+        skipped_tokens: &'a mut FxHashSet<usize>,
     ) -> Self {
         InternalDelphiLogicalLineParser {
             tokens,
@@ -198,7 +202,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             paren_level: 0,
             brack_level: 0,
             generic_level: 0,
-            attributed_directives,
+            skipped_tokens,
             last_finished_line: 0,
         }
     }
@@ -250,7 +254,12 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                       TFoo = class;
                     ```
                 */
-                TT::CompilerDirective
+                TT::Comment(
+                    CommentKind::IndividualLine
+                    | CommentKind::IndividualBlock
+                    | CommentKind::MultilineBlock,
+                )
+                | TT::CompilerDirective
                     if self.is_directive_before_next_token()
                         && self.is_directive_after_prev_token() =>
                 {
@@ -1914,9 +1923,10 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         loop {
             if let Some(token_index) = self.get_current_token_index() {
                 self.get_current_logical_line_mut().tokens.push(token_index);
-                if let Some(TT::CompilerDirective) = self.get_current_token_type() {
-                    self.attributed_directives.insert(token_index);
-                }
+
+                // This is to ensure if tokens are skipped in one pass and not
+                // in another, they don't get double handled.
+                self.skipped_tokens.remove(&token_index);
             }
 
             match self.get_current_token_type() {
@@ -1939,6 +1949,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     }
 
     fn skip_token(&mut self) {
+        self.skipped_tokens.extend(self.get_current_token_index());
         self.pass_index += 1;
     }
 
@@ -2096,7 +2107,9 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
     }
 
     fn is_directive_before_next_token(&self) -> bool {
-        let mut last_index = self.pass_index;
+        let Some(mut last_index) = self.get_current_token_index() else {
+            return false;
+        };
         for &index in self.pass_indices.iter().skip(self.pass_index + 1) {
             if index - last_index > 1 {
                 return true;
