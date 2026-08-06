@@ -362,6 +362,7 @@ mod comments {
         conditional_directives::generate(root_dir);
         individual_block::generate(root_dir);
         compound_operators::generate(root_dir);
+        before_context_end::generate(root_dir);
     }
 
     mod midline_line {
@@ -559,6 +560,25 @@ mod comments {
                         end
                     );
                 ",
+                anonymous_content = "
+                    A(
+                        procedure
+                        begin
+                          //
+                        end,
+                        procedure
+                        begin
+                          A
+                          //
+                        end,
+                        procedure
+                        begin
+                          A;
+                          //
+                          A
+                        end,
+                    );
+                ",
                 if_else = "
                     if AAAAAA then //
                       BBBBBBB;
@@ -579,6 +599,32 @@ mod comments {
                     else //
                     begin
                     end;
+                    if A then
+                      //
+                      begin
+                        //
+                      end
+                      //
+                          ;
+                    if A then
+                      //
+                      begin
+                        A
+                        //
+                      end
+                      //
+                          ;
+                    if A then begin
+                      //
+                    end
+                    //
+                        ;
+                    if A then begin
+                      A
+                      //
+                    end
+                    //
+                        ;
                 ",
                 after_do = "
                     try
@@ -740,6 +786,151 @@ mod comments {
                             {
                             }
                             BBBBBBBBB;
+                ",
+            );
+        }
+    }
+
+    mod before_context_end {
+        use super::*;
+
+        pub fn generate(root_dir: &Path) {
+            generate_test_cases!(
+                root_dir,
+                compound = "
+                    begin
+                      A := B + C
+                      //
+                    end
+                ",
+                compound_with_conditional = "
+                    begin
+                    {$IFDEF A}
+                      A := B + C
+                    {$ENDIF}
+                      //
+                    end
+                ",
+                if_else = "
+                    begin
+                      if A then begin
+                        A := B + C
+                      end
+
+                      //
+                      else
+                        B := C + D;
+                      if A then //
+                      begin
+                        A := B + C
+                      end
+
+                      //
+                      else
+                        B := C + D;
+                      if A then
+                        //
+                        begin
+                          A := B + C
+                        end
+
+                      //
+                      else
+                        B := C + D;
+                      if A then
+                        A := B + C
+
+                      //
+                      else
+                        B := C + D
+
+                      //
+                    end
+                ",
+                for_in = "
+                    begin
+                      for A in B do
+                        A := B + C
+                      //
+                    end
+                ",
+                for_to = "
+                    begin
+                      for A := B to C do
+                        A := B + C
+                      //
+                    end
+                ",
+                while_do = "
+                    begin
+                      while A do
+                        A := B + C
+                      //
+                    end
+                ",
+                initialization_finalization = "
+                    initialization
+                      A := B + C
+                      //
+                    finalization
+                      A := B + C
+                      //
+                    end.
+                ",
+                initialization = "
+                    initialization
+                      A := B + C
+                      //
+                    end.
+                ",
+                case = "
+                    case A of
+                      B: A := B + C
+                      //
+                    end.
+                ",
+                case_else = "
+                    case A of
+                      B: A := B + C
+                      //
+                    else
+                      A := B + C
+                      //
+                    end.
+                ",
+                repeat = "
+                    repeat
+                      A := B + C
+                      //
+                    until False;
+                ",
+                try_except = "
+                    try
+                      A := B + C
+                      //
+                    except
+                      on A do
+                        A := B + C
+                      //
+                    end;
+                ",
+                try_bare_except = "
+                    try
+                      A := B + C
+                      //
+                    except
+                      A := B + C
+                      //
+                    end;
+                ",
+                try_finally = "
+                    try
+                      A := B + C
+                      //
+                    finally
+                      A := B + C
+                      //
+                    end;
                 ",
             );
         }

@@ -226,8 +226,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         while let Some(token_type) = self.get_current_token_type() {
             if let Some(ending_context) = self.context.get_ending_context_idx(self) {
                 trace!(
-                    "Context ended, returning from parse_structures with {:?}",
-                    token_type
+                    "Context {:?} ended, returning from parse_structures with {:?}",
+                    self.context.contexts[ending_context].context_type, token_type
                 );
                 self.context.update_statuses(ending_context);
                 return;
@@ -371,7 +371,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                     self.next_token();
                     self.parse_statement_list_block(ParserContext {
                         context_type: ContextType::StatementBlock(BlockKind::Begin),
-                        context_ending_predicate: CEP::Opaque(end),
+                        context_ending_predicate: CEP::Opaque(statement_list_end),
                         level: ParserContextLevel::Level(1),
                     });
                     if let Some(TT::Keyword(KK::End)) = self.get_current_token_type() {
@@ -438,7 +438,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
                         self.next_token(); // Else
                         self.parse_statement_list_block(ParserContext {
                             context_type: ContextType::StatementBlock(BlockKind::Else),
-                            context_ending_predicate: CEP::Opaque(end),
+                            context_ending_predicate: CEP::Opaque(statement_list_end),
                             level: ParserContextLevel::Level(1),
                         });
                     }
@@ -611,13 +611,19 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
 
         trace!("Parse `then` statement");
         let mut level = ParserContextLevel::Parent(parent, 1);
-        self.parse_block(ParserContext {
-            context_type: ContextType::Statement(StatementKind::Normal),
-            context_ending_predicate: CEP::Transparent(|llp| {
-                matches!(llp.get_current_token_type(), Some(TT::Keyword(KK::Else)))
-            }),
-            level,
-        });
+        self.do_with_context(
+            ParserContext {
+                context_type: ContextType::Statement(StatementKind::Normal),
+                context_ending_predicate: CEP::Transparent(kw_else),
+                level,
+            },
+            |parser| {
+                parser.parse_structures();
+                parser.finish_logical_line();
+                // Interpret trailing comments as referring to the next line
+                parser.take_individual_comments(Some(LLT::ParentLineChildComment));
+            },
+        );
 
         if self.context.is_ended.last() == Some(&false)
             && let Some(KK::Else) = self.get_current_keyword_kind()
@@ -692,12 +698,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
 
         let context = ParserContext {
             context_type: ContextType::Statement(StatementKind::Case),
-            context_ending_predicate: CEP::Opaque(|parser: &LLP| {
-                matches!(
-                    parser.get_current_token_type(),
-                    Some(TT::Keyword(KK::End | KK::Else))
-                )
-            }),
+            context_ending_predicate: CEP::Opaque(else_end),
             level: ParserContextLevel::Level(1),
         };
         self.parse_statement_block_with_kind(context, StatementKind::Case);
@@ -707,7 +708,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             self.finish_logical_line();
             self.parse_statement_list_block(ParserContext {
                 context_type: ContextType::StatementBlock(BlockKind::Else),
-                context_ending_predicate: CEP::Opaque(end),
+                context_ending_predicate: CEP::Opaque(statement_list_end),
                 level: ParserContextLevel::Level(1),
             });
         }
@@ -818,6 +819,23 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         self.current_line.pop();
     }
 
+    fn take_individual_comments(&mut self, line_type: Option<LogicalLineType>) {
+        trace!("Take individual comments");
+        while let Some(TT::Comment(
+            CommentKind::IndividualBlock
+            | CommentKind::IndividualLine
+            | CommentKind::MultilineBlock,
+        )) = self.get_current_token_type()
+        {
+            trace!("Taking individual comment line");
+            self.next_token();
+            if let Some(line_type) = line_type {
+                self.set_logical_line_type(line_type);
+            }
+            self.finish_logical_line();
+        }
+    }
+
     fn parse_comment_lines(&mut self) {
         self.parse_block(ParserContext {
             context_type: ContextType::Utility,
@@ -864,8 +882,8 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             if let Some(context) = self.get_last_context() {
                 if let Some(ending_context) = self.context.get_ending_context_idx(self) {
                     trace!(
-                        "Context ended, returning from parse_statement with {:?}",
-                        token_type
+                        "Context {:?} ended, returning from parse_statement with {:?}",
+                        self.context.contexts[ending_context].context_type, token_type
                     );
                     self.context.update_statuses(ending_context);
                     return;
@@ -1214,14 +1232,17 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
             self.finish_logical_line();
             // With no unfinished line, this will add the separators to the last child line
             self.take_separators_on_last_line(level);
+
             if self.context.get_ending_context_idx(self).is_some()
                 || self.get_current_token_type().is_none()
             {
                 // If the parent context above the `Statement` is over, return.
                 // Otherwise, there are more statements to consume.
-                return;
+                break;
             }
         }
+
+        self.take_individual_comments(None);
     }
     fn parse_block(&mut self, context: ParserContext) {
         self.do_with_context(context, |parser| {
@@ -1709,7 +1730,7 @@ impl<'a, 'b> InternalDelphiLogicalLineParser<'a, 'b> {
         self.next_token(); // Begin
         self.parse_statement_list_block(ParserContext {
             context_type: ContextType::StatementBlock(BlockKind::Begin),
-            context_ending_predicate: CEP::Opaque(end),
+            context_ending_predicate: CEP::Opaque(statement_list_end),
             level: context_level,
         });
         self.next_token(); // End
@@ -2222,18 +2243,6 @@ fn of(parser: &LLP) -> bool {
     matches!(parser.get_current_keyword_kind(), Some(KK::Of))
 }
 
-fn section_headings(parser: &LLP) -> bool {
-    match parser.get_current_token_type() {
-        Some(TT::Keyword(KK::Implementation | KK::Initialization | KK::Finalization | KK::End)) => {
-            true
-        }
-        Some(TT::Keyword(KK::Interface)) => {
-            !matches!(parser.get_token_type::<-1>(), Some(TT::Op(OK::Equal(_))))
-        }
-        _ => false,
-    }
-}
-
 fn visibility_specifier(parser: &LLP) -> bool {
     matches!(
         parser.get_current_keyword_kind(),
@@ -2251,27 +2260,58 @@ fn begin_asm(parser: &LLP) -> bool {
         Some(TT::Keyword(KK::Begin | KK::Asm))
     )
 }
+
+macro_rules! statement_list_predicate {
+    ($parser: expr, $token_type_pat: pat) => {{
+        ($parser.pass_index..)
+            .map(|pass_index| $parser.get_token_type_for_index(pass_index))
+            .take_while(|token| !matches!(token, None | Some($token_type_pat)))
+            .all(|token| {
+                matches!(
+                    token,
+                    Some(TT::Comment(
+                        CommentKind::IndividualLine
+                            | CommentKind::MultilineBlock
+                            | CommentKind::IndividualBlock
+                    ))
+                )
+            })
+    }};
+}
+
+fn section_headings(parser: &LLP) -> bool {
+    match parser.get_current_token_type() {
+        Some(TT::Keyword(KK::Interface)) => {
+            !matches!(parser.get_token_type::<-1>(), Some(TT::Op(OK::Equal(_))))
+        }
+        _ => {
+            statement_list_predicate!(
+                parser,
+                TT::Keyword(KK::Implementation | KK::Initialization | KK::Finalization | KK::End)
+            )
+        }
+    }
+}
+
 fn else_end(parser: &LLP) -> bool {
-    matches!(
-        parser.get_current_token_type(),
-        Some(TT::Keyword(KK::End | KK::Else))
-    )
+    statement_list_predicate!(parser, TT::Keyword(KK::End | KK::Else))
+}
+
+fn kw_else(parser: &LLP) -> bool {
+    statement_list_predicate!(parser, TT::Keyword(KK::Else))
+}
+fn statement_list_end(parser: &LLP) -> bool {
+    statement_list_predicate!(parser, TT::Keyword(KK::End))
 }
 fn end(parser: &LLP) -> bool {
     matches!(parser.get_current_token_type(), Some(TT::Keyword(KK::End)))
 }
 fn until(parser: &LLP) -> bool {
-    matches!(
-        parser.get_current_token_type(),
-        Some(TT::Keyword(KK::Until))
-    )
+    statement_list_predicate!(parser, TT::Keyword(KK::Until))
 }
 
 fn except_finally(parser: &LLP) -> bool {
-    matches!(
-        parser.get_current_token_type(),
-        Some(TT::Keyword(KK::Except | KK::Finally))
-    )
+    statement_list_predicate!(parser, TT::Keyword(KK::Except | KK::Finally))
 }
 
 fn not_comment_or_directive(parser: &LLP) -> bool {
