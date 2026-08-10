@@ -1566,15 +1566,24 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
                 }
             });
 
-        // A context that is only a single token is useless
         self.contexts_to_remove
             .extend(self.contexts.into_iter().filter(|node_ref| {
                 let ctx = node_ref.get();
+
+                // Contexts only affect change to decisions within their range.
+                // As such, contexts with one token cannot affect any decisions
+                // and can be pruned.
                 let is_single_token = ctx.ending_token == Some(ctx.starting_token)
                   // `self.line_index` is the the index after the last token
                     || ctx.starting_token + 1 == self.line_index;
+
+                // `CT::CommaList` and `CT::Assignment` get eagerly added to the
+                // context stack. If they are unterminated, it implies the
+                // context is incomplete and doesn't represent the logical line
+                // in question.
                 let is_commalist_or_assignment = ctx.ending_token.is_none()
                     && matches!(ctx.context_type, CT::CommaList | CT::Assignment);
+
                 is_single_token || is_commalist_or_assignment
             }));
 
