@@ -443,6 +443,7 @@ impl TokenType {
     derive(strum_macros::EnumString),
     strum(ascii_case_insensitive)
 )]
+/// Semantic classification of a logical line after parsing/analysis.
 pub enum LogicalLineType {
     Assignment,
     ConditionalDirective,
@@ -461,20 +462,32 @@ pub enum LogicalLineType {
     CaseArm,
     Declaration,
     VariantRecordCaseArm,
+    /// Comment that should be indented as if part of the parent line (e.g. comments at the end of `if`).
     ParentLineChildComment,
+    /// Catch-all for logical lines whose semantics do not inform special formatting.
     Unknown,
+    /// "Dead" logical lines that are not to be reformatted or reconstructed.
     Voided,
 }
 #[derive(Hash, Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct LineParent {
     pub line_index: usize,
+    /// Token (as global token stream index) introducing the child line.
     pub global_token_index: usize,
 }
+
+/// Formatter unit representing one "logical" line in Delphi
+/// (i.e. tokens that could be conceivably formatted on a single line).
+/// Logical lines can be nested.
 #[derive(Debug, PartialEq, Eq)]
 pub struct LogicalLine {
+    /// Parent logical line, if any.
     parent: Option<LineParent>,
+    /// Indentation level relative to parent.
     level: u16,
+    /// Tokens (as global token stream indices) that belong to this logical line.
     tokens: Vec<usize>,
+    /// Semantic meaning of logical line.
     line_type: LogicalLineType,
 }
 impl LogicalLine {
@@ -506,12 +519,15 @@ impl LogicalLine {
     pub fn get_line_type(&self) -> LogicalLineType {
         self.line_type
     }
+    /// Exclude this logical line from reconstruction and remove all its tokens.
+    /// Returns the removed tokens.
     pub fn void_and_drain(&mut self) -> Drain<'_, usize> {
         self.line_type = LogicalLineType::Voided;
         self.tokens.drain(0..)
     }
 }
 
+/// Per-token whitespace metadata used during formatting.
 #[derive(Default, PartialEq, Eq)]
 pub struct FormattingData {
     ignored: bool,
@@ -568,8 +584,9 @@ pub enum MutTokenErr {
     /// The token is ignored, and therefore cannot be mutated.
     TokenIgnored,
 }
-
+/// Token stream with associated mutable formatting metadata for each token.
 pub struct FormattedTokens<'a> {
+    /// Underlying token stream.
     tokens: &'a mut [Token<'a>],
     /// Formatting metadata for each token, with the invariant that the length
     /// will always match the length of [field@FormattedTokens::tokens]
@@ -750,16 +767,24 @@ impl ReconstructionSettings {
 
 pub trait TokenData {
     type TokenType;
+    /// Returns the leading whitespace before the token content.
     fn get_leading_whitespace(&self) -> &str;
+    /// Returns the content of the token, excluding leading whitespace.
     fn get_content(&self) -> &str;
+    /// Returns the type of the token.
     fn get_token_type(&self) -> Self::TokenType;
+    /// Sets the type of the token.
     fn set_token_type(&mut self, typ: Self::TokenType);
 }
 
+/// Lexer token. Consists of the raw slice, info about leading whitespace, and a prospective token type.
 #[derive(Debug, PartialEq, Eq)]
 pub struct RawToken<'a> {
+    /// Corresponding input string slice, including leading whitespace.
     content: &'a str,
+    /// Length of leading whitespace in [`content`].
     ws_len: u32,
+    /// Prospective token type. May be refined by formatting passes.
     token_type: RawTokenType,
 }
 impl<'a> RawToken<'a> {
@@ -790,9 +815,13 @@ impl TokenData for RawToken<'_> {
     }
 }
 
+/// Normalized token used by formatters.
+/// Unlike [`RawToken`], the string content is mutable, so formatting passes can adjust token content.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Token<'a> {
+    /// Text representation of token, including leading whitespace.
     content: Cow<'a, str>,
+    /// Length of leading whitespace in [`content`].
     ws_len: u32,
     token_type: TokenType,
 }

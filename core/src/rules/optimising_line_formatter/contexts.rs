@@ -74,39 +74,66 @@ pub(super) enum BracketStyle {
 pub(super) enum ContextType {
     // Base contexts
     Base,
+    /// Inline `var`/`const` declaration (e.g. `begin var A := 1; end`).
     InlineDeclaration,
+    /// Raise statement (e.g. `raise <expr>`).
     Raise,
+    /// "Raise at" statement (e.g. `raise ... at <expr>`).
     RaiseAt,
+    /// Property declaration header.
     PropDec,
+    /// Routine declaration header.
     RoutineHeader,
+    /// Line-level container for routine/property directives.
     DirectivesLine,
+    /// `for ... in/to/downto ... do` control loop.
     ForLoop,
-    // To control the latter of the pair
+    /// Bracketed region (e.g. `(...)`, `[...]`, `<...>`).
     Brackets(BracketKind, BracketStyle),
     // Lists
+    /// Comma-separated list (e.g. `A, B, C`).
     CommaList,
+    /// Element inside a comma-separated list.
     CommaElem,
+    /// Semicolon-separated list (e.g. `A; B; C`).
     SemicolonList,
+    /// Element inside a semicolon-separated list.
     SemicolonElem,
+    /// Sequence of directives (e.g. `abstract; winapi`).
     DirectiveList,
+    /// Directive inside a `DirectiveList` (e.g. `abstract`).
     Directive,
     // Statement
+    /// Control-flow statement body/subject container.
     ControlFlow,
+    /// Assignment-like statement.
     Assignment,
+    /// Typed declaration assignment (e.g. `A: T = ...`).
     TypedAssignment,
     // Nested
+    /// Type expression.
     Type,
+    /// Operator binding (higher precedence = lower number).
     Precedence(u8),
+    /// `if ... then ... else ...` expression pairing context.
     IfElse,
+    /// Left-hand side of assignment-like forms.
     AssignLHS,
+    /// Right-hand side of assignment-like forms.
     AssignRHS,
+    /// Marks start of control-flow construct.
     ControlFlowBegin,
+    /// Conditional directive block (`{$if...}{$else}{$endif}`).
     ConditionalDirective,
-    // `MemberAccess` allows non-fluent calls to be on the same line
+    /// Member-access chain context (e.g. `A.B.C`).
     MemberAccess,
+    /// Region related to a keyword (e.g. after `then`, `do`, `of`, `for`).
     Subject,
+    /// Control-flow guard expression directly after a leading keyword (e.g. after `if`, `while`).
     GuardClause,
+    /// Control-flow guard expression in expression (e.g. in ternaries).
     ExpressionGuardClause,
+    /// Anonymous routine header (`function`/`procedure` used inline).
     AnonHeader,
 }
 use ContextType as CT;
@@ -129,8 +156,13 @@ pub(super) struct FormattingContext {
     context_type: ContextType,
     continuation_delta: u16,
     starting_token: u32,
-    /// Used to represent the last token that the formatting requirements will have.
-    /// Means the indentation can last longer than the rules.
+    /// Last token index (inclusive) where this context is active for decisions.
+    ///
+    /// This is not necessarily the same as when the context disappears from the stack,
+    /// as sometimes past contexts might need to be inspected to determine future decisions.
+    ///
+    /// For example, the RHS of a `=`/`:=` might still read `TypedAssignment`'s state to
+    /// decide RHS breaking, even though the context itself is no longer active.
     ending_token: Option<u32>,
 }
 impl FormattingContext {
@@ -275,6 +307,7 @@ pub(super) struct SpecificContextDataStack<'a> {
     specific_stack: &'a SpecificContextStack<'a>,
 }
 impl SpecificContextDataStack<'_> {
+    /// Return whether the current token in the solution is able to be broken.
     pub(super) fn parents_support_break(&self) -> bool {
         self.specific_stack
             .ctx_data_iter(self.solution)
@@ -449,6 +482,7 @@ impl<'a> SpecificContextStack<'a> {
                 }
             });
 
+        // Locks a break decision in.
         let apply_pivotal_break =
             |_: Ref<'_, FormattingContext>, data: &mut FormattingContextState| {
                 data.is_broken |= is_break;
@@ -798,6 +832,7 @@ impl<'a> SpecificContextStack<'a> {
 /// will happen to the contents should it be broken.
 pub(super) struct LineFormattingContexts<'a> {
     context_count: usize,
+    /// Lookup for the stack as of each token index in the line.
     update_indices: Vec<(u32, NodeRef<'a, FormattingContext>)>,
     line: &'a LogicalLine,
     token_types: &'a [TokenType],
@@ -807,6 +842,7 @@ impl<'a> LineFormattingContexts<'a> {
         ParentPointerTree::new(FormattingContext::new(CT::Base))
     }
 
+    /// Update context_tree with the context stack for a given logical line.
     pub fn new(
         line: &'a LogicalLine,
         token_types: &'a [TokenType],
@@ -815,6 +851,7 @@ impl<'a> LineFormattingContexts<'a> {
         let builder_context_tree = Self::new_tree();
         let mut contexts = LineFormattingContextsBuilder::new(&builder_context_tree);
 
+        // Init contexts based on what we already know about the logical line
         match line.get_line_type() {
             LLT::CaseArm => {
                 contexts.push_utility((CT::ControlFlowBegin, 0));
@@ -853,7 +890,9 @@ impl<'a> LineFormattingContexts<'a> {
             }
         }
 
+        // History of tokens we've already processed
         let mut prev_token_types: Vec<TokenType> = Vec::with_capacity(line.get_tokens().len());
+        // Get the nth most recent "semantic" token (semantic = not a comment or any directive)
         macro_rules! last_semantic_token_type {
             () => {
                 last_semantic_token_type!(0)
@@ -866,12 +905,16 @@ impl<'a> LineFormattingContexts<'a> {
                     .nth($i)
             };
         }
+
+        // Remaining token queue
         let mut next_token_types = line
             .get_tokens()
             .iter()
             .rev()
             .map(|id| token_types[*id])
             .collect::<Vec<_>>();
+
+        // Calculate context stack for all tokens in the line
         let mut current = next_token_types.pop();
 
         fn next_real_token_type(token_types: &[TokenType]) -> Option<TokenType> {
@@ -883,10 +926,12 @@ impl<'a> LineFormattingContexts<'a> {
         }
 
         while let Some(current_token_type) = current {
+            // For semantic/conditional tokens, first push new contexts that are implied by the previous token.
+            // This avoids including leading comments/directives in new contexts.
+            // e.g. for token stream `A , {} B` the `CommaElem` context should start at `B`, not `{}`.
             if !current_token_type.is_comment_or_compiler_directive() {
                 let last_context_type = contexts.current_context.get().context_type;
-                // New contexts relating to the previous token are pushed here
-                // to avoid including any leading comments
+                // Get most recent semantic OR conditional directive token
                 if let Some(prev_token_type) = prev_token_types
                     .iter()
                     .rev()
@@ -1036,9 +1081,11 @@ impl<'a> LineFormattingContexts<'a> {
                     }
                 }
             }
+
+            // Cache "starting" context for later calculations
             let last_context_type = contexts.current_context.get().context_type;
 
-            // For contexts that apply to the current token
+            // Push contexts that apply to the current token
             match current_token_type {
                 TT::Op(OK::LParen | OK::LBrack | OK::LessThan(ChK::Generic)) => {
                     let current_kind = match current_token_type {
@@ -1317,10 +1364,13 @@ impl<'a> LineFormattingContexts<'a> {
                 _ => {}
             }
 
+            // Move on to next token
             trace!("Moving to next token with type: {:?}", current_token_type);
             contexts.next_token();
+            prev_token_types.extend(current);
+            current = next_token_types.pop();
 
-            // After the current token, some contexts needs to be popped
+            // Spring cleaning on contexts that are no longer needed
             match current_token_type {
                 TT::Op(OK::GreaterThan(ChK::Generic)) => {
                     contexts.pop_until_after(context_matches!(CT::Brackets(BracketKind::Angle, _)));
@@ -1337,9 +1387,6 @@ impl<'a> LineFormattingContexts<'a> {
                 }
                 _ => {}
             }
-
-            prev_token_types.extend(current);
-            current = next_token_types.pop();
         }
 
         contexts.finalise();
@@ -1352,6 +1399,7 @@ impl<'a> LineFormattingContexts<'a> {
         }
     }
 
+    /// Convert the context tree into a formatting context lookup by token index (relative to line start).
     fn write_context_tree(
         tree: &'a ParentPointerTree<FormattingContext>,
         builder: LineFormattingContextsBuilder<'_>,
@@ -1410,11 +1458,18 @@ impl<'a> LineFormattingContexts<'a> {
 /// Facilitates the construction of [`LineFormattingContexts`] incrementally while
 /// iterating a line's tokens.
 struct LineFormattingContextsBuilder<'builder> {
+    /// The tree of formatting contexts for this logical line.
     contexts: &'builder ParentPointerTree<FormattingContext>,
+    /// Lookup for the stack as of each token index in the line.
     update_indices: Vec<(u32, NodeRef<'builder, FormattingContext>)>,
+    /// The current top of the context stack.
     current_context: NodeRef<'builder, FormattingContext>,
+    /// Utility contexts (provisional contexts) that have not yet been retained.
     contexts_to_remove: NodeRefSet,
+    /// Index of the current token in the line.
     line_index: u32,
+    /// Precedence(0) contexts that should be rewritten to MemberAccess contexts.
+    /// This contains all Precedence(0) contexts that have not been marked as [`fluent`].
     member_access_contexts: NodeRefSet,
 }
 impl<'builder> LineFormattingContextsBuilder<'builder> {
@@ -1428,13 +1483,14 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
             member_access_contexts: NodeRefSet::new(),
         }
     }
+    /// Iterator over the context types in the stack.
     fn type_stack(&self) -> impl Iterator<Item = ContextType> + use<'builder> {
         self.current_context
             .walk_parents_data()
             .map(|index| index.context_type)
     }
 
-    /// To ensure the context specified will not be eliminated as unused
+    /// Ensure the given context will not be eliminated as unused.
     fn retain(&mut self, context: NodeRef<'builder, FormattingContext>) {
         trace!(
             "Retaining context with type: {:?}",
@@ -1443,12 +1499,12 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
         self.contexts_to_remove.remove(&context);
     }
 
-    /// To ensure the current top of the context stack will not be eliminated as unused
+    /// Ensure the current top of the context stack will not be eliminated as unused.
     fn retain_current(&mut self) {
         self.retain(self.current_context.clone());
     }
 
-    /// To ensure the first matching context on the stack will not be eliminated as unused
+    /// Ensure the first matching context on the stack will not be eliminated as unused.
     fn retain_first<F: ContextFilter>(&mut self, filter: F) {
         let Some(ctx) = self
             .current_context
@@ -1460,7 +1516,7 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
         self.retain(ctx);
     }
 
-    /// To indicate the Precedence(0) context is actually a fluent context
+    /// Mark the given context as a fluent context (i.e. not a member access).
     fn fluent(&mut self, context: NodeRef<'builder, FormattingContext>) {
         self.member_access_contexts.remove(&context);
     }
@@ -1488,11 +1544,14 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
         node
     }
 
+    /// Push a context onto the top of the stack.
     fn push<C: Into<FormattingContext>>(&mut self, context: C) {
         self.add_context(context, |context_type| {
             trace!("Pushing context with type: {context_type:?}")
         });
     }
+
+    /// Push a provisional context that will be removed unless explicitly retained.
     fn push_utility<C: Into<FormattingContext>>(&mut self, context: C) {
         let context_index = self.add_context(context, |context_type| {
             trace!("Pushing utility context with type: {context_type:?}")
@@ -1501,11 +1560,13 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
     }
 
     const ADD_ALL_PRECEDENCES: u8 = super::LOWEST_PRECEDENCE + 1;
+    /// Push utility contexts for all operator precedences, from the given precedence up.
     fn push_operator_precedences(&mut self, starting_precedence: u8) {
         for precedence in (super::HIGHEST_PRECEDENCE..starting_precedence).rev() {
             self.push_utility(CT::Precedence(precedence));
         }
     }
+    /// Push utility contexts for all operator precedences, from the the current precedence up.
     fn push_operators(&mut self) {
         let starting_precedence = match self.type_stack().next() {
             Some(CT::Precedence(p)) => p,
@@ -1513,14 +1574,18 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
         };
         self.push_operator_precedences(starting_precedence);
     }
+    /// Push utility contexts for all operator precedences.
     fn push_expression(&mut self) {
         self.push_operator_precedences(Self::ADD_ALL_PRECEDENCES);
     }
 
+    /// Pops the top context off the stack.
     fn pop(&mut self) {
+        // Set ending token if unset
         if self.current_context.get().ending_token.is_none() {
             self.current_context.get_mut().ending_token = Some(self.line_index.saturating_sub(1));
         }
+
         if let Some(node) = self.current_context.parent() {
             trace!(
                 "Popping context with type: {:?}",
@@ -1530,6 +1595,7 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
         }
     }
 
+    /// Finds the depth of the first context type that matches the filter, if any.
     fn find_stack_depth<F: ContextFilter>(&mut self, context_filter: F) -> Option<usize> {
         self.type_stack()
             .enumerate()
@@ -1587,6 +1653,7 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
         ) {
             self.retain_current();
         }
+
         if self
             .update_indices
             .last()
@@ -1613,7 +1680,7 @@ impl<'builder> LineFormattingContextsBuilder<'builder> {
         self.current_context.get_mut()
     }
 
-    /// Finalises the context types and returns which contexts can be removed
+    /// Perform final processing on the context stack, removing unnecessary contexts and transforming others as needed.
     fn finalise(&mut self) {
         // Precedence(0) contexts that have not been deemed as "fluent" are
         // converted to `MemberAccess`

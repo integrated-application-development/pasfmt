@@ -1,5 +1,9 @@
 use crate::prelude::*;
 
+/// Undoes the usual indentation of compiler directives inside package files,
+/// in preference of the Delphi IDE style, which places them all at the margin.
+///
+/// This prevents churn when a pasfmt-formatted file is resaved in the IDE (and vice versa).
 pub struct DeindentPackageDirectives {}
 
 impl LogicalLinesConsolidator for DeindentPackageDirectives {

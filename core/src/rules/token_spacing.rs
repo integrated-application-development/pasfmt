@@ -3,6 +3,11 @@ use crate::lang::TokenType as TT;
 use crate::lang::*;
 use crate::prelude::*;
 
+/// Normalises spacing between tokens, including:
+/// * Single space between operators
+/// * One space before comments
+/// * One space before and after keywords
+/// * etc.
 pub struct TokenSpacing {}
 impl LogicalLineFileFormatter for TokenSpacing {
     fn format(&self, formatted_tokens: &mut FormattedTokens, _input: &[LogicalLine]) {

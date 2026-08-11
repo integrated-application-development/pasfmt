@@ -2,6 +2,9 @@ use itertools::Itertools;
 
 use crate::prelude::*;
 
+/// Reformats comment contents to a single leading space and no trailing whitespace.
+///
+/// "Separator comments" that repeat a single non-alphanumeric character are excluded.
 pub struct CommentFormatter {}
 
 fn format_line_comment(tok: &mut Token) {

@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+/// Converts keyword tokens to lowercase.
 pub struct LowercaseKeywords {}
 
 impl LogicalLineFileFormatter for LowercaseKeywords {

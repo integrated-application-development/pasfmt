@@ -8,6 +8,9 @@ struct TypeParamState {
     brack_count: u32,
 }
 
+/// Consolidates `<` and `>` tokens that are part of generic type parameter lists into `Generic` chevrons.
+///
+/// Ambiguous cases are assumed to be generic.
 pub struct DistinguishGenericTypeParamsConsolidator;
 impl TokenConsolidator for DistinguishGenericTypeParamsConsolidator {
     fn consolidate(&self, tokens: &mut [Token]) {

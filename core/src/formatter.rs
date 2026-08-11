@@ -62,10 +62,13 @@ impl<'cursor> FileOptions<'cursor> {
     }
 }
 
+/// Cursor position in a Delphi code string, as byte offset from start of string.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Cursor(pub u32);
 
+/// The entrypoint for formatting a string containing Delphi code.
 pub struct Formatter {
+    /// Converts the input string into a token stream.
     lexer: Box<dyn Lexer + Sync>,
     token_consolidators: Vec<Box<dyn RawTokenConsolidator + Sync>>,
     logical_line_parser: Box<dyn LogicalLineParser + Sync>,
