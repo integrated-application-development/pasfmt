@@ -9,6 +9,21 @@ use crate::{
 };
 use TokenType as TT;
 
+/// Consolidates simple `{$if} ... {$else} ... {$endif}` blocks into the same logical line,
+/// to support inline expression-style formatting of conditional directives.
+///
+/// ```delphi
+/// // Default behaviour:
+/// var x :=
+/// {$ifdef A}
+///     1
+/// {$else}
+///     2
+/// {$endif};
+///
+/// // With this consolidator:
+/// var x := {$ifdef A} 1 {$else} 2 {$endif};
+/// ```
 pub struct ConditionalDirectiveConsolidator {}
 impl ConditionalDirectiveConsolidator {
     fn is_allowed_token(tokens: &[Token], token_index: usize) -> bool {
@@ -54,6 +69,8 @@ impl ConditionalDirectiveConsolidator {
         let mut new_line_tokens = vec![first_token];
 
         for (&prev, &current) in line.get_tokens().iter().tuple_windows() {
+            // The logical line does not yet contain conditional directives, but we can
+            // detect them indirectly by looking for gaps
             if current - prev > 1 {
                 let gap_start_tok = prev + 1;
                 let gap_end_tok = current - 1;

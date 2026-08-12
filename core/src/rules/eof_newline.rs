@@ -1,5 +1,6 @@
 use crate::{lang::*, traits::LogicalLineFormatter};
 
+/// Ensures that the file ends with a single newline.
 pub struct EofNewline {}
 impl LogicalLineFormatter for EofNewline {
     fn format(&self, formatted_tokens: &mut FormattedTokens<'_>, _input: &LogicalLine) {

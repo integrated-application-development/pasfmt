@@ -25,8 +25,8 @@ impl InternalOptimisingLineFormatter<'_, '_> {
             return DR::Invalid;
         };
 
+        // Check invariants first for short-circuiting
         let parents_support_break = contexts_data.parents_support_break();
-
         if let Some(value) = self.get_formatting_invariant(line_index, line) {
             return value.map_can_break(parents_support_break);
         }
@@ -317,12 +317,14 @@ impl InternalOptimisingLineFormatter<'_, '_> {
             ((Some(TT::ConditionalDirective(kind)), Some(TT::Identifier)), DR::Indifferent)
                 if kind.is_end() =>
             {
+                // Break after `{$endif} <identifier>` if the parent context is broken
                 contexts_data
                     .get_last_context(context_matches!(_))
                     .map(|(_, data)| data.is_child_broken)
                     .if_else_or_default(DR::MustBreak, DR::Indifferent)
             }
             ((Some(TT::ConditionalDirective(kind)), Some(_)), DR::Indifferent) if kind.is_end() => {
+                // Break after `{$endif}`
                 DR::MustBreak
             }
             _ => requirement,
@@ -330,6 +332,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
         requirement.map_can_break(parents_support_break)
     }
 
+    /// Returns the decision that must always be applied for the given token, if any.
     pub(super) fn get_formatting_invariant(
         &self,
         line_index: u32,
@@ -382,6 +385,7 @@ impl InternalOptimisingLineFormatter<'_, '_> {
         }
     }
 
+    /// Get token types of the previous semantic token (`.0`) and current token (`.1`).
     fn get_token_type_window(
         &self,
         line_index: u32,

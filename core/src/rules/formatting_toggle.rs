@@ -63,6 +63,7 @@ fn parse_toggle(content: &str) -> Option<FormattingToggle> {
     parse_pasfmt_directive_comment_contents(content)
 }
 
+/// Prevents formatting of tokens between `pasfmt off` and `pasfmt on` comments.
 pub struct FormattingToggler {}
 impl TokenIgnorer for FormattingToggler {
     fn ignore_tokens(&self, input: (&[Token], &[LogicalLine]), token_marker: &mut TokenMarker) {

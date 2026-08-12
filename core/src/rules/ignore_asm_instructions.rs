@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+/// Prevents `asm` blocks from being formatted.
 pub struct IgnoreAsmIstructions;
 impl TokenIgnorer for IgnoreAsmIstructions {
     fn ignore_tokens(

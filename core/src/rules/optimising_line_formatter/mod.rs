@@ -33,13 +33,14 @@ pub struct OptimisingLineFormatterSettings {
     pub format_multiline_strings: bool,
 }
 
+/// Reflows [`LogicalLine`]s within the bounds of the line length limit.
 pub struct OptimisingLineFormatter {
     olf_settings: OptimisingLineFormatterSettings,
     recon_settings: ReconstructionSettings,
 }
 
 /// Realistically, the [`OptimisingLineFormatter`] is a
-/// [`LogicalLineFormatter`]. However, it is beneficial to reuse much of the
+/// [`LogicalLineFormatter`]. However, it is more performant to reuse much of the
 /// data constructed in [`OptimisingLineFormatter::format`] across all lines in
 /// a file.
 impl LogicalLineFileFormatter for OptimisingLineFormatter {
