@@ -87,6 +87,35 @@ const ValueMap: TArray<Integer> = [
 // pasfmt on
 ```
 
+### Formatting Inno Setup [Code] sections
+
+Some syntactic salt allows Inno Setup scripts to pass smoothly through `pasfmt`:
+
+```delphi
+[Deco]
+(*//
+
+[Setup]
+AppName=EmptyProgram
+AppVerName=EmptyProgram 1
+UsePreviousAppDir=false
+DefaultDirName={pf}\EmptyProgram
+Uninstallable=false
+OutputBaseFilename=HelloWorld
+PrivilegesRequired=none
+
+[Messages]
+SetupAppTitle=My Title
+
+[Code]
+//*)
+function InitializeSetup(): Boolean;
+begin
+  MsgBox('Hello world.', mbInformation, MB_OK);
+  Result := FALSE;
+end;
+```
+
 ## Integrations
 
 - [`pasfmt-rad`](https://github.com/integrated-application-development/pasfmt-rad): a Delphi IDE extension for `pasfmt`
